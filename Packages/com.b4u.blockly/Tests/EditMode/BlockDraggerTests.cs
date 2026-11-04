@@ -270,7 +270,7 @@ namespace Blockly.Tests
 
         public static string[] FuzzPrograms => new[] { "loops", "break_continue", "if_else", "lists", "text", "procedures", "logic" };
 
-        static void AssertModelIsSound(Workspace ws, int expectedBlocks, string context)
+        internal static void AssertModelIsSound(Workspace ws, int expectedBlocks, string context)
         {
             var all = ws.AllBlocks().ToList();
             Assert.AreEqual(expectedBlocks, all.Count, context + ": blocks lost or duplicated");
