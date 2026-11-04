@@ -137,6 +137,7 @@ namespace Blockly.UI
             var rt = (RectTransform)flyoutView.transform;
             rt.sizeDelta += new Vector2(24, 24);                     // padding inside the scroll area
             rt.anchoredPosition = new Vector2(12, -12);
+            if (current.HeaderHeight > 0) BuildCreateVariableButton();
             HighlightSelected();
         }
 
@@ -153,6 +154,32 @@ namespace Blockly.UI
         {
             // variables / procedures changed: dynamic categories must reflect that
             if (IsFlyoutOpen && selected >= 0) SelectCategory(selected);
+        }
+
+        public const string CreateVariableButtonName = "Create variable";
+
+        Button createVariableButton;
+        public Button VariableButton => createVariableButton;
+
+        void BuildCreateVariableButton()
+        {
+            var go = new GameObject(CreateVariableButtonName, typeof(RectTransform), typeof(Image), typeof(Button));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(flyoutView.transform, false);
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 1); rt.pivot = new Vector2(0, 1);
+            rt.anchoredPosition = new Vector2(8, -6); rt.sizeDelta = new Vector2(190, 32);
+            var img = go.GetComponent<Image>();
+            img.color = new Color(0.55f, 0.3f, 0.5f);
+            createVariableButton = go.GetComponent<Button>();
+            createVariableButton.targetGraphic = img;
+            createVariableButton.onClick.AddListener(() => main.RequestCreateVariable());
+
+            var label = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var lrt = (RectTransform)label.transform;
+            lrt.SetParent(rt, false);
+            lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one; lrt.offsetMin = lrt.offsetMax = Vector2.zero;
+            var t = label.GetComponent<TextMeshProUGUI>();
+            t.text = "Create variable..."; t.fontSize = 15; t.color = Color.white; t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
         }
 
         // ------------------------------------------------------------------ spawning

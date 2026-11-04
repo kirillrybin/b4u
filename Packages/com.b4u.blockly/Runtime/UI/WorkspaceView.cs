@@ -112,6 +112,118 @@ namespace Blockly.UI
             return RectTransformUtility.WorldToScreenPoint(cam, world);
         }
 
+        // ------------------------------------------------------------------ dropdown menus and variables
+        DropdownMenu menu;
+        DialogView dialog;
+
+        public DropdownMenu ActiveMenu => menu != null && menu.IsOpen ? menu : null;
+        public DialogView ActiveDialog => dialog != null && dialog.IsOpen ? dialog : null;
+
+        Canvas RootCanvas => GetComponentInParent<Canvas>();
+
+        public void CloseMenu()
+        {
+            if (menu != null && menu.IsOpen) menu.Close();
+            menu = null;
+        }
+
+        /// <summary>Opens the popup list under a dropdown or variable field.</summary>
+        public bool ShowDropdown(Block block, Field field)
+        {
+            if (workspace == null || Spawner != null || IsDragging || block == null || field == null || !FieldEditing.IsDropdown(field)) return false;
+            if (RootCanvas == null || Layout == null || !Layout.ByBlock.TryGetValue(block, out var blockBox)) return false;
+            var fieldBox = blockBox.Fields.Find(f => f.Field == field);
+            if (fieldBox == null) return false;
+
+            if (IsEditingField) SubmitFieldEdit(fieldInput.text);
+            CloseMenu();
+            if (!Layout.ByBlock.TryGetValue(block, out blockBox)) return false;
+            fieldBox = blockBox.Fields.Find(f => f.Field == field) ?? fieldBox;
+
+            var items = FieldEditing.GetDropdownItems(workspace, field);
+            if (items.Count == 0) return false;
+
+            FieldEditStarted?.Invoke(block);                       // a running program stops while the user changes it
+            var canvas = RootCanvas;
+            Canvas.ForceUpdateCanvases();                           // the canvas scale must be current before converting to screen pixels
+            var cam = canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            var below = WorkspaceToScreen(new Vector2(fieldBox.X, fieldBox.Y + fieldBox.H), cam);
+            menu = DropdownMenu.Open(canvas, below, fieldBox.W, items, item => ChooseDropdownItem(block, field, item));
+            return true;
+        }
+
+        /// <summary>What happens when a menu entry is chosen (also what clicking an entry calls).</summary>
+        public void ChooseDropdownItem(Block block, Field field, DropdownItem item)
+        {
+            switch (item.Action)
+            {
+                case DropdownAction.RenameVariable: RequestRenameVariable(item.Value); break;
+                case DropdownAction.DeleteVariable: RequestDeleteVariable(item.Value); break;
+                default: ApplyFieldValue(block, field, item.Value); break;
+            }
+        }
+
+        /// <summary>Sets a dropdown/variable field to a value from its list and redraws. Returns true if anything changed.</summary>
+        public bool ApplyFieldValue(Block block, Field field, string value)
+        {
+            if (workspace == null || block == null || field == null) return false;
+            EnsureMeasurer();
+            bool changed = FieldEditing.SetValue(workspace, block, field, value, new BlockLayouter(workspace, measurer));
+            if (changed) { Rebuild(); WorkspaceEdited?.Invoke(); }
+            return changed;
+        }
+
+        /// <summary>Tell listeners (the toolbox's dynamic categories, autosave...) that the workspace changed.</summary>
+        public void NotifyEdited() => WorkspaceEdited?.Invoke();
+
+        public void RequestCreateVariable(Action<Variable> created = null)
+        {
+            if (workspace == null || RootCanvas == null) return;
+            CloseMenu();
+            dialog = DialogView.ShowPrompt(RootCanvas, "New variable name:", "",
+                typed => VariableEditing.Validate(workspace, typed, null, out _),
+                typed =>
+                {
+                    var v = VariableEditing.Create(workspace, typed, out _);
+                    if (v == null) return;
+                    NotifyEdited();
+                    created?.Invoke(v);
+                });
+        }
+
+        public void RequestRenameVariable(string id)
+        {
+            var v = workspace?.GetVariableById(id);
+            if (v == null || RootCanvas == null) return;
+            dialog = DialogView.ShowPrompt(RootCanvas, "Rename all \"" + v.Name + "\" variables to:", v.Name,
+                typed => VariableEditing.Validate(workspace, typed, id, out _),
+                typed =>
+                {
+                    FieldEditStarted?.Invoke(null);
+                    if (VariableEditing.Rename(workspace, id, typed, out _)) { Rebuild(); WorkspaceEdited?.Invoke(); }
+                });
+        }
+
+        /// <summary>Deletes a variable and everything that uses it. Asks first when more than one block is affected.</summary>
+        public void RequestDeleteVariable(string id)
+        {
+            var v = workspace?.GetVariableById(id);
+            if (v == null) return;
+            int uses = VariableEditing.CountUses(workspace, id);
+            if (uses <= 1 || RootCanvas == null) { DeleteVariableNow(id); return; }
+            dialog = DialogView.ShowConfirm(RootCanvas, "Delete variable",
+                "Delete " + uses + " uses of the \"" + v.Name + "\" variable?", () => DeleteVariableNow(id));
+        }
+
+        void DeleteVariableNow(string id)
+        {
+            FieldEditStarted?.Invoke(null);
+            EnsureMeasurer();
+            VariableEditing.Delete(workspace, new BlockLayouter(workspace, measurer), id);
+            Rebuild();
+            WorkspaceEdited?.Invoke();
+        }
+
         // ------------------------------------------------------------------ editing fields
         public bool IsEditingField => editField != null;
         public TMP_InputField FieldEditor => fieldInput;
@@ -243,6 +355,7 @@ namespace Blockly.UI
         public bool BeginDrag(Block block, Vector2 workspacePoint, bool isNew = false)
         {
             if (workspace == null || IsDragging || block == null) return false;
+            CloseMenu();
             if (IsEditingField) SubmitFieldEdit(fieldInput.text);          // accept what was typed before moving things around
             EnsureMeasurer();
             var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer));
@@ -408,6 +521,7 @@ namespace Blockly.UI
 
         void Clear()
         {
+            CloseMenu();
             if (fieldInput != null && editField != null) { editBlock = null; editField = null; fieldInput.gameObject.SetActive(false); }
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
@@ -499,7 +613,7 @@ namespace Blockly.UI
                 var bg = rt.gameObject.AddComponent<PolygonGraphic>();
                 bg.SetShape(rect, dropdown ? BlockStyle.DropdownFill(baseColour, box.IsShadow) : BlockStyle.InputFill,
                             BlockStyle.Stroke(baseColour, box.IsShadow), 1f);
-                bool clickable = Spawner == null && FieldEditing.IsEditableText(f.Field);
+                bool clickable = Spawner == null && (FieldEditing.IsEditableText(f.Field) || FieldEditing.IsDropdown(f.Field));
                 bg.raycastTarget = clickable;                              // other fields pass clicks through to the block
                 if (clickable) rt.gameObject.AddComponent<FieldClickTarget>().Init(this, box.Block, f.Field);
             }

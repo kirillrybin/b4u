@@ -218,6 +218,42 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void ChoosingAnOperatorInTheMenuThenRunningPrintsTheNewResult()
+        {
+            var c = Open();
+            ShowByName(c, "logic");
+            var compare = c.View.Workspace.AllBlocks().First(b => b.Type == "logic_compare");      // 1 = 1
+            Assert.IsTrue(c.View.ShowDropdown(compare, compare.GetField("OP")));
+            int neq = c.View.ActiveMenu.Items.ToList().FindIndex(i => i.Value == "NEQ");
+            c.View.ActiveMenu.Pick(neq);
+
+            c.Run();
+            RunToEnd(c);
+            var original = System.IO.File.ReadAllText("Packages/com.b4u.blockly/Tests/EditMode/Fixtures/programs/logic.expected.txt").TrimEnd('\n').Split('\n');
+            Assert.AreEqual("true", original[0], "the original first line is 1 = 1");
+            var expected = new[] { "false" }.Concat(original.Skip(1)).ToArray();
+            CollectionAssert.AreEqual(expected, c.Console.Lines.ToArray(), "only the first result changed");
+        }
+
+        [Test]
+        public void RenamingAVariableThroughTheMenuLeavesTheProgramWorking()
+        {
+            var c = Open();
+            ShowByName(c, "variables");
+            var set = c.View.Workspace.AllBlocks().First(b => b.Type == "variables_set");
+            c.View.ShowDropdown(set, set.GetField("VAR"));
+            int rename = c.View.ActiveMenu.Items.ToList().FindIndex(i => i.Action == Blockly.Editing.DropdownAction.RenameVariable);
+            c.View.ActiveMenu.Pick(rename);
+            Assert.IsTrue(c.View.ActiveDialog.Submit("renamed_variable"));
+
+            c.Run();
+            RunToEnd(c);
+            var expected = System.IO.File.ReadAllText("Packages/com.b4u.blockly/Tests/EditMode/Fixtures/programs/variables.expected.txt").TrimEnd('\n').Split('\n');
+            CollectionAssert.AreEqual(expected, c.Console.Lines.ToArray());
+            Assert.NotNull(c.View.Workspace.GetVariableByName("renamed_variable"));
+        }
+
+        [Test]
         public void ConsoleShowsPrintedMarkupLiterally()
         {
             var c = Open();

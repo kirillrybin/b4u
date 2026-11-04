@@ -327,14 +327,16 @@ namespace Blockly.UI.Tests
             => new PointerEventData(es) { button = PointerEventData.InputButton.Left, position = at, pressPosition = at };
 
         [Test]
-        public void OnlyTextAndNumberFieldsAreClickable()
+        public void OnlyEditableFieldsAreClickable()
         {
             var (view, ws, text, one, two) = EditSetup();
             var clickable = view.GetComponentsInChildren<FieldClickTarget>();
-            Assert.AreEqual(3, clickable.Length, "the text, the number 1 and the shadow number 2");
-            Assert.IsTrue(clickable.All(t => FieldEditing.IsEditableText(t.Field)));
-            Assert.IsFalse(clickable.Any(t => t.Field.Name == "OP"), "dropdowns are not text fields");
+            Assert.AreEqual(4, clickable.Length, "the text, the number 1, the shadow number 2 and the + / - dropdown");
+            Assert.AreEqual(3, clickable.Count(t => FieldEditing.IsEditableText(t.Field)));
+            Assert.AreEqual(1, clickable.Count(t => FieldEditing.IsDropdown(t.Field) && t.Field.Name == "OP"));
             Assert.IsTrue(clickable.All(t => t.GetComponent<PolygonGraphic>().raycastTarget));
+            // labels ("+" is a dropdown, but words like "repeat" are not) are never clickable
+            Assert.IsFalse(clickable.Any(t => t.Field.IsLabel));
         }
 
         [Test]
@@ -343,7 +345,9 @@ namespace Blockly.UI.Tests
             var view = NewView();
             view.Spawner = new NoSpawn();
             view.SetWorkspace(StandardBlockSet.Load(Editable));
-            Assert.AreEqual(0, view.GetComponentsInChildren<FieldClickTarget>().Length);
+            Assert.AreEqual(0, view.GetComponentsInChildren<FieldClickTarget>().Length, "neither text nor dropdown fields react in a flyout");
+            var arith = view.Workspace.TopBlocks[1];
+            Assert.IsFalse(view.ShowDropdown(arith, arith.GetField("OP")));
             Assert.IsFalse(view.BeginFieldEdit(view.Workspace.TopBlocks[0].GetInputTargetBlock("TEXT"), view.Workspace.TopBlocks[0].GetInputTargetBlock("TEXT").GetField("TEXT")));
         }
 

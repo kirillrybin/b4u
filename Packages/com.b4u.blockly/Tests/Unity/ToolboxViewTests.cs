@@ -240,6 +240,43 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void TheVariablesFlyoutOffersACreateVariableButton()
+        {
+            tb.SelectCategory(IndexOf("Variables"));
+            Assert.NotNull(tb.VariableButton);
+            Assert.IsTrue(tb.VariableButton.transform.IsChildOf(tb.FlyoutView.transform));
+            Assert.IsNotNull(tb.VariableButton.GetComponentInChildren<TMP_Text>());
+            StringAssert.Contains("Create variable", tb.VariableButton.GetComponentInChildren<TMP_Text>().text);
+
+            var first = tb.FlyoutView.Workspace.TopBlocks[0];
+            Assert.GreaterOrEqual(tb.FlyoutView.Layout.ByBlock[first].Y, Flyout.VariablesHeaderHeight - 0.01f, "blocks start below the button");
+
+            tb.SelectCategory(IndexOf("Loops"));
+            Assert.IsNull(tb.FlyoutView.GetComponentsInChildren<Button>().FirstOrDefault(b => b.name == ToolboxView.CreateVariableButtonName), "only the Variables category has it");
+        }
+
+        [Test]
+        public void CreatingAVariableFromTheFlyoutAddsItToTheWorkspaceAndTheFlyout()
+        {
+            tb.SelectCategory(IndexOf("Variables"));
+            int before = main.Workspace.Variables.Count;
+            tb.VariableButton.onClick.Invoke();
+            var dialog = main.ActiveDialog;
+            Assert.NotNull(dialog, "the button opens the name prompt");
+
+            Assert.IsFalse(dialog.Submit(""));
+            Assert.IsTrue(dialog.Submit("score"));
+            Assert.AreEqual(before + 1, main.Workspace.Variables.Count);
+            Assert.NotNull(main.Workspace.GetVariableByName("score"));
+
+            Assert.IsTrue(tb.IsFlyoutOpen, "the flyout stays open");
+            var gets = tb.FlyoutView.Workspace.TopBlocks.Where(b => b.Type == "variables_get")
+                .Select(b => tb.FlyoutView.Workspace.GetVariableById(b.GetFieldValue("VAR")).Name).ToArray();
+            CollectionAssert.Contains(gets, "score", "and now offers a block for the new variable");
+            Assert.NotNull(tb.VariableButton, "the button is still there");
+        }
+
+        [Test]
         public void ToolboxStripIsTheDeleteArea()
         {
             Assert.AreSame(tb.transform, main.DeleteArea);

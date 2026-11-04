@@ -146,6 +146,27 @@ namespace Blockly.EditorTools
             if (typed != null) view.SetFieldEditorText(typed);
         }
 
+        /// <summary>-blocklyMenu "math_arithmetic:OP" opens that field's dropdown; -blocklyDialog create | rename:&lt;id&gt; | delete:&lt;id&gt; opens a variable dialog.</summary>
+        static void OpenMenuOrDialogIfRequested(WorkspaceView view, Workspace ws)
+        {
+            string menu = Arg("-blocklyMenu");
+            if (menu != null)
+            {
+                var p = menu.Split(':');
+                var block = Nth(ws, p[0]);
+                if (!view.ShowDropdown(block, block.GetField(p[1]))) throw new InvalidOperationException("cannot open menu " + menu);
+            }
+            string dialog = Arg("-blocklyDialog");
+            if (dialog == null) return;
+            var d = dialog.Split(':');
+            if (d[0] == "create") view.RequestCreateVariable();
+            else if (d[0] == "rename") view.RequestRenameVariable(d[1]);
+            else if (d[0] == "delete") view.RequestDeleteVariable(d[1]);
+            var typed = Arg("-blocklyDialogText");
+            if (typed != null && view.ActiveDialog != null && view.ActiveDialog.IsPrompt) view.ActiveDialog.Input.SetTextWithoutNotify(typed);
+            if (Arg("-blocklyDialogSubmit") == "1" && view.ActiveDialog != null) view.ActiveDialog.Submit(typed ?? "");     // shows validation errors
+        }
+
         /// <summary>"type" or "type@2": the n-th (0-based) block of that type in workspace order.</summary>
         static Block Nth(Workspace ws, string spec)
         {
@@ -191,6 +212,7 @@ namespace Blockly.EditorTools
             }
             HoldDragIfRequested(view, ws);
             OpenFieldEditorIfRequested(view, ws);
+            OpenMenuOrDialogIfRequested(view, ws);
 
             Canvas.ForceUpdateCanvases();
             foreach (var t in canvasGo.GetComponentsInChildren<TMP_Text>()) t.ForceMeshUpdate();
