@@ -29,6 +29,7 @@ namespace Blockly.Editing
         readonly BlockLayouter layouter;
 
         Block dragged, lastInChain;
+        bool discardOnCancel;
         HashSet<Block> draggedSet;
         LayoutResult staticLayout;
         Connection originalParent;               // parent-side connection the block was attached to, if any
@@ -53,9 +54,14 @@ namespace Blockly.Editing
         public bool IsBeingDragged(Block block) => draggedSet != null && draggedSet.Contains(block);
 
         // ------------------------------------------------------------------ begin
-        public bool Begin(Block block)
+        /// <summary>
+        /// Starts dragging. <paramref name="isNew"/> marks a block that was just spawned from the toolbox: it is a top-level
+        /// block of the workspace already, and cancelling the drag throws it away instead of putting it back.
+        /// </summary>
+        public bool Begin(Block block, bool isNew = false)
         {
             if (IsDragging || block == null || block.IsShadow) return false;
+            discardOnCancel = isNew;
 
             var before = layouter.LayoutWorkspace();
             if (!before.ByBlock.TryGetValue(block, out var box)) return false;
@@ -172,6 +178,7 @@ namespace Blockly.Editing
         public void Cancel()
         {
             if (!IsDragging) return;
+            if (discardOnCancel) { Delete(); return; }
             var child = dragged.Output ?? dragged.Previous;
             if (originalParent != null && child != null && originalParent.Target == null && child.Target == null)
             {
@@ -185,8 +192,17 @@ namespace Blockly.Editing
             Reset();
         }
 
+        /// <summary>Drops the dragged blocks into the trash: they and everything inside them are removed.</summary>
+        public void Delete()
+        {
+            if (!IsDragging) return;
+            WorkspaceEditing.Delete(workspace, layouter, dragged, heal: false);
+            Reset();
+        }
+
         void Reset()
         {
+            discardOnCancel = false;
             dragged = null; lastInChain = null; draggedSet = null; staticLayout = null; originalParent = null; DraggedLayout = null;
             Candidate = null;
         }

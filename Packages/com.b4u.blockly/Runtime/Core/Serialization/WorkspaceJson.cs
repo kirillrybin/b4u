@@ -31,6 +31,12 @@ namespace Blockly
             }
         }
 
+        /// <summary>
+        /// Creates a block (with its shadows and children) from a Blockly JSON block object, e.g. a toolbox entry.
+        /// The block is not added to the workspace's top blocks; the caller places it.
+        /// </summary>
+        public static Block CreateBlock(Workspace ws, Dictionary<string, object> spec) => LoadBlock(ws, spec, false);
+
         static Block LoadBlock(Workspace ws, Dictionary<string, object> d, bool shadow)
         {
             string type = Json.Json.GetString(d, "type") ?? throw new FormatException("Block without 'type'");
@@ -69,6 +75,11 @@ namespace Blockly
 
             var next = Json.Json.GetObject(d, "next");
             if (next != null && block.Next != null) ConnectChildren(ws, block.Next, next);
+
+            // A variable field nobody set still holds the definition's default *name*; store the variable's id instead.
+            foreach (var f in block.AllFields())
+                if (f.Spec.FieldType == "field_variable" && ws.GetVariableById(f.Value) == null)
+                    f.Value = ws.GetOrCreateVariable(f.Value).Id;
             return block;
         }
 
@@ -99,7 +110,8 @@ namespace Blockly
                         ws.GetOrCreateVariable(Json.Json.GetString(o, "name", id), id, Json.Json.GetString(o, "type", ""));
                     return id;
                 }
-                return ws.GetOrCreateVariable(v as string ?? "item").Id;
+                string byName = Json.Json.GetString(o, "name") ?? v as string ?? "item";
+                return ws.GetOrCreateVariable(byName, null, Json.Json.GetString(o, "type", "")).Id;
             }
             if (v is bool b) return b ? "TRUE" : "FALSE";
             if (v is double n) return JsValue.Shortest(n);
