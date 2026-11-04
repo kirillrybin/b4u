@@ -58,7 +58,7 @@ namespace Blockly
         public Action<string> Print = _ => { };
         public Random Random = new Random();
 
-        /// <summary>Raised just before a statement block executes (for highlighting).</summary>
+        /// <summary>Raised when a statement block is about to execute; the interpreter then pauses one step (for highlighting).</summary>
         public event Action<Block> BlockExecuting;
 
         readonly Dictionary<string, object> variables = new Dictionary<string, object>();
@@ -174,6 +174,7 @@ namespace Blockly
             {
                 if (b.Disabled) continue;
                 BlockExecuting?.Invoke(b);
+                yield return null;      // paused *before* the block runs, so a debugger can show "about to execute"
                 if (!Handlers.TryStatement(b.Type, out var handler))
                     throw new NotSupportedException("No statement handler for block type '" + b.Type + "'");
                 var it = handler(this, b);
