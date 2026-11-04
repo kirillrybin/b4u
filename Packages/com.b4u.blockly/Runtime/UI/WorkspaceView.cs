@@ -109,6 +109,9 @@ namespace Blockly.UI
             if (IsEditingField || ActiveDialog != null) return false;
             if (key == KeyCode.Delete || key == KeyCode.Backspace) return !ctrlOrCommand && DeleteSelected();
             if (!ctrlOrCommand) return false;
+            if (key == KeyCode.C) return CopySelected();
+            if (key == KeyCode.X) return CutSelected();
+            if (key == KeyCode.V) return Paste();
             if (key == KeyCode.Z) return shift ? Redo() : Undo();
             if (key == KeyCode.Y) return Redo();
             return false;
@@ -140,6 +143,42 @@ namespace Blockly.UI
             Rebuild();
             RecordForUndo(before);
             SelectionChanged?.Invoke(null);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        // ------------------------------------------------------------------ copy / cut / paste
+        /// <summary>What Ctrl+C copied; shared by all views so a block can be pasted into another program.</summary>
+        public static string Clipboard { get; set; }
+        static float clipboardX, clipboardY;
+        public static bool HasClipboard => !string.IsNullOrEmpty(Clipboard);
+
+        /// <summary>Copies the selected block with its inputs (not the blocks after it).</summary>
+        public bool CopySelected()
+        {
+            var block = SelectedBlock;
+            if (block == null || workspace == null || Layout == null || !Layout.ByBlock.TryGetValue(block, out var box)) return false;
+            var text = WorkspaceEditing.Copy(workspace, block);
+            if (text == null) return false;
+            Clipboard = text; clipboardX = box.X; clipboardY = box.Y;
+            return true;
+        }
+
+        /// <summary>Copy, then delete the selected block (the blocks after it close the gap).</summary>
+        public bool CutSelected() => CopySelected() && DeleteSelected();
+
+        /// <summary>Puts the copied block into the workspace next to where it was copied from and selects it. One undo step.</summary>
+        public bool Paste()
+        {
+            if (workspace == null || History == null || IsDragging || !HasClipboard) return false;
+            CloseMenu();
+            string before = SnapshotForUndo();
+            var block = WorkspaceEditing.Paste(workspace, Clipboard, clipboardX, clipboardY);
+            if (block == null) return false;
+            FieldEditStarted?.Invoke(null);                       // a running program is about to be edited: stop it
+            Rebuild();
+            Select(block);
+            RecordForUndo(before);
             WorkspaceEdited?.Invoke();
             return true;
         }
@@ -609,7 +648,10 @@ namespace Blockly.UI
                      || UnityEngine.Input.GetKey(KeyCode.LeftCommand) || UnityEngine.Input.GetKey(KeyCode.RightCommand);
             if (!ctrl) return;
             bool shift = UnityEngine.Input.GetKey(KeyCode.LeftShift) || UnityEngine.Input.GetKey(KeyCode.RightShift);
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Z)) HandleShortcut(KeyCode.Z, true, shift);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.C)) HandleShortcut(KeyCode.C, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.X)) HandleShortcut(KeyCode.X, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.V)) HandleShortcut(KeyCode.V, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.Z)) HandleShortcut(KeyCode.Z, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Y)) HandleShortcut(KeyCode.Y, true, shift);
         }
 #endif
