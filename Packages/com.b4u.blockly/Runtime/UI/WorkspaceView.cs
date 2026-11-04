@@ -20,8 +20,13 @@ namespace Blockly.UI
         TMP_Text measureTemplate;
         readonly Dictionary<Block, RectTransform> blockObjects = new Dictionary<Block, RectTransform>();
 
+        RectTransform highlightObject;
+        PolygonGraphic highlightShape;
+
         public Workspace Workspace => workspace;
         public LayoutResult Layout { get; private set; }
+        /// <summary>The block currently outlined as "about to execute", or null.</summary>
+        public Block HighlightedBlock { get; private set; }
 
         public void SetWorkspace(Workspace ws)
         {
@@ -39,6 +44,33 @@ namespace Blockly.UI
 
             var rt = (RectTransform)transform;
             rt.sizeDelta = new Vector2(Mathf.Max(0, Layout.Right), Mathf.Max(0, Layout.Bottom));
+        }
+
+        public static readonly Color HighlightColour = new Color(1f, 0.85f, 0.1f, 1f);
+
+        /// <summary>Outlines a block (drawn above everything, including its children). Pass null to clear.</summary>
+        public void SetHighlight(Block block)
+        {
+            HighlightedBlock = null;
+            BlockBox box = null;
+            if (block != null && Layout != null && Layout.ByBlock.TryGetValue(block, out box)) HighlightedBlock = block;
+
+            if (HighlightedBlock == null)
+            {
+                if (highlightObject != null) highlightObject.gameObject.SetActive(false);
+                return;
+            }
+            if (highlightObject == null)
+            {
+                highlightObject = NewRect("highlight", transform, box.X, box.Y, box.W, box.H);
+                highlightShape = highlightObject.gameObject.AddComponent<PolygonGraphic>();
+                highlightShape.raycastTarget = false;
+            }
+            highlightObject.gameObject.SetActive(true);
+            highlightObject.anchoredPosition = new Vector2(box.X, -box.Y);
+            highlightObject.sizeDelta = new Vector2(box.W, box.H);
+            highlightShape.SetShape(Translate(box.Outline, box.X, box.Y), Color.clear, HighlightColour, 3.5f);
+            highlightObject.SetAsLastSibling();
         }
 
         /// <summary>Arranges the top blocks in one column (Blockly's "Clean up Blocks") and redraws.</summary>
@@ -59,6 +91,7 @@ namespace Blockly.UI
                 DestroyImmediateSafe(child.gameObject);
             }
             blockObjects.Clear();
+            highlightObject = null; highlightShape = null; HighlightedBlock = null;
         }
 
         static void DestroyImmediateSafe(GameObject go)

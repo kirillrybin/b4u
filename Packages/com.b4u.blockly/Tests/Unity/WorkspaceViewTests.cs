@@ -79,6 +79,57 @@ namespace Blockly.UI.Tests
             Assert.IsTrue(Contains(repeat, box.W - 4, box.H - 4), "the bottom bar itself is part of the shape");
         }
 
+        [Test]
+        public void HighlightOutlinesTheBlockOnTopAndCanBeCleared()
+        {
+            var view = NewView();
+            var ws = StandardBlockSet.Load(Fixture("loops"));
+            view.SetWorkspace(ws);
+            var target = ws.TopBlocks[0];
+
+            view.SetHighlight(target);
+            Assert.AreSame(target, view.HighlightedBlock);
+            var h = view.transform.Cast<Transform>().Single(t => t.name == "highlight");
+            Assert.IsTrue(h.gameObject.activeSelf);
+            Assert.AreEqual(view.transform.childCount - 1, h.GetSiblingIndex(), "drawn above every block, children included");
+            var box = view.Layout.ByBlock[target];
+            Assert.AreEqual(box.Outline.Length, h.GetComponent<PolygonGraphic>().Polygon.Length, "uses the block's own outline");
+            Assert.AreEqual(box.X, ((RectTransform)h).anchoredPosition.x, 1e-3f);
+            Assert.AreEqual(-box.Y, ((RectTransform)h).anchoredPosition.y, 1e-3f);
+            Assert.IsFalse(h.GetComponent<PolygonGraphic>().raycastTarget, "must not steal clicks");
+
+            var other = ws.TopBlocks[0].NextBlock;
+            view.SetHighlight(other);
+            Assert.AreEqual(1, view.transform.Cast<Transform>().Count(t => t.name == "highlight"), "one highlight object, reused");
+            Assert.AreEqual(view.Layout.ByBlock[other].X, ((RectTransform)h).anchoredPosition.x, 1e-3f);
+
+            view.SetHighlight(null);
+            Assert.IsNull(view.HighlightedBlock);
+            Assert.IsFalse(h.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void RebuildDropsTheHighlight()
+        {
+            var view = NewView();
+            var ws = StandardBlockSet.Load(Fixture("loops"));
+            view.SetWorkspace(ws);
+            view.SetHighlight(ws.TopBlocks[0]);
+            view.Rebuild();
+            Assert.IsNull(view.HighlightedBlock);
+            Assert.AreEqual(0, view.transform.Cast<Transform>().Count(t => t.name == "highlight"));
+        }
+
+        [Test]
+        public void HighlightingAnUnknownBlockClearsInsteadOfThrowing()
+        {
+            var view = NewView();
+            view.SetWorkspace(StandardBlockSet.Load(Fixture("loops")));
+            var stranger = StandardBlockSet.Load(Fixture("logic")).TopBlocks[0];
+            Assert.DoesNotThrow(() => view.SetHighlight(stranger));
+            Assert.IsNull(view.HighlightedBlock);
+        }
+
         static bool Contains(PolygonGraphic g, float x, float y)
         {
             bool inside = false;
