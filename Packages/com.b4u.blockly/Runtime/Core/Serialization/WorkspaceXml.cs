@@ -81,7 +81,7 @@ namespace Blockly
 
         static void ConnectChildren(Workspace ws, Connection parent, XmlElement holder)
         {
-            foreach (XmlElement s in Elements(holder, "shadow")) parent.Shadow = LoadBlock(ws, s, true);
+            foreach (XmlElement s in Elements(holder, "shadow")) { parent.Shadow = LoadBlock(ws, s, true); parent.Shadow.ShadowOf = parent; }
             foreach (XmlElement b in Elements(holder, "block"))
             {
                 var child = LoadBlock(ws, b, false);

@@ -97,6 +97,8 @@ namespace Blockly
         public BlockDefinition Definition;
         public double X, Y;
         public bool InputsInline, Collapsed, Disabled, IsShadow;
+        /// <summary>For a shadow block: the connection it is the default value of (shadows are not "connected", so Parent is null).</summary>
+        public Connection ShadowOf;
         public Dictionary<string, object> ExtraState;   // mutator state (kept verbatim for round-trip)
         public List<Input> Inputs = new List<Input>();
         public Connection Previous, Next, Output;

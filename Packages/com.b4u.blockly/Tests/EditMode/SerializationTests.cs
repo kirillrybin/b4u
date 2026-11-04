@@ -56,6 +56,26 @@ namespace Blockly.Tests
         }
 
         [Test]
+        public void ShadowBlocksKnowWhichConnectionTheyBelongTo()
+        {
+            foreach (var load in new System.Action<Workspace>[]
+            {
+                ws => WorkspaceJson.Load(ws, TestSupport.Read("Tests", "EditMode", "Fixtures", "hello.json")),
+                ws => WorkspaceXml.Load(ws, TestSupport.Read("Tests", "EditMode", "Fixtures", "hello.xml")),
+            })
+            {
+                var ws = TestSupport.NewWorkspace();
+                load(ws);
+                var repeat = ws.TopBlocks[0].NextBlock;
+                var shadow = repeat.GetInput("TIMES").Connection.Shadow;
+                Assert.IsTrue(shadow.IsShadow);
+                Assert.IsNull(shadow.Parent, "a shadow is not connected");
+                Assert.AreSame(repeat.GetInput("TIMES").Connection, shadow.ShadowOf);
+                Assert.AreSame(repeat, shadow.ShadowOf.Owner);
+            }
+        }
+
+        [Test]
         public void XmlAndJsonProduceSameWorkspace()
         {
             var j = TestSupport.NewWorkspace();

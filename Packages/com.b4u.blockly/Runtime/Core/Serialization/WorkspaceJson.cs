@@ -76,7 +76,7 @@ namespace Blockly
         {
             if (holder == null) return;
             var sh = Json.Json.GetObject(holder, "shadow");
-            if (sh != null) parent.Shadow = LoadBlock(ws, sh, true);
+            if (sh != null) { parent.Shadow = LoadBlock(ws, sh, true); parent.Shadow.ShadowOf = parent; }
             var bl = Json.Json.GetObject(holder, "block");
             if (bl != null)
             {
