@@ -1,0 +1,10 @@
+{
+  "name": "com.b4u.blockly",
+  "displayName": "Blockly for Unity",
+  "version": "0.1.0",
+  "unity": "6000.0",
+  "description": "Native C# port of Blockly: block model, JSON/XML serialization, UGUI rendering and interpreter.",
+  "dependencies": {
+    "com.unity.ugui": "2.0.0"
+  }
+}
