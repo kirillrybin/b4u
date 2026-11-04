@@ -1,0 +1,8 @@
+{
+  "name": "Blockly.Editor",
+  "rootNamespace": "Blockly.EditorTools",
+  "references": ["Blockly.Core", "Blockly.UI", "Unity.TextMeshPro", "UnityEngine.UI"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "autoReferenced": true
+}

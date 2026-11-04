@@ -1,0 +1,11 @@
+{
+  "name": "Blockly.UI.Tests",
+  "rootNamespace": "Blockly.UI.Tests",
+  "references": ["Blockly.Core", "Blockly.UI", "Unity.TextMeshPro", "UnityEngine.UI", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}

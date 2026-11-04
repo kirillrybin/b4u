@@ -1,0 +1,100 @@
+using System;
+using System.IO;
+using Blockly.UI;
+using TMPro;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Blockly.EditorTools
+{
+    /// <summary>
+    /// Renders a Blockly program with the real UGUI view into a PNG, so layout changes can be checked visually
+    /// without entering play mode. Needs a graphics device (do NOT pass -nographics).
+    /// Usage: Unity -batchmode -projectPath . -executeMethod Blockly.EditorTools.ScreenshotTool.CaptureFromCommandLine
+    ///        -blocklyProgram file.json -blocklyOut out.png [-blocklyWidth 900 -blocklyHeight 600 -blocklyScale 1.5]
+    /// </summary>
+    public static class ScreenshotTool
+    {
+        static string Arg(string name, string def = null)
+        {
+            var a = Environment.GetCommandLineArgs();
+            for (int i = 0; i < a.Length - 1; i++) if (a[i] == name) return a[i + 1];
+            return def;
+        }
+
+        public static void CaptureFromCommandLine()
+        {
+            try
+            {
+                string program = Arg("-blocklyProgram") ?? throw new ArgumentException("-blocklyProgram is required");
+                string output = Arg("-blocklyOut") ?? throw new ArgumentException("-blocklyOut is required");
+                Capture(program, output, int.Parse(Arg("-blocklyWidth", "900")), int.Parse(Arg("-blocklyHeight", "600")), float.Parse(Arg("-blocklyScale", "1.5"), System.Globalization.CultureInfo.InvariantCulture));
+                EditorApplication.Exit(0);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Screenshot failed: " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        public static void Capture(string programPath, string outputPng, int width, int height, float scale)
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var camGo = new GameObject("Camera", typeof(Camera));
+            var cam = camGo.GetComponent<Camera>();
+            cam.orthographic = true;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.97f, 0.97f, 0.97f);
+            var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            cam.targetTexture = rt;
+
+            var canvasGo = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler));
+            var canvas = canvasGo.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = cam;
+            canvas.planeDistance = 1f;
+            var scaler = canvasGo.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+            scaler.scaleFactor = scale;
+
+            var viewGo = new GameObject("Workspace", typeof(RectTransform), typeof(WorkspaceView));
+            viewGo.transform.SetParent(canvasGo.transform, false);
+            var vrt = (RectTransform)viewGo.transform;
+            vrt.anchorMin = vrt.anchorMax = new Vector2(0, 1);
+            vrt.pivot = new Vector2(0, 1);
+            vrt.anchoredPosition = new Vector2(16, -16);
+
+            var ws = StandardBlockSet.Load(File.ReadAllText(programPath));
+            var view = viewGo.GetComponent<WorkspaceView>();
+            view.SetWorkspace(ws);
+            if (Arg("-blocklyCleanup", "1") == "1")        // programs without coordinates would all pile up at one point
+            {
+                view.CleanUp();
+            }
+
+            Canvas.ForceUpdateCanvases();
+            foreach (var t in canvasGo.GetComponentsInChildren<TMP_Text>()) t.ForceMeshUpdate();
+            Canvas.ForceUpdateCanvases();
+            cam.Render();
+
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            var tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPng)));
+            File.WriteAllBytes(outputPng, tex.EncodeToPNG());
+            Debug.Log($"Screenshot: {outputPng} ({view.Layout.Boxes.Count} blocks, workspace {view.Layout.Right:0}x{view.Layout.Bottom:0})");
+
+            UnityEngine.Object.DestroyImmediate(tex);
+            cam.targetTexture = null;
+            rt.Release();
+            UnityEngine.Object.DestroyImmediate(rt);
+        }
+    }
+}
