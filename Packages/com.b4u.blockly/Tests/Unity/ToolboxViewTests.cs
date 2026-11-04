@@ -277,6 +277,53 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void CreatingABlockFromTheToolboxAndDroppingItIsASingleUndoStep()
+        {
+            string before = WorkspaceJson.Save(main.Workspace);
+            int blocks = main.Workspace.AllBlocks().Count();
+            tb.SelectCategory(IndexOf("Math"));
+            var grab = FlyoutBlock("math_number");
+            var ped = PressOnFlyoutBlock(grab);
+            ExecuteEvents.Execute(grab.gameObject, ped, ExecuteEvents.beginDragHandler);
+            ped.position = ped.pressPosition + new Vector2(0, -60);
+            ExecuteEvents.Execute(ped.pointerDrag, ped, ExecuteEvents.dragHandler);
+            ExecuteEvents.Execute(ped.pointerDrag, ped, ExecuteEvents.endDragHandler);
+            Assert.AreEqual(blocks + 1, main.Workspace.AllBlocks().Count());
+            Assert.AreEqual(1, main.History.UndoCount, "creating the block and dropping it are ONE step");
+
+            Assert.IsTrue(main.Undo());
+            Assert.AreEqual(before, WorkspaceJson.Save(main.Workspace), "a single undo removes the new block");
+            Assert.AreEqual(blocks, main.Workspace.AllBlocks().Count());
+            Assert.IsTrue(main.Redo());
+            Assert.AreEqual(blocks + 1, main.Workspace.AllBlocks().Count());
+        }
+
+        [Test]
+        public void ACancelledToolboxDragLeavesNoUndoStep()
+        {
+            tb.SelectCategory(IndexOf("Logic"));
+            var grab = FlyoutBlock("controls_if");
+            ExecuteEvents.Execute(grab.gameObject, PressOnFlyoutBlock(grab), ExecuteEvents.beginDragHandler);
+            main.CancelDrag();
+            Assert.IsFalse(main.CanUndo);
+        }
+
+        [Test]
+        public void TheToolboxStillOffersBlocksAfterUndoRebuiltTheWorkspaceContents()
+        {
+            tb.SelectCategory(IndexOf("Variables"));
+            tb.VariableButton.onClick.Invoke();
+            main.ActiveDialog.Submit("undoable");
+            Assert.NotNull(main.Workspace.GetVariableByName("undoable"));
+            Assert.IsTrue(main.Undo());
+            Assert.IsNull(main.Workspace.GetVariableByName("undoable"));
+            Assert.IsTrue(tb.IsFlyoutOpen);
+            var names = tb.FlyoutView.Workspace.TopBlocks.Where(b => b.Type == "variables_get")
+                .Select(b => tb.FlyoutView.Workspace.GetVariableById(b.GetFieldValue("VAR")).Name).ToArray();
+            CollectionAssert.DoesNotContain(names, "undoable", "the open flyout refreshed itself after the undo");
+        }
+
+        [Test]
         public void ToolboxStripIsTheDeleteArea()
         {
             Assert.AreSame(tb.transform, main.DeleteArea);

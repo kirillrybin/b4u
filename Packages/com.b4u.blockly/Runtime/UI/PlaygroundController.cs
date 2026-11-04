@@ -16,6 +16,8 @@ namespace Blockly.UI
         [SerializeField] TMP_Text title;
         [SerializeField] TMP_Text slowLabel;
         [SerializeField] ToolboxView toolbox;
+        [SerializeField] UnityEngine.UI.Button undoButton;
+        [SerializeField] UnityEngine.UI.Button redoButton;
         [SerializeField] bool cleanUpOnLoad = true;
         [SerializeField] float contentMargin = 40f;
         [SerializeField] float slowInterval = 0.35f;
@@ -42,10 +44,24 @@ namespace Blockly.UI
         /// <summary>One frame of the running program (Update calls this; tests call it directly).</summary>
         public void Tick(float deltaSeconds) => runner?.Pump(deltaSeconds);
 
-        public void Configure(TextAsset[] programAssets, WorkspaceView workspaceView, ConsoleView consoleView, TMP_Text titleText, TMP_Text slowButtonLabel, ToolboxView toolboxView = null)
+        public void Configure(TextAsset[] programAssets, WorkspaceView workspaceView, ConsoleView consoleView, TMP_Text titleText, TMP_Text slowButtonLabel, ToolboxView toolboxView = null,
+                              UnityEngine.UI.Button undo = null, UnityEngine.UI.Button redo = null)
         {
             programs = programAssets; view = workspaceView; console = consoleView; title = titleText; slowLabel = slowButtonLabel; toolbox = toolboxView;
+            undoButton = undo; redoButton = redo;
         }
+
+        public void Undo() => view?.Undo();
+        public void Redo() => view?.Redo();
+
+        void RefreshHistoryButtons()
+        {
+            if (undoButton != null) undoButton.interactable = view != null && view.CanUndo;
+            if (redoButton != null) redoButton.interactable = view != null && view.CanRedo;
+        }
+
+        public UnityEngine.UI.Button UndoButton => undoButton;
+        public UnityEngine.UI.Button RedoButton => redoButton;
 
         public ToolboxView Toolbox => toolbox;
 
@@ -65,7 +81,7 @@ namespace Blockly.UI
         {
             if (Count == 0 || view == null) return;
             runner?.Stop();
-            if (view != null) { view.BlockDragStarted -= OnDragStarted; view.FieldEditStarted -= OnDragStarted; }
+            if (view != null) { view.BlockDragStarted -= OnDragStarted; view.FieldEditStarted -= OnDragStarted; view.HistoryChanged -= RefreshHistoryButtons; }
             index = Mathf.Clamp(i, 0, Count - 1);
             var asset = programs[index];
 
@@ -73,7 +89,9 @@ namespace Blockly.UI
             view.SetWorkspace(ws);
             view.BlockDragStarted += OnDragStarted;
             view.FieldEditStarted += OnDragStarted;
-            if (cleanUpOnLoad) view.CleanUp();
+            view.HistoryChanged += RefreshHistoryButtons;
+            if (cleanUpOnLoad) view.CleanUp(recordUndo: false);        // arranging a freshly loaded program is not something to undo
+            RefreshHistoryButtons();
             var rt = (RectTransform)view.transform;
             rt.sizeDelta += new Vector2(contentMargin, contentMargin);   // breathing room inside the scroll area
             rt.anchoredPosition = new Vector2(contentMargin * 0.5f, -contentMargin * 0.5f);

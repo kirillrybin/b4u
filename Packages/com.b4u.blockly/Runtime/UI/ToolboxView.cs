@@ -196,11 +196,12 @@ namespace Blockly.UI
             var inMain = main.ScreenToWorkspace(e.pressPosition, cam);
 
             var ws = main.Workspace;
+            string before = main.History?.Snapshot();                // taken before the block exists: creating + dropping it is ONE undo step
             var block = WorkspaceEditing.Spawn(ws, spec);
             block.X = inMain.x - inside.x; block.Y = inMain.y - inside.y;
             ws.TopBlocks.Add(block);
 
-            if (!main.BeginDrag(block, inMain, isNew: true))
+            if (!main.BeginDrag(block, inMain, isNew: true, stateBefore: before))
             {
                 ws.TopBlocks.Remove(block);
                 return false;

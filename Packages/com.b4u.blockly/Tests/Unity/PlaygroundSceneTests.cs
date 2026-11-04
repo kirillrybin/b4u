@@ -254,6 +254,67 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void UndoAndRedoButtonsAreWiredAndFollowTheHistory()
+        {
+            var c = Open();
+            foreach (var (button, method) in new[] { ("Undo", "Undo"), ("Redo", "Redo") })
+            {
+                var b = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == button);
+                Assert.AreEqual(1, b.onClick.GetPersistentEventCount(), button);
+                Assert.AreSame(c, b.onClick.GetPersistentTarget(0), button);
+                Assert.AreEqual(method, b.onClick.GetPersistentMethodName(0), button);
+            }
+
+            ShowByName(c, "loops");
+            Assert.IsFalse(c.UndoButton.interactable, "nothing to undo in a freshly loaded program");
+            Assert.IsFalse(c.RedoButton.interactable);
+
+            var text = c.View.Workspace.AllBlocks().First(b => b.Type == "text" && b.GetFieldValue("TEXT") == "rep");
+            c.View.BeginFieldEdit(text, text.GetField("TEXT")); c.View.SubmitFieldEdit("ping");
+            Assert.IsTrue(c.UndoButton.interactable); Assert.IsFalse(c.RedoButton.interactable);
+
+            c.Undo();
+            Assert.IsFalse(c.UndoButton.interactable); Assert.IsTrue(c.RedoButton.interactable);
+            c.Redo();
+            Assert.IsTrue(c.UndoButton.interactable); Assert.IsFalse(c.RedoButton.interactable);
+
+            c.Next();
+            Assert.IsFalse(c.UndoButton.interactable, "another program starts with a clean history");
+        }
+
+        [Test]
+        public void EditRunUndoRunPrintsTheOriginalOutputAgain()
+        {
+            var c = Open();
+            ShowByName(c, "loops");
+            var expected = System.IO.File.ReadAllText("Packages/com.b4u.blockly/Tests/EditMode/Fixtures/programs/loops.expected.txt").TrimEnd('\n').Split('\n');
+
+            var text = c.View.Workspace.AllBlocks().First(b => b.Type == "text" && b.GetFieldValue("TEXT") == "rep");
+            c.View.BeginFieldEdit(text, text.GetField("TEXT")); c.View.SubmitFieldEdit("ping");
+            c.Run(); RunToEnd(c);
+            Assert.AreEqual("ping", c.Console.Lines[0], "the edit took effect");
+
+            c.Undo();
+            c.Run(); RunToEnd(c);
+            CollectionAssert.AreEqual(expected, c.Console.Lines.ToArray(), "undone: exactly what real Blockly prints for the original program");
+            Assert.AreEqual("Finished", c.Console.StatusText);
+        }
+
+        [Test]
+        public void UndoStopsARunningProgram()
+        {
+            var c = Open();
+            ShowByName(c, "loops");
+            var text = c.View.Workspace.AllBlocks().First(b => b.Type == "text" && b.GetFieldValue("TEXT") == "rep");
+            c.View.BeginFieldEdit(text, text.GetField("TEXT")); c.View.SubmitFieldEdit("ping");
+            c.Step();
+            Assert.AreEqual(RunnerState.Paused, c.Runner.State);
+            c.Undo();
+            Assert.AreEqual(RunnerState.Idle, c.Runner.State);
+            Assert.AreEqual("Stopped", c.Console.StatusText);
+        }
+
+        [Test]
         public void ConsoleShowsPrintedMarkupLiterally()
         {
             var c = Open();

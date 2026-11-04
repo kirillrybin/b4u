@@ -26,6 +26,16 @@ namespace Blockly.UI
         RectTransform highlightObject;
         PolygonGraphic highlightShape;
 
+        // undo / redo
+        string dragBefore;
+
+        /// <summary>One step per user action; null for a flyout (nothing there is editable).</summary>
+        public UndoHistory History { get; private set; }
+        public bool CanUndo => History != null && History.CanUndo;
+        public bool CanRedo => History != null && History.CanRedo;
+        /// <summary>The undo/redo stacks changed (refresh the buttons).</summary>
+        public event Action HistoryChanged;
+
         // drag & drop
         BlockDragger dragger;
         Vector2 grabOffset;
@@ -61,8 +71,39 @@ namespace Blockly.UI
         public void SetWorkspace(Workspace ws)
         {
             workspace = ws;
+            History = ws != null && Spawner == null ? new UndoHistory(ws) : null;
+            if (History != null) History.Changed += () => HistoryChanged?.Invoke();
+            HistoryChanged?.Invoke();
             Rebuild();
         }
+
+        // ------------------------------------------------------------------ undo / redo
+        public bool Undo() => StepHistory(undo: true);
+        public bool Redo() => StepHistory(undo: false);
+
+        bool StepHistory(bool undo)
+        {
+            if (History == null || IsDragging || IsEditingField || ActiveDialog != null) return false;   // finish what is open first
+            if (undo ? !History.CanUndo : !History.CanRedo) return false;
+            CloseMenu();
+            FieldEditStarted?.Invoke(null);                       // a running program is about to be edited: stop it
+            if (undo) History.Undo(); else History.Redo();
+            Rebuild();                                            // the restored blocks are new objects
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        /// <summary>Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo. Ignored while text is being typed (the input field has its own).</summary>
+        public bool HandleShortcut(KeyCode key, bool ctrlOrCommand, bool shift)
+        {
+            if (!ctrlOrCommand || IsEditingField || ActiveDialog != null) return false;
+            if (key == KeyCode.Z) return shift ? Redo() : Undo();
+            if (key == KeyCode.Y) return Redo();
+            return false;
+        }
+
+        string SnapshotForUndo() => History?.Snapshot();
+        void RecordForUndo(string before) { if (before != null) History?.Commit(before); }
 
         public void Rebuild()
         {
@@ -168,8 +209,9 @@ namespace Blockly.UI
         {
             if (workspace == null || block == null || field == null) return false;
             EnsureMeasurer();
+            string before = SnapshotForUndo();
             bool changed = FieldEditing.SetValue(workspace, block, field, value, new BlockLayouter(workspace, measurer));
-            if (changed) { Rebuild(); WorkspaceEdited?.Invoke(); }
+            if (changed) { RecordForUndo(before); Rebuild(); WorkspaceEdited?.Invoke(); }
             return changed;
         }
 
@@ -184,8 +226,10 @@ namespace Blockly.UI
                 typed => VariableEditing.Validate(workspace, typed, null, out _),
                 typed =>
                 {
+                    string before = SnapshotForUndo();
                     var v = VariableEditing.Create(workspace, typed, out _);
                     if (v == null) return;
+                    RecordForUndo(before);
                     NotifyEdited();
                     created?.Invoke(v);
                 });
@@ -200,7 +244,8 @@ namespace Blockly.UI
                 typed =>
                 {
                     FieldEditStarted?.Invoke(null);
-                    if (VariableEditing.Rename(workspace, id, typed, out _)) { Rebuild(); WorkspaceEdited?.Invoke(); }
+                    string before = SnapshotForUndo();
+                    if (VariableEditing.Rename(workspace, id, typed, out _)) { RecordForUndo(before); Rebuild(); WorkspaceEdited?.Invoke(); }
                 });
         }
 
@@ -219,7 +264,9 @@ namespace Blockly.UI
         {
             FieldEditStarted?.Invoke(null);
             EnsureMeasurer();
+            string before = SnapshotForUndo();
             VariableEditing.Delete(workspace, new BlockLayouter(workspace, measurer), id);
+            RecordForUndo(before);
             Rebuild();
             WorkspaceEdited?.Invoke();
         }
@@ -289,9 +336,11 @@ namespace Blockly.UI
             editBlock = null; editField = null;
             fieldInput.gameObject.SetActive(false);
 
+            string before = SnapshotForUndo();
             bool changed = FieldEditing.SetValue(workspace, block, field, text);
             if (changed)
             {
+                RecordForUndo(before);
                 Rebuild();
                 WorkspaceEdited?.Invoke();
             }
@@ -352,15 +401,19 @@ namespace Blockly.UI
 
         // ------------------------------------------------------------------ dragging blocks
         /// <summary>Starts dragging <paramref name="block"/> (and the blocks after it) grabbed at <paramref name="workspacePoint"/>.</summary>
-        public bool BeginDrag(Block block, Vector2 workspacePoint, bool isNew = false)
+        /// <param name="stateBefore">For a block that was just created from the toolbox: the snapshot taken before it existed,
+        /// so creating it and dropping it is one undo step.</param>
+        public bool BeginDrag(Block block, Vector2 workspacePoint, bool isNew = false, string stateBefore = null)
         {
             if (workspace == null || IsDragging || block == null) return false;
             CloseMenu();
             if (IsEditingField) SubmitFieldEdit(fieldInput.text);          // accept what was typed before moving things around
+            string before = stateBefore ?? SnapshotForUndo();
             EnsureMeasurer();
             var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer));
             if (!d.Begin(block, isNew)) return false;
             dragger = d;
+            dragBefore = before;
             BlockDragStarted?.Invoke(block);
 
             Rebuild();                                   // the old parent shrank now that the block left it
@@ -415,6 +468,8 @@ namespace Blockly.UI
             OverDeleteArea = false;
             if (wasOver) DeleteHoverChanged?.Invoke(false);
             Rebuild();
+            RecordForUndo(dragBefore);                                    // nothing recorded if the drag changed nothing (cancelled)
+            dragBefore = null;
             WorkspaceEdited?.Invoke();
         }
 
@@ -480,6 +535,13 @@ namespace Blockly.UI
         void Update()
         {
             if (IsDragging && UnityEngine.Input.GetKeyDown(KeyCode.Escape)) CancelDrag();   // not Blockly.Input
+            if (Spawner != null) return;
+            bool ctrl = UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl)
+                     || UnityEngine.Input.GetKey(KeyCode.LeftCommand) || UnityEngine.Input.GetKey(KeyCode.RightCommand);
+            if (!ctrl) return;
+            bool shift = UnityEngine.Input.GetKey(KeyCode.LeftShift) || UnityEngine.Input.GetKey(KeyCode.RightShift);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.Z)) HandleShortcut(KeyCode.Z, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.Y)) HandleShortcut(KeyCode.Y, true, shift);
         }
 #endif
 
@@ -511,11 +573,14 @@ namespace Blockly.UI
         }
 
         /// <summary>Arranges the top blocks in one column (Blockly's "Clean up Blocks") and redraws.</summary>
-        public void CleanUp()
+        /// <param name="recordUndo">False when arranging a program that was just loaded (undo must not "unload" it).</param>
+        public void CleanUp(bool recordUndo = true)
         {
             if (workspace == null) return;
             EnsureMeasurer();
+            string before = recordUndo ? SnapshotForUndo() : null;
             new BlockLayouter(workspace, measurer).CleanUp();
+            RecordForUndo(before);
             Rebuild();
         }
 

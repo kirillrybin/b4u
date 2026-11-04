@@ -122,14 +122,17 @@ namespace Blockly.EditorTools
             var step = Button("Step", bar, "Step", 236, 80);
             var stop = Button("Stop", bar, "Stop", 322, 80);
             var slow = Button("Slow", bar, "Slow: off", 408, 120);
+            var undo = Button("Undo", bar, "Undo", 546, 84);
+            var redo = Button("Redo", bar, "Redo", 636, 84);
             var title = Label("Title", bar, 18, 36, TextAlignmentOptions.MidlineLeft);
-            Place(title.rectTransform, 546, 6, 700, 36);
+            Place(title.rectTransform, 736, 6, 520, 36);
 
             var controller = new GameObject("Playground").AddComponent<PlaygroundController>();
-            controller.Configure(programs, view, consoleView, title, slow.GetComponentInChildren<TMP_Text>(), toolboxView);
+            controller.Configure(programs, view, consoleView, title, slow.GetComponentInChildren<TMP_Text>(), toolboxView, undo, redo);
             Wire(prev, controller.Previous); Wire(next, controller.Next);
             Wire(run, controller.Run); Wire(step, controller.Step);
             Wire(stop, controller.Stop); Wire(slow, controller.ToggleSlow);
+            Wire(undo, controller.Undo); Wire(redo, controller.Redo);
 
             Directory.CreateDirectory(Root);
             string scenePath = Root + "/Playground.unity";
