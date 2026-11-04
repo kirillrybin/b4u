@@ -31,6 +31,13 @@ namespace Blockly
             }
         }
 
+        /// <summary>Replaces the whole content of <paramref name="ws"/> with a saved state (what undo/redo does).</summary>
+        public static void Restore(Workspace ws, string json)
+        {
+            ws.Clear();
+            Load(ws, json);
+        }
+
         /// <summary>
         /// Creates a block (with its shadows and children) from a Blockly JSON block object, e.g. a toolbox entry.
         /// The block is not added to the workspace's top blocks; the caller places it.

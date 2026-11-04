@@ -225,7 +225,28 @@ namespace Blockly
 
         public Workspace(BlockRegistry registry) { Registry = registry; }
 
-        public string NewId() => "b" + (nextId++);
+        /// <summary>A block id nobody in this workspace has. Loaded programs bring their own ids, so a plain counter would collide.</summary>
+        public string NewId()
+        {
+            string id;
+            do id = "b" + (nextId++); while (IdInUse(id));
+            return id;
+        }
+
+        bool IdInUse(string id)
+        {
+            foreach (var t in TopBlocks)
+                foreach (var b in t.Descendants())
+                    if (b.Id == id) return true;
+            return false;
+        }
+
+        /// <summary>Empties the workspace (blocks and variables) but keeps the object, which views and runners hold on to.</summary>
+        public void Clear()
+        {
+            TopBlocks.Clear();
+            Variables.Clear();
+        }
 
         public Block CreateBlock(string type, string id = null)
         {
@@ -239,10 +260,19 @@ namespace Blockly
         public Variable GetVariableById(string id) => Variables.Find(v => v.Id == id);
         public Variable GetVariableByName(string name) => Variables.Find(v => v.Name == name);
 
+        /// <summary>An id no variable uses. (Counting variables is not enough: after a delete the count collides with a live id.)</summary>
+        string NewVariableId()
+        {
+            int n = Variables.Count + 1;
+            string id;
+            do id = "v" + n++; while (GetVariableById(id) != null);
+            return id;
+        }
+
         public Variable GetOrCreateVariable(string name, string id = null, string type = "")
         {
             var v = (id != null ? GetVariableById(id) : null) ?? GetVariableByName(name);
-            if (v == null) Variables.Add(v = new Variable { Id = id ?? "v" + (Variables.Count + 1), Name = name, Type = type });
+            if (v == null) Variables.Add(v = new Variable { Id = id ?? NewVariableId(), Name = name, Type = type });
             return v;
         }
 
