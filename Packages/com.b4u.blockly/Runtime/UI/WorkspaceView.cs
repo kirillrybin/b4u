@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
+using Blockly.Editing;
 using Blockly.Layout;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Blockly.UI
@@ -13,7 +16,7 @@ namespace Blockly.UI
     /// Place it under a Canvas; its RectTransform's top-left is the workspace origin.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
-    public sealed class WorkspaceView : MonoBehaviour
+    public sealed class WorkspaceView : MonoBehaviour, IDragHandler, IEndDragHandler
     {
         Workspace workspace;
         TmpTextMeasurer measurer;
@@ -22,6 +25,18 @@ namespace Blockly.UI
 
         RectTransform highlightObject;
         PolygonGraphic highlightShape;
+
+        // drag & drop
+        BlockDragger dragger;
+        Vector2 grabOffset;
+        RectTransform snapMarker;
+        PolygonGraphic snapShape;
+        readonly List<RectTransform> draggedObjects = new List<RectTransform>();
+
+        /// <summary>A drag started (the program should stop running; the model is about to change).</summary>
+        public event Action<Block> BlockDragStarted;
+        /// <summary>The user changed the workspace (a block was dropped, moved or reconnected).</summary>
+        public event Action WorkspaceEdited;
 
         public Workspace Workspace => workspace;
         public LayoutResult Layout { get; private set; }
@@ -45,6 +60,141 @@ namespace Blockly.UI
             var rt = (RectTransform)transform;
             rt.sizeDelta = new Vector2(Mathf.Max(0, Layout.Right), Mathf.Max(0, Layout.Bottom));
         }
+
+        public bool IsDragging => dragger != null && dragger.IsDragging;
+        public Block DraggedBlock => dragger?.Dragged;
+        public SnapCandidate? SnapCandidate => dragger?.Candidate;
+        public static readonly Color SnapColour = new Color(1f, 0.85f, 0.1f, 0.95f);
+
+        // ------------------------------------------------------------------ coordinates
+        /// <summary>Screen point to workspace units (x right, y down from the workspace's top-left corner).</summary>
+        public Vector2 ScreenToWorkspace(Vector2 screen, Camera cam)
+        {
+            var rt = (RectTransform)transform;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(rt, screen, cam, out var local);
+            var r = rt.rect;
+            return new Vector2(local.x - r.xMin, r.yMax - local.y);
+        }
+
+        public Vector2 WorkspaceToScreen(Vector2 workspacePoint, Camera cam)
+        {
+            var rt = (RectTransform)transform;
+            var r = rt.rect;
+            var world = rt.TransformPoint(new Vector3(r.xMin + workspacePoint.x, r.yMax - workspacePoint.y, 0));
+            return RectTransformUtility.WorldToScreenPoint(cam, world);
+        }
+
+        // ------------------------------------------------------------------ dragging blocks
+        /// <summary>Starts dragging <paramref name="block"/> (and the blocks after it) grabbed at <paramref name="workspacePoint"/>.</summary>
+        public bool BeginDrag(Block block, Vector2 workspacePoint)
+        {
+            if (workspace == null || IsDragging || block == null) return false;
+            EnsureMeasurer();
+            var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer));
+            if (!d.Begin(block)) return false;
+            dragger = d;
+            BlockDragStarted?.Invoke(block);
+
+            Rebuild();                                   // the old parent shrank now that the block left it
+            grabOffset = workspacePoint - new Vector2((float)block.X, (float)block.Y);
+            ReorderDraggedToFront();
+            UpdateSnapMarker();
+            return true;
+        }
+
+        public void DragTo(Vector2 workspacePoint)
+        {
+            if (!IsDragging) return;
+            var target = workspacePoint - grabOffset;
+            dragger.MoveTo(target.x, target.y);
+            ApplyDraggedLayout();
+            UpdateSnapMarker();
+        }
+
+        public void EndDrag()
+        {
+            if (!IsDragging) return;
+            dragger.End();
+            FinishDrag();
+        }
+
+        public void CancelDrag()
+        {
+            if (!IsDragging) return;
+            dragger.Cancel();
+            FinishDrag();
+        }
+
+        void FinishDrag()
+        {
+            dragger = null;
+            draggedObjects.Clear();
+            Rebuild();
+            WorkspaceEdited?.Invoke();
+        }
+
+        void ReorderDraggedToFront()
+        {
+            draggedObjects.Clear();
+            if (Layout == null) return;
+            foreach (var box in Layout.Boxes)
+                if (dragger.IsBeingDragged(box.Block) && blockObjects.TryGetValue(box.Block, out var rt))
+                {
+                    rt.SetAsLastSibling();               // layout order keeps parents beneath their children
+                    draggedObjects.Add(rt);
+                }
+        }
+
+        /// <summary>Moves the dragged blocks' objects to where the core says they are (no rebuild while dragging).</summary>
+        void ApplyDraggedLayout()
+        {
+            var layout = dragger.DraggedLayout;
+            if (layout == null) return;
+            foreach (var box in layout.Boxes)
+                if (blockObjects.TryGetValue(box.Block, out var rt))
+                    rt.anchoredPosition = new Vector2(box.X, -box.Y);
+        }
+
+        void UpdateSnapMarker()
+        {
+            var cand = dragger?.Candidate;
+            if (!cand.HasValue)
+            {
+                if (snapMarker != null) snapMarker.gameObject.SetActive(false);
+                return;
+            }
+            if (snapMarker == null)
+            {
+                snapMarker = NewRect("snap", transform, 0, 0, 1, 1);
+                snapShape = snapMarker.gameObject.AddComponent<PolygonGraphic>();
+                snapShape.raycastTarget = false;
+                var circle = new Vec2[16];
+                for (int i = 0; i < circle.Length; i++)
+                {
+                    float a = i * Mathf.PI * 2f / circle.Length;
+                    circle[i] = new Vec2(Mathf.Cos(a) * 7f, Mathf.Sin(a) * 7f);
+                }
+                snapShape.SetShape(circle, SnapColour, new Color(0.45f, 0.35f, 0f, 1f), 1.5f);
+            }
+            snapMarker.gameObject.SetActive(true);
+            snapMarker.anchoredPosition = new Vector2(cand.Value.TargetPoint.X, -cand.Value.TargetPoint.Y);
+            snapMarker.SetAsLastSibling();
+        }
+
+        // Pointer events are redirected here by BlockDragTarget (the dragged block's own object is rebuilt mid-drag).
+        public void OnDrag(PointerEventData e)
+        {
+            if (IsDragging) DragTo(ScreenToWorkspace(e.position, e.pressEventCamera));
+        }
+
+        public void OnEndDrag(PointerEventData e) => EndDrag();
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+        void Update()
+        {
+            if (IsDragging && UnityEngine.Input.GetKeyDown(KeyCode.Escape)) CancelDrag();   // not Blockly.Input
+        }
+#endif
 
         public static readonly Color HighlightColour = new Color(1f, 0.85f, 0.1f, 1f);
 
@@ -92,6 +242,7 @@ namespace Blockly.UI
             }
             blockObjects.Clear();
             highlightObject = null; highlightShape = null; HighlightedBlock = null;
+            snapMarker = null; snapShape = null;
         }
 
         static void DestroyImmediateSafe(GameObject go)
@@ -145,6 +296,8 @@ namespace Blockly.UI
             var root = NewRect(box.Block.Type, transform, box.X, box.Y, box.W, box.H);
             blockObjects[box.Block] = root;
 
+            var dragTarget = root.gameObject.AddComponent<BlockDragTarget>();
+            dragTarget.Init(this, box.Block);
             var body = root.gameObject.AddComponent<PolygonGraphic>();
             body.SetShape(Translate(box.Outline, box.X, box.Y), BlockStyle.Fill(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow));
 

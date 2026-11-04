@@ -158,6 +158,27 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void StartingADragStopsTheRunningProgramAndEditingMakesTheNextRunUseTheChange()
+        {
+            var c = Open();
+            ShowByName(c, "variables");
+            c.Step();
+            Assert.AreEqual(RunnerState.Paused, c.Runner.State);
+
+            var first = c.View.Workspace.TopBlocks[0];
+            var box = c.View.Layout.ByBlock[first];
+            Assert.IsTrue(c.View.BeginDrag(first, new Vector2(box.X + 4, box.Y + 4)));
+            Assert.AreEqual(RunnerState.Idle, c.Runner.State, "a running/paused program stops when the user starts editing it");
+            Assert.AreEqual("Stopped", c.Console.StatusText);
+            c.View.CancelDrag();
+
+            // the program is still runnable and unchanged
+            c.Run();
+            RunToEnd(c);
+            Assert.AreEqual(6, c.Console.Lines.Count);
+        }
+
+        [Test]
         public void ConsoleShowsPrintedMarkupLiterally()
         {
             var c = Open();

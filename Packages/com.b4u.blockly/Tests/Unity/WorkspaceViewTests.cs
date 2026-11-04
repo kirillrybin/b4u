@@ -4,6 +4,7 @@ using Blockly.Layout;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Blockly.UI.Tests
 {
@@ -128,6 +129,175 @@ namespace Blockly.UI.Tests
             var stranger = StandardBlockSet.Load(Fixture("logic")).TopBlocks[0];
             Assert.DoesNotThrow(() => view.SetHighlight(stranger));
             Assert.IsNull(view.HighlightedBlock);
+        }
+
+        // ------------------------------------------------------------------ dragging
+        const string TwoBlocks =
+            "<xml xmlns=\"https://developers.google.com/blockly/xml\">" +
+            "<block type=\"text_print\" x=\"20\" y=\"20\"></block>" +
+            "<block type=\"text\" x=\"400\" y=\"200\"><field name=\"TEXT\">hi</field></block></xml>";
+
+        (WorkspaceView view, Workspace ws, Block print, Block text) DragSetup()
+        {
+            var view = NewView();
+            var ws = StandardBlockSet.Load(TwoBlocks);
+            view.SetWorkspace(ws);
+            return (view, ws, ws.TopBlocks[0], ws.TopBlocks[1]);
+        }
+
+        /// <summary>Workspace point to drag to so that the text block's output lands on print's TEXT input.</summary>
+        static Vector2 PointOntoTextInput(WorkspaceView view, Block print, Block text, Vector2 grab)
+        {
+            var target = view.Layout.ByBlock[print].Connections[print.GetInput("TEXT").Connection];
+            var mine = view.Layout.ByBlock[text].Connections[text.Output];
+            return grab + new Vector2(target.X - mine.X, target.Y - mine.Y);
+        }
+
+        [Test]
+        public void DragMovesTheObjectsShowsTheSnapMarkerAndDropConnects()
+        {
+            var (view, ws, print, text) = DragSetup();
+            Block started = null; int edits = 0;
+            view.BlockDragStarted += b => started = b;
+            view.WorkspaceEdited += () => edits++;
+
+            var box = view.Layout.ByBlock[text];
+            var grab = new Vector2(box.X + 5, box.Y + 5);
+            Assert.IsTrue(view.BeginDrag(text, grab));
+            Assert.IsTrue(view.IsDragging);
+            Assert.AreSame(text, started);
+            Assert.IsNull(view.SnapCandidate);
+
+            var textObject = view.GetComponentsInChildren<BlockDragTarget>().First(t => t.Block == text).transform;
+            Assert.AreEqual(view.transform.childCount - 1, textObject.GetSiblingIndex(), "dragged block is drawn on top");
+
+            view.DragTo(grab + new Vector2(-100, 40));                          // far from anything
+            Assert.AreEqual(box.X - 100, ((RectTransform)textObject).anchoredPosition.x, 1e-3f);
+            Assert.AreEqual(-(box.Y + 40), ((RectTransform)textObject).anchoredPosition.y, 1e-3f);
+            Assert.IsNull(view.SnapCandidate);
+
+            view.DragTo(PointOntoTextInput(view, print, text, grab));
+            Assert.IsNotNull(view.SnapCandidate, "close to print's input");
+            var marker = view.transform.Cast<Transform>().Single(t => t.name == "snap");
+            Assert.IsTrue(marker.gameObject.activeSelf);
+            var tp = view.SnapCandidate.Value.TargetPoint;
+            Assert.AreEqual(tp.X, ((RectTransform)marker).anchoredPosition.x, 1e-3f);
+            Assert.AreEqual(-tp.Y, ((RectTransform)marker).anchoredPosition.y, 1e-3f);
+
+            view.EndDrag();
+            Assert.IsFalse(view.IsDragging);
+            Assert.AreSame(text, print.GetInputTargetBlock("TEXT"));
+            Assert.AreEqual(1, ws.TopBlocks.Count);
+            Assert.AreEqual(1, edits);
+            Assert.AreEqual(0, view.transform.Cast<Transform>().Count(t => t.name == "snap"), "marker is gone after the rebuild");
+            Assert.AreEqual(ws.AllBlocks().Count(), view.Layout.Boxes.Count(b => !b.IsShadow));
+        }
+
+        [Test]
+        public void CancelPutsEverythingBack()
+        {
+            var (view, ws, print, text) = DragSetup();
+            string before = WorkspaceJson.Save(ws);
+            var box = view.Layout.ByBlock[text];
+            view.BeginDrag(text, new Vector2(box.X + 5, box.Y + 5));
+            view.DragTo(new Vector2(0, 0));
+            view.CancelDrag();
+            Assert.IsFalse(view.IsDragging);
+            Assert.AreEqual(before, WorkspaceJson.Save(ws));
+        }
+
+        [Test]
+        public void DraggingAChildOutOfItsParentShrinksTheParentAndRebuildsOnce()
+        {
+            var view = NewView();
+            var ws = StandardBlockSet.Load("<xml xmlns=\"https://developers.google.com/blockly/xml\"><block type=\"text_print\" x=\"10\" y=\"10\"><value name=\"TEXT\"><block type=\"text\"><field name=\"TEXT\">a long long text</field></block></value></block></xml>");
+            view.SetWorkspace(ws);
+            var print = ws.TopBlocks[0]; var child = print.GetInputTargetBlock("TEXT");
+            float widthWith = view.Layout.ByBlock[print].W;
+            var cb = view.Layout.ByBlock[child];
+            view.BeginDrag(child, new Vector2(cb.X + 3, cb.Y + 3));
+            Assert.IsNull(child.Parent);
+            Assert.AreEqual(2, ws.TopBlocks.Count);
+            view.CancelDrag();
+            Assert.AreSame(print, child.Parent, "cancel reattaches it");
+            Assert.AreEqual(widthWith, view.Layout.ByBlock[print].W, 1e-3f);
+        }
+
+        [Test]
+        public void PointerEventsDriveTheWholeDragThroughTheView()
+        {
+            var (view, ws, print, text) = DragSetup();
+            var es = new GameObject("EventSystem", typeof(EventSystem)).GetComponent<EventSystem>();
+            try
+            {
+                var box = view.Layout.ByBlock[text];
+                var grab = new Vector2(box.X + 5, box.Y + 5);
+                var start = view.WorkspaceToScreen(grab, null);
+                var end = view.WorkspaceToScreen(PointOntoTextInput(view, print, text, grab), null);
+
+                var ped = new PointerEventData(es) { button = PointerEventData.InputButton.Left, position = start, pressPosition = start };
+                var textObject = view.GetComponentsInChildren<BlockDragTarget>().First(t => t.Block == text).gameObject;
+
+                ExecuteEvents.Execute(textObject, ped, ExecuteEvents.beginDragHandler);
+                Assert.IsTrue(view.IsDragging, "the block's object started the drag");
+                Assert.AreSame(view.gameObject, ped.pointerDrag, "later events are redirected to the view (the block's own object gets rebuilt)");
+
+                ped.position = end;
+                ExecuteEvents.Execute(ped.pointerDrag, ped, ExecuteEvents.dragHandler);
+                Assert.IsNotNull(view.SnapCandidate);
+
+                ExecuteEvents.Execute(ped.pointerDrag, ped, ExecuteEvents.endDragHandler);
+                Assert.IsFalse(view.IsDragging);
+                Assert.AreSame(text, print.GetInputTargetBlock("TEXT"));
+            }
+            finally { Object.DestroyImmediate(es.gameObject); }
+        }
+
+        [Test]
+        public void OnlyTheLeftMouseButtonDrags()
+        {
+            var (view, ws, print, text) = DragSetup();
+            var es = new GameObject("EventSystem", typeof(EventSystem)).GetComponent<EventSystem>();
+            try
+            {
+                var ped = new PointerEventData(es) { button = PointerEventData.InputButton.Right, position = Vector2.zero, pressPosition = Vector2.zero };
+                var go = view.GetComponentsInChildren<BlockDragTarget>().First(t => t.Block == text).gameObject;
+                ExecuteEvents.Execute(go, ped, ExecuteEvents.beginDragHandler);
+                Assert.IsFalse(view.IsDragging);
+            }
+            finally { Object.DestroyImmediate(es.gameObject); }
+        }
+
+        [Test]
+        public void ShadowBlocksDragTheirParent()
+        {
+            var view = NewView();
+            var ws = StandardBlockSet.Load("<xml xmlns=\"https://developers.google.com/blockly/xml\"><block type=\"text_print\" x=\"10\" y=\"10\"><value name=\"TEXT\"><shadow type=\"text\"><field name=\"TEXT\">s</field></shadow></value></block></xml>");
+            view.SetWorkspace(ws);
+            var es = new GameObject("EventSystem", typeof(EventSystem)).GetComponent<EventSystem>();
+            try
+            {
+                var print = ws.TopBlocks[0];
+                var shadowObject = view.GetComponentsInChildren<BlockDragTarget>().First(t => t.Block.IsShadow).gameObject;
+                var ped = new PointerEventData(es) { button = PointerEventData.InputButton.Left, position = Vector2.zero, pressPosition = Vector2.zero };
+                ExecuteEvents.Execute(shadowObject, ped, ExecuteEvents.beginDragHandler);
+                Assert.IsTrue(view.IsDragging);
+                Assert.AreSame(print, view.DraggedBlock);
+                view.CancelDrag();
+            }
+            finally { Object.DestroyImmediate(es.gameObject); }
+        }
+
+        [Test]
+        public void ScreenAndWorkspaceCoordinatesRoundTrip()
+        {
+            var view = NewView();
+            view.SetWorkspace(StandardBlockSet.Load(Fixture("loops")));
+            foreach (var p in new[] { new Vector2(0, 0), new Vector2(123.5f, 40f), new Vector2(300, 700) })
+            {
+                var back = view.ScreenToWorkspace(view.WorkspaceToScreen(p, null), null);
+                Assert.AreEqual(p.x, back.x, 1e-2f); Assert.AreEqual(p.y, back.y, 1e-2f);
+            }
         }
 
         static bool Contains(PolygonGraphic g, float x, float y)

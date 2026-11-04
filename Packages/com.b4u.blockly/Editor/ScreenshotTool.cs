@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Blockly.UI;
 using TMPro;
 using UnityEditor;
@@ -105,6 +106,39 @@ namespace Blockly.EditorTools
             UnityEngine.Object.DestroyImmediate(rt);
         }
 
+        /// <summary>
+        /// -blocklyDrag "text:text_print.TEXT"  grabs the first block of type 'text' and holds it over the TEXT input of the
+        /// first 'text_print' block (offset a few units), so the snap marker is visible. Add -blocklyDrop 1 to release it.
+        /// </summary>
+        static void HoldDragIfRequested(WorkspaceView view, Workspace ws)
+        {
+            string spec = Arg("-blocklyDrag");
+            if (spec == null) return;
+            var parts = spec.Split(':');
+            string[] target = parts[1].Split('.');
+            var dragged = Nth(ws, parts[0]);
+            var targetBlock = Nth(ws, target[0]);
+            var box = view.Layout.ByBlock[dragged];
+            var grab = new Vector2(box.X + 5, box.Y + 5);
+            if (!view.BeginDrag(dragged, grab)) throw new InvalidOperationException("cannot drag " + parts[0]);
+
+            var targetConn = target.Length > 1 ? targetBlock.GetInput(target[1]).Connection : targetBlock.Next;
+            var tp = view.Layout.ByBlock[targetBlock].Connections[targetConn];
+            var head = dragged.Output ?? dragged.Previous;
+            var mp = view.Layout.ByBlock[dragged].Connections[head];
+            float jitter = float.Parse(Arg("-blocklyJitter", "8"), System.Globalization.CultureInfo.InvariantCulture);
+            view.DragTo(grab + new Vector2(tp.X - mp.X + jitter, tp.Y - mp.Y + jitter));
+            if (Arg("-blocklyDrop") == "1") view.EndDrag();
+        }
+
+        /// <summary>"type" or "type@2": the n-th (0-based) block of that type in workspace order.</summary>
+        static Block Nth(Workspace ws, string spec)
+        {
+            var bits = spec.Split('@');
+            int n = bits.Length > 1 ? int.Parse(bits[1]) : 0;
+            return ws.AllBlocks().Where(b => b.Type == bits[0]).ElementAt(n);
+        }
+
         public static void Capture(string programPath, string outputPng, int width, int height, float scale)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -140,6 +174,7 @@ namespace Blockly.EditorTools
             {
                 view.CleanUp();
             }
+            HoldDragIfRequested(view, ws);
 
             Canvas.ForceUpdateCanvases();
             foreach (var t in canvasGo.GetComponentsInChildren<TMP_Text>()) t.ForceMeshUpdate();
