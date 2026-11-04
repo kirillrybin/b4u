@@ -183,14 +183,72 @@ namespace Blockly.UI
             return true;
         }
 
+        // ------------------------------------------------------------------ procedure parameters
+        RectTransform paramsButton;
+        public const string ParamsButtonName = "params button";
+
+        /// <summary>The small "params" button shown on a selected procedure definition; null when it is not shown.</summary>
+        public RectTransform ParamsButton => paramsButton != null && paramsButton.gameObject.activeSelf ? paramsButton : null;
+
+        void UpdateParamsButton(BlockBox box)
+        {
+            bool wanted = Spawner == null && ProcedureInfo.IsDefinition(SelectedBlock);
+            if (!wanted) { if (paramsButton != null) paramsButton.gameObject.SetActive(false); return; }
+            if (paramsButton == null)
+            {
+                paramsButton = NewRect(ParamsButtonName, transform, 0, 0, 58, 22);
+                var img = paramsButton.gameObject.AddComponent<Image>();
+                img.color = SelectionColour;
+                var btn = paramsButton.gameObject.AddComponent<Button>();
+                btn.targetGraphic = img;
+                btn.onClick.AddListener(() => RequestEditParams(SelectedBlock));
+                var label = NewRect("text", paramsButton, 0, 0, 58, 22);
+                var t = label.gameObject.AddComponent<TextMeshProUGUI>();
+                Configure(t);
+                t.text = "params";
+                t.fontSize = 12;
+                t.color = Color.white;
+                t.alignment = TextAlignmentOptions.Center;
+            }
+            paramsButton.gameObject.SetActive(true);
+            paramsButton.anchoredPosition = new Vector2(box.X + box.W - 58, -(box.Y - 22));   // just above the block's top-right corner
+            paramsButton.SetAsLastSibling();
+        }
+
+        /// <summary>Asks for the parameter names of a procedure definition ("a, b") and applies them. One undo step.</summary>
+        public void RequestEditParams(Block definition)
+        {
+            if (workspace == null || Spawner != null || definition == null || !ProcedureInfo.IsDefinition(definition) || RootCanvas == null) return;
+            if (IsDragging || IsEditingField || ActiveDialog != null) return;
+            CloseMenu();
+            dialog = DialogView.ShowPrompt(RootCanvas, "Parameters of \"" + ProcedureInfo.Name(definition) + "\" (separated by commas):",
+                string.Join(", ", ProcedureEditing.CurrentNames(definition)),
+                ProcedureEditing.Validate,
+                typed => ApplyParams(definition, ProcedureEditing.ParseNames(typed)));
+        }
+
+        /// <summary>Sets the parameters of a definition and redraws. Returns true if anything changed.</summary>
+        public bool ApplyParams(Block definition, IList<string> names)
+        {
+            if (workspace == null || definition == null) return false;
+            FieldEditStarted?.Invoke(null);                       // a running program is about to be edited: stop it
+            EnsureMeasurer();
+            string before = SnapshotForUndo();
+            bool changed = ProcedureEditing.SetParams(workspace, new BlockLayouter(workspace, measurer), definition, names);
+            if (changed) { RecordForUndo(before); Rebuild(); WorkspaceEdited?.Invoke(); }
+            return changed;
+        }
+
         void UpdateSelectionOutline()
         {
             BlockBox box = null;
             if (SelectedBlock == null || Layout == null || !Layout.ByBlock.TryGetValue(SelectedBlock, out box))
             {
                 if (selectionObject != null) selectionObject.gameObject.SetActive(false);
+                if (paramsButton != null) paramsButton.gameObject.SetActive(false);
                 return;
             }
+            UpdateParamsButton(box);
             if (selectionObject == null)
             {
                 selectionObject = NewRect("selection", transform, box.X, box.Y, box.W, box.H);
@@ -708,7 +766,7 @@ namespace Blockly.UI
             }
             blockObjects.Clear();
             highlightObject = null; highlightShape = null; HighlightedBlock = null;
-            selectionObject = null; selectionShape = null;
+            selectionObject = null; selectionShape = null; paramsButton = null;
             snapMarker = null; snapShape = null;
         }
 
