@@ -28,6 +28,11 @@ namespace Blockly.Layout
         public Vec2[] Outline;                     // clockwise in y-down coordinates
         public readonly List<FieldBox> Fields = new List<FieldBox>();
         public readonly List<SlotBox> Slots = new List<SlotBox>();
+        /// <summary>
+        /// Where each of the block's connections sits (workspace coordinates). A parent's connection and the
+        /// connected child's connection are at the same point, which is what snapping measures against.
+        /// </summary>
+        public readonly Dictionary<Connection, Vec2> Connections = new Dictionary<Connection, Vec2>();
     }
 
     public sealed class LayoutResult
@@ -304,16 +309,24 @@ namespace Blockly.Layout
             res.Right = Math.Max(res.Right, x + m.W);
             res.Bottom = Math.Max(res.Bottom, y + m.H);
 
+            var b = m.Block;
+            if (b.Output != null) box.Connections[b.Output] = new Vec2(x, y + Metrics.TabTop);
+            if (b.Previous != null) box.Connections[b.Previous] = new Vec2(x, y);
+            if (b.Next != null) box.Connections[b.Next] = new Vec2(x, y + m.H);
+
             var children = new List<Action>();   // children are placed after the parent so they draw on top
             foreach (var r in m.Rows)
             {
                 float rowY = y + r.Y;
                 float cx = x + Metrics.PadLeft;
+                if (r.External?.Connection != null) box.Connections[r.External.Connection] = new Vec2(x + m.W, rowY + Metrics.TabTop);
+                if (r.Statement?.Connection != null) box.Connections[r.Statement.Connection] = new Vec2(x + m.StmtX, rowY);
                 foreach (var it in r.Items)
                 {
                     if (it.Slot != null)
                     {
                         float sy = rowY + (r.H - it.H) / 2f;
+                        if (it.Slot.Connection != null) box.Connections[it.Slot.Connection] = new Vec2(cx + Metrics.TabWidth, sy + Metrics.TabTop);
                         box.Slots.Add(new SlotBox { Input = it.Slot, Polygon = SlotPolygon(cx, sy, it.W, it.H) });
                         if (it.SlotChild != null)
                         {

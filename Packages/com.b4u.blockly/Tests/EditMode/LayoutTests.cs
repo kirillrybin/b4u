@@ -101,6 +101,40 @@ namespace Blockly.Tests
             Assert.AreEqual(before, RunOutput(), "cleaning up must not change what the program does");
         }
 
+        [TestCaseSource(nameof(Programs))]
+        public void ConnectedPairsMeetAtTheSamePoint(string name)
+        {
+            var (ws, layout) = Load(name);
+            int pairs = 0;
+            foreach (var box in layout.Boxes)
+            {
+                if (box.IsShadow) continue;
+                var child = box.Block.Output ?? box.Block.Previous;
+                var parentConn = child?.Target;
+                if (parentConn == null) continue;
+                var parentBox = layout.ByBlock[parentConn.Owner];
+                var a = parentBox.Connections[parentConn]; var b = box.Connections[child];
+                Assert.AreEqual(a.X, b.X, 0.01f, name + ": " + box.Block.Type + " x");
+                Assert.AreEqual(a.Y, b.Y, 0.01f, name + ": " + box.Block.Type + " y");
+                pairs++;
+            }
+            Assert.Greater(pairs, 0);
+        }
+
+        [Test]
+        public void EveryConnectionOfEveryBlockHasAPoint()
+        {
+            var (ws, layout) = Load("lists_more");
+            foreach (var box in layout.Boxes)
+            {
+                var b = box.Block;
+                foreach (var c in new[] { b.Output, b.Previous, b.Next }.Where(c => c != null))
+                    Assert.IsTrue(box.Connections.ContainsKey(c), b.Type + " " + c.Type);
+                foreach (var i in b.Inputs.Where(i => i.Connection != null))
+                    Assert.IsTrue(box.Connections.ContainsKey(i.Connection), b.Type + " input " + i.Name);
+            }
+        }
+
         [Test]
         public void StackedBlocksStartExactlyBelowThePreviousOne()
         {
