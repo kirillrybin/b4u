@@ -82,6 +82,7 @@ namespace Blockly.EditorTools
             var toolboxView = toolboxRt.gameObject.AddComponent<ToolboxView>();
             toolboxView.Configure(view, categories, flyoutPanel, flyoutView);
             scroll.gameObject.AddComponent<FlyoutDismiss>().Configure(toolboxView);
+            scroll.gameObject.AddComponent<SelectionClear>().Configure(view);
             flyoutPanel.gameObject.SetActive(false);
 
             // --- console ---

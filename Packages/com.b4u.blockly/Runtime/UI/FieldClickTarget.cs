@@ -23,6 +23,7 @@ namespace Blockly.UI
         {
             if (e != null && e.button != PointerEventData.InputButton.Left) return;
             if (view == null) return;
+            view.Select(block);
             if (Blockly.Editing.FieldEditing.IsDropdown(field)) view.ShowDropdown(block, field);
             else view.BeginFieldEdit(block, field);
         }

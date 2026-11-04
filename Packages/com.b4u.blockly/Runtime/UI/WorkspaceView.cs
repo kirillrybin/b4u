@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Blockly.Editing;
 using Blockly.Layout;
 using TMPro;
@@ -68,9 +69,18 @@ namespace Blockly.UI
         /// <summary>The block currently outlined as "about to execute", or null.</summary>
         public Block HighlightedBlock { get; private set; }
 
+        /// <summary>The block the user clicked (Delete removes it), or null. Never a shadow block.</summary>
+        public Block SelectedBlock { get; private set; }
+        /// <summary>The selection changed (a block was clicked, deselected, or deleted).</summary>
+        public event Action<Block> SelectionChanged;
+        RectTransform selectionObject;
+        PolygonGraphic selectionShape;
+        public static readonly Color SelectionColour = new Color(0.15f, 0.45f, 0.95f, 1f);
+
         public void SetWorkspace(Workspace ws)
         {
             workspace = ws;
+            SelectedBlock = null;
             History = ws != null && Spawner == null ? new UndoHistory(ws) : null;
             if (History != null) History.Changed += () => HistoryChanged?.Invoke();
             HistoryChanged?.Invoke();
@@ -96,10 +106,64 @@ namespace Blockly.UI
         /// <summary>Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo. Ignored while text is being typed (the input field has its own).</summary>
         public bool HandleShortcut(KeyCode key, bool ctrlOrCommand, bool shift)
         {
-            if (!ctrlOrCommand || IsEditingField || ActiveDialog != null) return false;
+            if (IsEditingField || ActiveDialog != null) return false;
+            if (key == KeyCode.Delete || key == KeyCode.Backspace) return !ctrlOrCommand && DeleteSelected();
+            if (!ctrlOrCommand) return false;
             if (key == KeyCode.Z) return shift ? Redo() : Undo();
             if (key == KeyCode.Y) return Redo();
             return false;
+        }
+
+        // ------------------------------------------------------------------ selection
+        /// <summary>Selects a block (a shadow selects the block that owns it). Null or a block not in the workspace clears it.</summary>
+        public void Select(Block block)
+        {
+            while (block != null && block.IsShadow) block = block.ShadowOf?.Owner;
+            if (block != null && (workspace == null || Spawner != null || !workspace.AllBlocks().Contains(block))) block = null;
+            if (block == SelectedBlock) return;
+            SelectedBlock = block;
+            UpdateSelectionOutline();
+            SelectionChanged?.Invoke(block);
+        }
+
+        /// <summary>Deletes the selected block and its inputs; the blocks that followed it close the gap (Blockly's Delete key). One undo step.</summary>
+        public bool DeleteSelected()
+        {
+            var block = SelectedBlock;
+            if (block == null || workspace == null || IsDragging || History == null) return false;
+            CloseMenu();
+            FieldEditStarted?.Invoke(null);                       // a running program is about to be edited: stop it
+            string before = SnapshotForUndo();
+            EnsureMeasurer();
+            WorkspaceEditing.Delete(workspace, new BlockLayouter(workspace, measurer), block, heal: true);
+            SelectedBlock = null;
+            Rebuild();
+            RecordForUndo(before);
+            SelectionChanged?.Invoke(null);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        void UpdateSelectionOutline()
+        {
+            BlockBox box = null;
+            if (SelectedBlock == null || Layout == null || !Layout.ByBlock.TryGetValue(SelectedBlock, out box))
+            {
+                if (selectionObject != null) selectionObject.gameObject.SetActive(false);
+                return;
+            }
+            if (selectionObject == null)
+            {
+                selectionObject = NewRect("selection", transform, box.X, box.Y, box.W, box.H);
+                selectionShape = selectionObject.gameObject.AddComponent<PolygonGraphic>();
+                selectionShape.raycastTarget = false;
+            }
+            selectionObject.gameObject.SetActive(true);
+            selectionObject.anchoredPosition = new Vector2(box.X, -box.Y);
+            selectionObject.sizeDelta = new Vector2(box.W, box.H);
+            selectionShape.SetShape(Translate(box.Outline, box.X, box.Y), Color.clear, SelectionColour, 3f);
+            selectionObject.SetAsLastSibling();
+            if (highlightObject != null && highlightObject.gameObject.activeSelf) highlightObject.SetAsLastSibling();   // "executing" stays on top
         }
 
         string SnapshotForUndo() => History?.Snapshot();
@@ -115,6 +179,9 @@ namespace Blockly.UI
 
             var rt = (RectTransform)transform;
             rt.sizeDelta = new Vector2(Mathf.Max(0, Layout.Right), Mathf.Max(0, Layout.Bottom));
+
+            if (SelectedBlock != null && !Layout.ByBlock.ContainsKey(SelectedBlock)) { SelectedBlock = null; SelectionChanged?.Invoke(null); }
+            UpdateSelectionOutline();
         }
 
         /// <summary>The text measurer shared with the layout (so other views can lay out with identical metrics).</summary>
@@ -536,6 +603,8 @@ namespace Blockly.UI
         {
             if (IsDragging && UnityEngine.Input.GetKeyDown(KeyCode.Escape)) CancelDrag();   // not Blockly.Input
             if (Spawner != null) return;
+            if (UnityEngine.Input.GetKeyDown(KeyCode.Delete)) HandleShortcut(KeyCode.Delete, false, false);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.Backspace)) HandleShortcut(KeyCode.Backspace, false, false);
             bool ctrl = UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl)
                      || UnityEngine.Input.GetKey(KeyCode.LeftCommand) || UnityEngine.Input.GetKey(KeyCode.RightCommand);
             if (!ctrl) return;
@@ -597,6 +666,7 @@ namespace Blockly.UI
             }
             blockObjects.Clear();
             highlightObject = null; highlightShape = null; HighlightedBlock = null;
+            selectionObject = null; selectionShape = null;
             snapMarker = null; snapShape = null;
         }
 
