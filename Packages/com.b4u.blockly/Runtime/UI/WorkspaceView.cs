@@ -35,8 +35,16 @@ namespace Blockly.UI
 
         /// <summary>A drag started (the program should stop running; the model is about to change).</summary>
         public event Action<Block> BlockDragStarted;
-        /// <summary>The user changed the workspace (a block was dropped, moved or reconnected).</summary>
+        /// <summary>The user changed the workspace (a block was dropped, moved, reconnected, created or deleted).</summary>
         public event Action WorkspaceEdited;
+        /// <summary>The dragged blocks entered / left the delete area.</summary>
+        public event Action<bool> DeleteHoverChanged;
+
+        /// <summary>Dropping dragged blocks inside this rectangle deletes them (the toolbox strip).</summary>
+        public RectTransform DeleteArea;
+        /// <summary>Non-null turns this view into a flyout: grabbing a block asks the spawner for a copy instead of moving it.</summary>
+        public IBlockSpawner Spawner;
+        public bool OverDeleteArea { get; private set; }
 
         public Workspace Workspace => workspace;
         public LayoutResult Layout { get; private set; }
@@ -59,6 +67,19 @@ namespace Blockly.UI
 
             var rt = (RectTransform)transform;
             rt.sizeDelta = new Vector2(Mathf.Max(0, Layout.Right), Mathf.Max(0, Layout.Bottom));
+        }
+
+        /// <summary>The text measurer shared with the layout (so other views can lay out with identical metrics).</summary>
+        public ITextMeasurer Measurer
+        {
+            get
+            {
+                // TextMeshPro only initialises (font, material) once enabled; under an inactive parent it would fail deep inside TMP
+                if (!isActiveAndEnabled && measurer == null)
+                    throw new InvalidOperationException("WorkspaceView '" + name + "' must be active in the hierarchy to measure text; show its panel first.");
+                EnsureMeasurer();
+                return measurer;
+            }
         }
 
         public bool IsDragging => dragger != null && dragger.IsDragging;
@@ -86,12 +107,12 @@ namespace Blockly.UI
 
         // ------------------------------------------------------------------ dragging blocks
         /// <summary>Starts dragging <paramref name="block"/> (and the blocks after it) grabbed at <paramref name="workspacePoint"/>.</summary>
-        public bool BeginDrag(Block block, Vector2 workspacePoint)
+        public bool BeginDrag(Block block, Vector2 workspacePoint, bool isNew = false)
         {
             if (workspace == null || IsDragging || block == null) return false;
             EnsureMeasurer();
             var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer));
-            if (!d.Begin(block)) return false;
+            if (!d.Begin(block, isNew)) return false;
             dragger = d;
             BlockDragStarted?.Invoke(block);
 
@@ -114,8 +135,22 @@ namespace Blockly.UI
         public void EndDrag()
         {
             if (!IsDragging) return;
-            dragger.End();
+            if (OverDeleteArea) dragger.Delete(); else dragger.End();
             FinishDrag();
+        }
+
+        /// <summary>Tells the view whether the pointer is over the delete area (pointer events compute this themselves).</summary>
+        public void SetOverDeleteArea(bool over)
+        {
+            if (OverDeleteArea == over) return;
+            OverDeleteArea = over;
+            foreach (var rt in draggedObjects)
+            {
+                if (rt == null) continue;
+                if (!rt.TryGetComponent<CanvasGroup>(out var group)) group = rt.gameObject.AddComponent<CanvasGroup>();   // not '??': Unity's fake null
+                group.alpha = over ? 0.45f : 1f;           // "this will be thrown away"
+            }
+            DeleteHoverChanged?.Invoke(over);
         }
 
         public void CancelDrag()
@@ -129,6 +164,9 @@ namespace Blockly.UI
         {
             dragger = null;
             draggedObjects.Clear();
+            bool wasOver = OverDeleteArea;
+            OverDeleteArea = false;
+            if (wasOver) DeleteHoverChanged?.Invoke(false);
             Rebuild();
             WorkspaceEdited?.Invoke();
         }
@@ -184,7 +222,9 @@ namespace Blockly.UI
         // Pointer events are redirected here by BlockDragTarget (the dragged block's own object is rebuilt mid-drag).
         public void OnDrag(PointerEventData e)
         {
-            if (IsDragging) DragTo(ScreenToWorkspace(e.position, e.pressEventCamera));
+            if (!IsDragging) return;
+            DragTo(ScreenToWorkspace(e.position, e.pressEventCamera));
+            SetOverDeleteArea(DeleteArea != null && RectTransformUtility.RectangleContainsScreenPoint(DeleteArea, e.position, e.pressEventCamera));
         }
 
         public void OnEndDrag(PointerEventData e) => EndDrag();

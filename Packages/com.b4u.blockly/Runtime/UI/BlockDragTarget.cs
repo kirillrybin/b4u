@@ -20,6 +20,20 @@ namespace Blockly.UI
         public void OnBeginDrag(PointerEventData e)
         {
             if (e.button != PointerEventData.InputButton.Left || view == null) return;
+
+            if (view.Spawner != null)                    // flyout: any part of a block grabs the whole top-level block
+            {
+                var top = block;
+                while (top != null)
+                {
+                    if (top.IsShadow) top = top.ShadowOf?.Owner;
+                    else if (top.Parent != null) top = top.Parent;
+                    else break;
+                }
+                if (top != null) view.Spawner.TrySpawn(top, e, view);
+                return;
+            }
+
             var grabbed = block;
             while (grabbed != null && grabbed.IsShadow) grabbed = grabbed.ShadowOf?.Owner;   // a shadow is not 'connected', so Parent is null
             if (grabbed == null) return;

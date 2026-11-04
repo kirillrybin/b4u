@@ -16,6 +16,15 @@ namespace Blockly.UI
             return registry;
         }
 
+        public const string ToolboxResourcePath = "Blockly/StandardToolbox";
+
+        public static Blockly.Editing.ToolboxDefinition LoadToolbox()
+        {
+            var asset = Resources.Load<TextAsset>(ToolboxResourcePath);
+            if (asset == null) throw new System.IO.FileNotFoundException("Missing Resources/" + ToolboxResourcePath + ".json");
+            return Blockly.Editing.ToolboxDefinition.FromJson(asset.text);
+        }
+
         /// <summary>Creates a workspace from Blockly JSON (starts with '{') or XML (starts with '&lt;').</summary>
         public static Workspace Load(string programText)
         {
