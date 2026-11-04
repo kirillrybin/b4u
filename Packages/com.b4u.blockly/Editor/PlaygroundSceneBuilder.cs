@@ -19,7 +19,7 @@ namespace Blockly.EditorTools
     public static class PlaygroundSceneBuilder
     {
         const string Root = "Assets/Playground";
-        const float ToolbarHeight = 48f, ConsoleHeight = 190f, StatusHeight = 24f;
+        const float ToolbarHeight = 48f, ConsoleHeight = 190f, StatusHeight = 24f, ToolboxWidth = 130f, FlyoutWidth = 360f;
 
         static readonly Color Dark = new Color(0.17f, 0.17f, 0.2f);
         static readonly Color ButtonColour = new Color(0.33f, 0.36f, 0.48f);
@@ -47,7 +47,7 @@ namespace Blockly.EditorTools
             var canvas = (RectTransform)canvasGo.transform;
 
             // --- workspace (pan with drag / wheel) ---
-            var scroll = Stretch("Scroll", canvas, 0, ConsoleHeight, 0, ToolbarHeight);
+            var scroll = Stretch("Scroll", canvas, ToolboxWidth, ConsoleHeight, 0, ToolbarHeight);
             scroll.gameObject.AddComponent<Image>().color = new Color(0.97f, 0.97f, 0.97f);
             var scrollRect = scroll.gameObject.AddComponent<ScrollRect>();
             var viewport = Stretch("Viewport", scroll, 0, 0, 0, 0);
@@ -58,6 +58,31 @@ namespace Blockly.EditorTools
             scrollRect.horizontal = scrollRect.vertical = true;
             scrollRect.movementType = ScrollRect.MovementType.Clamped;
             scrollRect.scrollSensitivity = 30f;
+
+            // --- toolbox strip (also the trash) and its flyout ---
+            var toolboxRt = Stretch("Toolbox", canvas, 0, ConsoleHeight, 0, ToolbarHeight);
+            toolboxRt.anchorMin = new Vector2(0, 0); toolboxRt.anchorMax = new Vector2(0, 1);
+            toolboxRt.offsetMin = new Vector2(0, ConsoleHeight); toolboxRt.offsetMax = new Vector2(ToolboxWidth, -ToolbarHeight);
+            toolboxRt.gameObject.AddComponent<Image>().color = new Color(0.22f, 0.22f, 0.26f);
+            var categories = Stretch("Categories", toolboxRt, 6, 6, 6, 6);
+
+            var flyoutPanel = Stretch("Flyout", canvas, 0, ConsoleHeight, 0, ToolbarHeight);
+            flyoutPanel.anchorMin = new Vector2(0, 0); flyoutPanel.anchorMax = new Vector2(0, 1);
+            flyoutPanel.offsetMin = new Vector2(ToolboxWidth, ConsoleHeight); flyoutPanel.offsetMax = new Vector2(ToolboxWidth + FlyoutWidth, -ToolbarHeight);
+            flyoutPanel.gameObject.AddComponent<Image>().color = new Color(0.9f, 0.9f, 0.93f, 1f);
+            var flyoutScroll = flyoutPanel.gameObject.AddComponent<ScrollRect>();
+            var flyoutViewport = Stretch("Viewport", flyoutPanel, 0, 0, 0, 0);
+            flyoutViewport.gameObject.AddComponent<RectMask2D>();
+            var flyoutContent = Anchored("Blocks", flyoutViewport, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, new Vector2(100, 100));
+            var flyoutView = flyoutContent.gameObject.AddComponent<WorkspaceView>();
+            flyoutScroll.viewport = flyoutViewport; flyoutScroll.content = flyoutContent;
+            flyoutScroll.horizontal = true; flyoutScroll.vertical = true;
+            flyoutScroll.movementType = ScrollRect.MovementType.Clamped; flyoutScroll.scrollSensitivity = 30f;
+
+            var toolboxView = toolboxRt.gameObject.AddComponent<ToolboxView>();
+            toolboxView.Configure(view, categories, flyoutPanel, flyoutView);
+            scroll.gameObject.AddComponent<FlyoutDismiss>().Configure(toolboxView);
+            flyoutPanel.gameObject.SetActive(false);
 
             // --- console ---
             var panel = Anchored("Console", canvas, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, ConsoleHeight));
@@ -101,7 +126,7 @@ namespace Blockly.EditorTools
             Place(title.rectTransform, 546, 6, 700, 36);
 
             var controller = new GameObject("Playground").AddComponent<PlaygroundController>();
-            controller.Configure(programs, view, consoleView, title, slow.GetComponentInChildren<TMP_Text>());
+            controller.Configure(programs, view, consoleView, title, slow.GetComponentInChildren<TMP_Text>(), toolboxView);
             Wire(prev, controller.Previous); Wire(next, controller.Next);
             Wire(run, controller.Run); Wire(step, controller.Step);
             Wire(stop, controller.Stop); Wire(slow, controller.ToggleSlow);

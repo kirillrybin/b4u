@@ -2,6 +2,7 @@
 # Renders the whole Playground scene after running commands. Usage: dev/shoot-playground.sh <out.png> <program> [steps|run] [slow]
 #   dev/shoot-playground.sh /tmp/a.png loops 3      # three Step presses
 #   dev/shoot-playground.sh /tmp/b.png loops run    # run to the end
+#   FLYOUT=2 dev/shoot-playground.sh /tmp/c.png loops 0   # with the Math flyout open
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 UNITY="${UNITY:-/Applications/Unity/Hub/Editor/6000.3.14f1/Unity.app/Contents/MacOS/Unity}"
@@ -9,6 +10,7 @@ OUT="$1"; NAME="$2"; MODE="${3:-0}"
 ARGS=()
 if [ "$MODE" = "run" ]; then ARGS+=(-blocklyRun 1); else ARGS+=(-blocklySteps "$MODE"); fi
 [ "$4" = "slow" ] && ARGS+=(-blocklySlow 1)
+[ -n "$FLYOUT" ] && ARGS+=(-blocklyFlyout "$FLYOUT")   # e.g. FLYOUT=2 opens the third category
 mkdir -p "$(dirname "$OUT")"
 "$UNITY" -batchmode -projectPath "$ROOT" -executeMethod Blockly.EditorTools.ScreenshotTool.CapturePlaygroundFromCommandLine \
   -blocklyPlayground "$NAME" -blocklyOut "$OUT" "${ARGS[@]}" -logFile "${OUT%.png}.log"

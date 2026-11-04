@@ -43,6 +43,17 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void SceneHasNoMissingScripts()
+        {
+            Open();
+            var all = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.Greater(all.Length, 20);
+            foreach (var t in all)
+                Assert.AreEqual(0, UnityEditor.GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject),
+                    "missing script on '" + t.name + "' (a MonoBehaviour defined in a file with a different name?)");
+        }
+
+        [Test]
         public void NextAndPreviousWrapAround()
         {
             var c = Open();

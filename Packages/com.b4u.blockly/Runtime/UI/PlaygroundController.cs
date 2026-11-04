@@ -15,6 +15,7 @@ namespace Blockly.UI
         [SerializeField] ConsoleView console;
         [SerializeField] TMP_Text title;
         [SerializeField] TMP_Text slowLabel;
+        [SerializeField] ToolboxView toolbox;
         [SerializeField] bool cleanUpOnLoad = true;
         [SerializeField] float contentMargin = 40f;
         [SerializeField] float slowInterval = 0.35f;
@@ -41,10 +42,12 @@ namespace Blockly.UI
         /// <summary>One frame of the running program (Update calls this; tests call it directly).</summary>
         public void Tick(float deltaSeconds) => runner?.Pump(deltaSeconds);
 
-        public void Configure(TextAsset[] programAssets, WorkspaceView workspaceView, ConsoleView consoleView, TMP_Text titleText, TMP_Text slowButtonLabel)
+        public void Configure(TextAsset[] programAssets, WorkspaceView workspaceView, ConsoleView consoleView, TMP_Text titleText, TMP_Text slowButtonLabel, ToolboxView toolboxView = null)
         {
-            programs = programAssets; view = workspaceView; console = consoleView; title = titleText; slowLabel = slowButtonLabel;
+            programs = programAssets; view = workspaceView; console = consoleView; title = titleText; slowLabel = slowButtonLabel; toolbox = toolboxView;
         }
+
+        public ToolboxView Toolbox => toolbox;
 
         // ---------------------------------------------------------------- programs
         public void Next() => Show((index + 1) % Mathf.Max(1, Count));
@@ -81,6 +84,7 @@ namespace Blockly.UI
             runner.Finished += OnFinished;
             console?.Clear();
             console?.SetStatus("Ready", ConsoleView.NeutralColour);
+            toolbox?.CloseFlyout();
         }
 
         // ---------------------------------------------------------------- run controls
