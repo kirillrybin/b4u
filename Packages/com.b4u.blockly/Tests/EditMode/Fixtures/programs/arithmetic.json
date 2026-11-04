@@ -1,0 +1,451 @@
+{
+ "blocks": {
+  "languageVersion": 0,
+  "blocks": [
+   {
+    "type": "text_print",
+    "id": "7j9ljh5}i]y?ux5YcN3-",
+    "x": 10,
+    "y": 10,
+    "inputs": {
+     "TEXT": {
+      "block": {
+       "type": "math_arithmetic",
+       "id": "6-EHXqQ7g]ppn/ry85^U",
+       "fields": {
+        "OP": "ADD"
+       },
+       "inputs": {
+        "A": {
+         "block": {
+          "type": "math_number",
+          "id": "+R@}O.S{|QQOWf^AJMb4",
+          "fields": {
+           "NUM": 1
+          }
+         }
+        },
+        "B": {
+         "block": {
+          "type": "math_number",
+          "id": "UAeIKY~HVBLK3|oglPy9",
+          "fields": {
+           "NUM": 2
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "next": {
+     "block": {
+      "type": "text_print",
+      "id": "0_Lz7~{I?bt;o|Os%Src",
+      "inputs": {
+       "TEXT": {
+        "block": {
+         "type": "math_arithmetic",
+         "id": "78YG}Lk59xg5O/ol/MAd",
+         "fields": {
+          "OP": "MINUS"
+         },
+         "inputs": {
+          "A": {
+           "block": {
+            "type": "math_number",
+            "id": "~Czz}:mLu=oT4dx-N/]s",
+            "fields": {
+             "NUM": 7
+            }
+           }
+          },
+          "B": {
+           "block": {
+            "type": "math_number",
+            "id": "(Ek)zLnFW9Fb7+F:8?y*",
+            "fields": {
+             "NUM": 10
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "next": {
+       "block": {
+        "type": "text_print",
+        "id": ".%Nt]/ofAk]j(};@)z-O",
+        "inputs": {
+         "TEXT": {
+          "block": {
+           "type": "math_arithmetic",
+           "id": "jl/L~0RzvKHO2.C;}uXe",
+           "fields": {
+            "OP": "MULTIPLY"
+           },
+           "inputs": {
+            "A": {
+             "block": {
+              "type": "math_number",
+              "id": "VTH$06rz@`*#uR-urH_s",
+              "fields": {
+               "NUM": 3
+              }
+             }
+            },
+            "B": {
+             "block": {
+              "type": "math_number",
+              "id": "x_jJBh92Y0]mhut}xf$B",
+              "fields": {
+               "NUM": 4
+              }
+             }
+            }
+           }
+          }
+         }
+        },
+        "next": {
+         "block": {
+          "type": "text_print",
+          "id": "O/cxotM(v?=/S1rX-}mu",
+          "inputs": {
+           "TEXT": {
+            "block": {
+             "type": "math_arithmetic",
+             "id": "^joS[{.aO}p.H(S|+eRi",
+             "fields": {
+              "OP": "DIVIDE"
+             },
+             "inputs": {
+              "A": {
+               "block": {
+                "type": "math_number",
+                "id": "*|_g#]WW-9Qh9g^HF;A$",
+                "fields": {
+                 "NUM": 9
+                }
+               }
+              },
+              "B": {
+               "block": {
+                "type": "math_number",
+                "id": "y@+x:,Y8Vz6-3u]ao`K_",
+                "fields": {
+                 "NUM": 2
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "next": {
+           "block": {
+            "type": "text_print",
+            "id": "mU,NkoLAJpm2!S1:ax@(",
+            "inputs": {
+             "TEXT": {
+              "block": {
+               "type": "math_arithmetic",
+               "id": ",9l^~]o$j]{kICfyVY*W",
+               "fields": {
+                "OP": "POWER"
+               },
+               "inputs": {
+                "A": {
+                 "block": {
+                  "type": "math_number",
+                  "id": "zuGy;JNrY*[ujyNHsj`7",
+                  "fields": {
+                   "NUM": 2
+                  }
+                 }
+                },
+                "B": {
+                 "block": {
+                  "type": "math_number",
+                  "id": "43SSyfxGPgonV!q3)POS",
+                  "fields": {
+                   "NUM": 10
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "next": {
+             "block": {
+              "type": "text_print",
+              "id": "Bd0tq81w[~Ad]yNhwv^R",
+              "inputs": {
+               "TEXT": {
+                "block": {
+                 "type": "math_arithmetic",
+                 "id": ";V**`spV1_.*CA;I(fj5",
+                 "fields": {
+                  "OP": "DIVIDE"
+                 },
+                 "inputs": {
+                  "A": {
+                   "block": {
+                    "type": "math_number",
+                    "id": "kRM}rx$aLSwBBGqmH;RA",
+                    "fields": {
+                     "NUM": 1
+                    }
+                   }
+                  },
+                  "B": {
+                   "block": {
+                    "type": "math_number",
+                    "id": "`#yKZ+*jHNc4-{L3yML2",
+                    "fields": {
+                     "NUM": 0
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              "next": {
+               "block": {
+                "type": "text_print",
+                "id": "2wi!=,=$t+%zYTvr`l[9",
+                "inputs": {
+                 "TEXT": {
+                  "block": {
+                   "type": "math_arithmetic",
+                   "id": "La0u7+7ugi%sy3TI{As6",
+                   "fields": {
+                    "OP": "ADD"
+                   },
+                   "inputs": {
+                    "A": {
+                     "block": {
+                      "type": "math_number",
+                      "id": "_Bn[bSaJ@$!wkOm(K8]Y",
+                      "fields": {
+                       "NUM": 0.1
+                      }
+                     }
+                    },
+                    "B": {
+                     "block": {
+                      "type": "math_number",
+                      "id": "pLZbAv~NY$j1%HwSd=r,",
+                      "fields": {
+                       "NUM": 0.2
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                },
+                "next": {
+                 "block": {
+                  "type": "text_print",
+                  "id": "n:}$I]tS}m)8nBf!R@g3",
+                  "inputs": {
+                   "TEXT": {
+                    "block": {
+                     "type": "math_arithmetic",
+                     "id": "dh]5D)E5Ooy+/KB^f8*t",
+                     "fields": {
+                      "OP": "POWER"
+                     },
+                     "inputs": {
+                      "A": {
+                       "block": {
+                        "type": "math_number",
+                        "id": "3L8u@.;rf$VT,ffndvF3",
+                        "fields": {
+                         "NUM": 10
+                        }
+                       }
+                      },
+                      "B": {
+                       "block": {
+                        "type": "math_number",
+                        "id": "dW@aA3Wbl/}CscrR2z3p",
+                        "fields": {
+                         "NUM": 21
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "next": {
+                   "block": {
+                    "type": "text_print",
+                    "id": "b0W+x5k8aX1;z?{~;22_",
+                    "inputs": {
+                     "TEXT": {
+                      "block": {
+                       "type": "math_arithmetic",
+                       "id": "U_~sCMT+[z]yTvOQ0i1o",
+                       "fields": {
+                        "OP": "POWER"
+                       },
+                       "inputs": {
+                        "A": {
+                         "block": {
+                          "type": "math_number",
+                          "id": "eJ,++jWN^^;bGSN9D?+|",
+                          "fields": {
+                           "NUM": 10
+                          }
+                         }
+                        },
+                        "B": {
+                         "block": {
+                          "type": "math_number",
+                          "id": "@Y]0gb}5Brf03kps$h^E",
+                          "fields": {
+                           "NUM": -7
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    },
+                    "next": {
+                     "block": {
+                      "type": "text_print",
+                      "id": "EBp`NFr[iWbM=N?M4eBf",
+                      "inputs": {
+                       "TEXT": {
+                        "block": {
+                         "type": "math_arithmetic",
+                         "id": "QE~hwN3dELQsWI`6t}Ha",
+                         "fields": {
+                          "OP": "MULTIPLY"
+                         },
+                         "inputs": {
+                          "A": {
+                           "block": {
+                            "type": "math_number",
+                            "id": "FF0)0@DmIa!#2`J_AXFH",
+                            "fields": {
+                             "NUM": 123456789
+                            }
+                           }
+                          },
+                          "B": {
+                           "block": {
+                            "type": "math_number",
+                            "id": "-,gwAn@/~,+.{WHWJ|![",
+                            "fields": {
+                             "NUM": 1000000000000
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      },
+                      "next": {
+                       "block": {
+                        "type": "text_print",
+                        "id": "D^R^A3Sju~;LA2m_GqC~",
+                        "inputs": {
+                         "TEXT": {
+                          "block": {
+                           "type": "math_arithmetic",
+                           "id": "E+XqmWhpp(}E.;A.:e!v",
+                           "fields": {
+                            "OP": "DIVIDE"
+                           },
+                           "inputs": {
+                            "A": {
+                             "block": {
+                              "type": "math_number",
+                              "id": "25F!|NK%}s36Sq;KZ]jd",
+                              "fields": {
+                               "NUM": -1
+                              }
+                             }
+                            },
+                            "B": {
+                             "block": {
+                              "type": "math_number",
+                              "id": "X3xPqu$qE5[yC|GTBxbV",
+                              "fields": {
+                               "NUM": 3
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        },
+                        "next": {
+                         "block": {
+                          "type": "text_print",
+                          "id": "x[{@TtUHL7R)f/L^]NE0",
+                          "inputs": {
+                           "TEXT": {
+                            "block": {
+                             "type": "math_arithmetic",
+                             "id": "Wn|O(d8!~quWjb]S(yDe",
+                             "fields": {
+                              "OP": "MINUS"
+                             },
+                             "inputs": {
+                              "A": {
+                               "block": {
+                                "type": "math_number",
+                                "id": "$Qo%!(E7N~ySi7}_Vf!Q",
+                                "fields": {
+                                 "NUM": 0
+                                }
+                               }
+                              },
+                              "B": {
+                               "block": {
+                                "type": "math_number",
+                                "id": "Nk)b$btcI:HFtkFpP^0;",
+                                "fields": {
+                                 "NUM": 0
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  ]
+ }
+}

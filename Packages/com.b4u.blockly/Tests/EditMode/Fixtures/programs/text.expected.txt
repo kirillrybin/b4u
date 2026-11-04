@@ -1,0 +1,20 @@
+abc
+n=5
+only
+
+5
+0
+true
+false
+2
+4
+0
+HELLO WORLD FOO
+hello world foo
+Hello World Foo
+[pad]
+[pad  ]
+[  pad]
+bonono
+cba
+xy3

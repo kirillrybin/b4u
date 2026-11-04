@@ -1,0 +1,34 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variables_set",
+        "id": "set1",
+        "x": 20,
+        "y": 30,
+        "fields": { "VAR": { "id": "var1" } },
+        "inputs": {
+          "VALUE": { "block": { "type": "math_number", "id": "n1", "fields": { "NUM": 3 } } }
+        },
+        "next": {
+          "block": {
+            "type": "controls_repeat_ext",
+            "id": "rep1",
+            "inputs": {
+              "TIMES": { "shadow": { "type": "math_number", "id": "sh1", "fields": { "NUM": 10 } }, "block": { "type": "variables_get", "id": "get1", "fields": { "VAR": { "id": "var1" } } } },
+              "DO": {
+                "block": {
+                  "type": "text_print",
+                  "id": "p1",
+                  "inputs": { "TEXT": { "shadow": { "type": "text", "id": "sh2", "fields": { "TEXT": "hi" } } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "variables": [ { "name": "count", "id": "var1" } ]
+}

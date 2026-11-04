@@ -1,0 +1,14 @@
+window.alert(1e+21);
+window.alert(1e-7);
+window.alert(0.000001);
+window.alert(123456789012345680000);
+window.alert(1.5e+300);
+window.alert(-0.5);
+window.alert(100);
+window.alert(0.1);
+window.alert(1e+21 * 10);
+window.alert(1 / 3);
+window.alert(2 / 3);
+window.alert(Math.pow(2, 53));
+window.alert(Math.pow(2, 70));
+window.alert(5 / 100000000);

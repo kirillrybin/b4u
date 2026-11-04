@@ -1,0 +1,17 @@
+window.alert(1 == 1);
+window.alert(1 != 2);
+window.alert(1 < 2);
+window.alert(2 <= 2);
+window.alert(1 > 2);
+window.alert(3 >= 2);
+window.alert('a' == 'a');
+window.alert('a' < 'b');
+window.alert(1 == '1');
+window.alert(null == null);
+window.alert(true && false);
+window.alert(false || true);
+window.alert(!false);
+window.alert(true ? 'yes' : 'no');
+window.alert(false ? 'yes' : 'no');
+window.alert(null);
+window.alert(true);
