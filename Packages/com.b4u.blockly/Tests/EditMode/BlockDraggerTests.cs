@@ -343,5 +343,99 @@ namespace Blockly.Tests
             Assert.Greater(connected, 0, name + ": the fuzzer should have connected something");
             Assert.Greater(moved, 0);
         }
+
+        // ---------------------------------------------------------------- random edits incl. toolbox spawn and delete
+        public static string[] EditPrograms => new[] { "loops", "procedures", "lists", "if_else", "variables" };
+
+        [TestCaseSource(nameof(EditPrograms))]
+        public void RandomEditsWithSpawnAndDeleteStayConsistent(string name)
+        {
+            var ws = TestSupport.NewWorkspace();
+            WorkspaceJson.Load(ws, File.ReadAllText(Path.Combine(Dir, name + ".json")));
+            var env = new Env(ws);
+            var toolbox = TestSupport.NewToolbox();
+            int expected = ws.AllBlocks().Count();
+            var rng = new Random(777 + name.Length * 31);
+            int spawned = 0, deleted = 0, connectedNew = 0;
+
+            void AimAtRandomConnection(Block block)
+            {
+                var layout = env.Layouter.LayoutWorkspace();
+                var targets = layout.Boxes.Where(b => !b.IsShadow && !env.Dragger.IsBeingDragged(b.Block)).ToList();
+                var own = env.Layouter.LayoutStack(block, (float)block.X, (float)block.Y);
+                var mine = block.Output ?? block.Previous ?? block.Next;
+                if (targets.Count > 0 && mine != null && own.ByBlock[mine.Owner].Connections.TryGetValue(mine, out var mp) && rng.Next(5) != 0)
+                {
+                    var tb = targets[rng.Next(targets.Count)];
+                    var tc = tb.Connections.Keys.ElementAt(rng.Next(tb.Connections.Count));
+                    var tp = tb.Connections[tc];
+                    env.Dragger.MoveTo(block.X + tp.X - mp.X + rng.Next(-6, 7), block.Y + tp.Y - mp.Y + rng.Next(-6, 7));
+                }
+                else env.Dragger.MoveTo(rng.Next(-100, 800), rng.Next(-100, 800));
+            }
+
+            for (int step = 0; step < 220; step++)
+            {
+                int op = rng.Next(10);
+                string ctx = $"{name} step {step} op {op}";
+                if (op <= 4)                                                        // move / connect an existing block
+                {
+                    var all = ws.AllBlocks().ToList();
+                    if (all.Count == 0) continue;
+                    var block = all[rng.Next(all.Count)];
+                    if (!env.Dragger.Begin(block)) continue;
+                    AimAtRandomConnection(block);
+                    if (rng.Next(8) == 0) env.Dragger.Cancel(); else env.Dragger.End();
+                }
+                else if (op <= 7)                                                   // pull a block out of the toolbox
+                {
+                    var cat = toolbox.Categories[rng.Next(toolbox.Categories.Count)];
+                    var specs = Flyout.Specs(cat, ws);
+                    var spec = specs[rng.Next(specs.Count)];
+                    var block = WorkspaceEditing.Spawn(ws, spec);
+                    block.X = rng.Next(0, 600); block.Y = rng.Next(0, 600);
+                    ws.TopBlocks.Add(block);
+                    int size = block.Descendants().Count();
+                    expected += size; spawned++;
+                    Assert.IsTrue(env.Dragger.Begin(block, isNew: true), ctx);
+                    AimAtRandomConnection(block);
+                    if (rng.Next(4) == 0) { env.Dragger.Cancel(); expected -= size; }       // dropped on the toolbox again
+                    else if (env.Dragger.End() == DropOutcome.Connected) connectedNew++;
+                }
+                else if (op == 8)                                                   // drag something into the trash
+                {
+                    var all = ws.AllBlocks().ToList();
+                    if (all.Count == 0) continue;
+                    var block = all[rng.Next(all.Count)];
+                    if (!env.Dragger.Begin(block)) continue;
+                    int atLeast = env.Dragger.DraggedBlocks.Count;
+                    int before = ws.AllBlocks().Count();
+                    env.Dragger.Delete();
+                    int after = ws.AllBlocks().Count();
+                    Assert.LessOrEqual(after, before - atLeast, ctx + ": the whole dragged stack must be gone");
+                    expected = after; deleted++;
+                }
+                else                                                                // Delete key: remove one block, heal the stack
+                {
+                    var all = ws.AllBlocks().ToList();
+                    if (all.Count == 0) continue;
+                    var block = all[rng.Next(all.Count)];
+                    int before = ws.AllBlocks().Count();
+                    WorkspaceEditing.Delete(ws, env.Layouter, block, heal: true);
+                    Assert.Less(ws.AllBlocks().Count(), before, ctx + ": something was deleted");
+                    expected = ws.AllBlocks().Count(); deleted++;
+                }
+
+                AssertModelIsSound(ws, expected, ctx);
+                if (step % 10 == 0) Assert.DoesNotThrow(() => { var it = new Interpreter(ws); it.Start(); it.RunToCompletion(20000); }, ctx);
+            }
+
+            string saved = WorkspaceJson.Save(ws);
+            var reloaded = TestSupport.NewWorkspace();
+            WorkspaceJson.Load(reloaded, saved);
+            Assert.AreEqual(expected, reloaded.AllBlocks().Count());
+            Assert.AreEqual(saved, WorkspaceJson.Save(reloaded));
+            Assert.Greater(spawned, 10, name); Assert.Greater(deleted, 5, name); Assert.Greater(connectedNew, 0, name + ": some spawned blocks should have snapped in");
+        }
     }
 }

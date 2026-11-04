@@ -1,0 +1,75 @@
+{
+ "kind": "categoryToolbox",
+ "contents": [
+  {"kind": "category", "name": "Logic", "colour": 210, "contents": [
+    {"kind": "block", "type": "controls_if"},
+    {"kind": "block", "type": "controls_if", "extraState": {"hasElse": true}},
+    {"kind": "block", "type": "controls_if", "extraState": {"elseIfCount": 1, "hasElse": true}},
+    {"kind": "block", "type": "logic_compare"},
+    {"kind": "block", "type": "logic_operation"},
+    {"kind": "block", "type": "logic_negate"},
+    {"kind": "block", "type": "logic_boolean"},
+    {"kind": "block", "type": "logic_null"},
+    {"kind": "block", "type": "logic_ternary"}
+   ]},
+  {"kind": "category", "name": "Loops", "colour": 120, "contents": [
+    {"kind": "block", "type": "controls_repeat_ext", "inputs": {"TIMES": {"shadow": {"type": "math_number", "fields": {"NUM": 10}}}}},
+    {"kind": "block", "type": "controls_repeat", "fields": {"TIMES": 10}},
+    {"kind": "block", "type": "controls_whileUntil"},
+    {"kind": "block", "type": "controls_for", "fields": {"VAR": {"name": "i"}}, "inputs": {"FROM": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}, "TO": {"shadow": {"type": "math_number", "fields": {"NUM": 10}}}, "BY": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}}},
+    {"kind": "block", "type": "controls_forEach", "fields": {"VAR": {"name": "item"}}},
+    {"kind": "block", "type": "controls_flow_statements"}
+   ]},
+  {"kind": "category", "name": "Math", "colour": 230, "contents": [
+    {"kind": "block", "type": "math_number"},
+    {"kind": "block", "type": "math_arithmetic", "inputs": {"A": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}, "B": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}}},
+    {"kind": "block", "type": "math_single", "inputs": {"NUM": {"shadow": {"type": "math_number", "fields": {"NUM": 9}}}}},
+    {"kind": "block", "type": "math_trig", "inputs": {"NUM": {"shadow": {"type": "math_number", "fields": {"NUM": 45}}}}},
+    {"kind": "block", "type": "math_constant"},
+    {"kind": "block", "type": "math_number_property", "inputs": {"NUMBER_TO_CHECK": {"shadow": {"type": "math_number", "fields": {"NUM": 0}}}}},
+    {"kind": "block", "type": "math_round", "inputs": {"NUM": {"shadow": {"type": "math_number", "fields": {"NUM": 3.1}}}}},
+    {"kind": "block", "type": "math_on_list"},
+    {"kind": "block", "type": "math_modulo", "inputs": {"DIVIDEND": {"shadow": {"type": "math_number", "fields": {"NUM": 64}}}, "DIVISOR": {"shadow": {"type": "math_number", "fields": {"NUM": 10}}}}},
+    {"kind": "block", "type": "math_constrain", "inputs": {"VALUE": {"shadow": {"type": "math_number", "fields": {"NUM": 50}}}, "LOW": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}, "HIGH": {"shadow": {"type": "math_number", "fields": {"NUM": 100}}}}},
+    {"kind": "block", "type": "math_random_int", "inputs": {"FROM": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}, "TO": {"shadow": {"type": "math_number", "fields": {"NUM": 100}}}}},
+    {"kind": "block", "type": "math_random_float"},
+    {"kind": "block", "type": "math_atan2", "inputs": {"X": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}, "Y": {"shadow": {"type": "math_number", "fields": {"NUM": 1}}}}}
+   ]},
+  {"kind": "category", "name": "Text", "colour": 160, "contents": [
+    {"kind": "block", "type": "text"},
+    {"kind": "block", "type": "text_join"},
+    {"kind": "block", "type": "text_append", "fields": {"VAR": {"name": "item"}}, "inputs": {"TEXT": {"shadow": {"type": "text", "fields": {"TEXT": ""}}}}},
+    {"kind": "block", "type": "text_length", "inputs": {"VALUE": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_isEmpty", "inputs": {"VALUE": {"shadow": {"type": "text", "fields": {"TEXT": ""}}}}},
+    {"kind": "block", "type": "text_indexOf", "inputs": {"VALUE": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}, "FIND": {"shadow": {"type": "text", "fields": {"TEXT": "b"}}}}},
+    {"kind": "block", "type": "text_charAt", "inputs": {"VALUE": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_getSubstring", "inputs": {"STRING": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_changeCase", "inputs": {"TEXT": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_trim", "inputs": {"TEXT": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_count", "inputs": {"SUB": {"shadow": {"type": "text", "fields": {"TEXT": "a"}}}, "TEXT": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_replace", "inputs": {"FROM": {"shadow": {"type": "text", "fields": {"TEXT": "a"}}}, "TO": {"shadow": {"type": "text", "fields": {"TEXT": "b"}}}, "TEXT": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_reverse", "inputs": {"TEXT": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}},
+    {"kind": "block", "type": "text_print", "inputs": {"TEXT": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}}}
+   ]},
+  {"kind": "category", "name": "Lists", "colour": 260, "contents": [
+    {"kind": "block", "type": "lists_create_empty"},
+    {"kind": "block", "type": "lists_create_with"},
+    {"kind": "block", "type": "lists_repeat", "inputs": {"ITEM": {"shadow": {"type": "text", "fields": {"TEXT": "abc"}}}, "NUM": {"shadow": {"type": "math_number", "fields": {"NUM": 5}}}}},
+    {"kind": "block", "type": "lists_length"},
+    {"kind": "block", "type": "lists_isEmpty"},
+    {"kind": "block", "type": "lists_indexOf"},
+    {"kind": "block", "type": "lists_getIndex"},
+    {"kind": "block", "type": "lists_setIndex"},
+    {"kind": "block", "type": "lists_getSublist"},
+    {"kind": "block", "type": "lists_split", "inputs": {"DELIM": {"shadow": {"type": "text", "fields": {"TEXT": ","}}}}},
+    {"kind": "block", "type": "lists_sort"},
+    {"kind": "block", "type": "lists_reverse"}
+   ]},
+  {"kind": "category", "name": "Variables", "colour": 330, "custom": "VARIABLE"},
+  {"kind": "category", "name": "Functions", "colour": 290, "custom": "PROCEDURE", "contents": [
+    {"kind": "block", "type": "procedures_defnoreturn"},
+    {"kind": "block", "type": "procedures_defreturn"},
+    {"kind": "block", "type": "procedures_ifreturn"}
+   ]}
+ ]
+}

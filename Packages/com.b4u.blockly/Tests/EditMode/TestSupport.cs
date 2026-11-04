@@ -18,6 +18,9 @@ namespace Blockly.Tests
 
         public static string Read(params string[] rel) => File.ReadAllText(Path.Combine(PackageRoot(), Path.Combine(rel)));
 
+        public static Blockly.Editing.ToolboxDefinition NewToolbox()
+            => Blockly.Editing.ToolboxDefinition.FromJson(Read("Runtime", "Resources", "Blockly", "StandardToolbox.json"));
+
         public static Workspace NewWorkspace()
         {
             var reg = new BlockRegistry();
