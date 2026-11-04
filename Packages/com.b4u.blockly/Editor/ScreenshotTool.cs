@@ -40,6 +40,71 @@ namespace Blockly.EditorTools
             }
         }
 
+        /// <summary>
+        /// Renders the whole saved Playground scene (toolbar, workspace, console) after running some commands.
+        /// Args: -blocklyPlayground name  -blocklyOut out.png  [-blocklySteps n | -blocklyRun 1]  [-blocklyWidth/-Height]
+        /// </summary>
+        public static void CapturePlaygroundFromCommandLine()
+        {
+            try
+            {
+                string name = Arg("-blocklyPlayground") ?? throw new ArgumentException("-blocklyPlayground is required");
+                string output = Arg("-blocklyOut") ?? throw new ArgumentException("-blocklyOut is required");
+                int w = int.Parse(Arg("-blocklyWidth", "1280")), h = int.Parse(Arg("-blocklyHeight", "720"));
+                EditorSceneManager.OpenScene("Assets/Playground/Playground.unity", OpenSceneMode.Single);
+                var controller = UnityEngine.Object.FindFirstObjectByType<PlaygroundController>();
+                if (!controller.ShowByName(name)) throw new ArgumentException("no such program: " + name);
+                if (Arg("-blocklySlow") == "1") controller.ToggleSlow();
+
+                int steps = int.Parse(Arg("-blocklySteps", "0"));
+                for (int i = 0; i < steps; i++) controller.Step();
+                if (Arg("-blocklyRun") == "1")
+                {
+                    controller.Run();
+                    for (int i = 0; i < 100000 && controller.Runner.State == RunnerState.Running; i++) controller.Tick(0.016f);
+                }
+
+                var canvas = UnityEngine.Object.FindFirstObjectByType<Canvas>();
+                var cam = new GameObject("Camera", typeof(Camera)).GetComponent<Camera>();
+                cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = Color.black;
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = cam; canvas.planeDistance = 1f;
+                var scaler = canvas.GetComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;   // Screen size is meaningless in batch mode
+                scaler.scaleFactor = h / 720f;
+                Render(cam, canvas, output, w, h);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Playground screenshot failed: " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        static void Render(Camera cam, Canvas canvas, string outputPng, int width, int height)
+        {
+            var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            cam.targetTexture = rt;
+            Canvas.ForceUpdateCanvases();
+            foreach (var t in canvas.GetComponentsInChildren<TMP_Text>()) t.ForceMeshUpdate();
+            Canvas.ForceUpdateCanvases();
+            cam.Render();
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            var tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPng)));
+            File.WriteAllBytes(outputPng, tex.EncodeToPNG());
+            Debug.Log("Screenshot: " + outputPng);
+            UnityEngine.Object.DestroyImmediate(tex);
+            cam.targetTexture = null;
+            rt.Release();
+            UnityEngine.Object.DestroyImmediate(rt);
+        }
+
         public static void Capture(string programPath, string outputPng, int width, int height, float scale)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
