@@ -41,20 +41,71 @@ namespace Blockly
                 case Undefined _: return double.NaN;
                 case bool b: return b ? 1 : 0;
                 case double d: return d;
-                case string s:
-                    s = s.Trim();
-                    if (s.Length == 0) return 0;
-                    if (s == "Infinity" || s == "+Infinity") return double.PositiveInfinity;
-                    if (s == "-Infinity") return double.NegativeInfinity;
-                    if (s.StartsWith("0x") || s.StartsWith("0X"))
-                        return long.TryParse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var h) ? h : double.NaN;
-                    if (char.IsLetter(s[s.Length - 1]) || s.IndexOf(',') >= 0) return double.NaN; // reject "1e", "NaN" variants, "1,5"
-                    return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? n : double.NaN;
+                case string s: return ParseNumber(s);
                 case List<object> l:
                     return l.Count == 0 ? 0 : l.Count == 1 ? ToNumber(l[0]) : double.NaN;
                 default: return double.NaN;
             }
         }
+
+        /// <summary>
+        /// ECMAScript StringToNumber: surrounding whitespace is ignored, "" is 0, accepts decimal / exponent / ±Infinity /
+        /// 0x 0o 0b literals, and anything else (including trailing junk like "12abc") is NaN.
+        /// </summary>
+        public static double ParseNumber(string text)
+        {
+            string s = text.Trim();
+            if (s.Length == 0) return 0;
+            if (s == "Infinity" || s == "+Infinity") return double.PositiveInfinity;
+            if (s == "-Infinity") return double.NegativeInfinity;
+
+            if (s.Length > 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X' || s[1] == 'o' || s[1] == 'O' || s[1] == 'b' || s[1] == 'B'))
+            {
+                int radix = char.ToLowerInvariant(s[1]) == 'x' ? 16 : char.ToLowerInvariant(s[1]) == 'o' ? 8 : 2;
+                double r = 0;
+                for (int k = 2; k < s.Length; k++)
+                {
+                    int d = HexDigit(s[k]);
+                    if (d < 0 || d >= radix) return double.NaN;
+                    r = r * radix + d;
+                }
+                return r;
+            }
+
+            // StrDecimalLiteral: [+-] ( digits [. digits?] | . digits ) [ (e|E) [+-] digits ]
+            int i = 0, n = s.Length;
+            if (s[i] == '+' || s[i] == '-') i++;
+            int intStart = i;
+            while (i < n && s[i] >= '0' && s[i] <= '9') i++;
+            int intDigits = i - intStart, fracDigits = 0;
+            if (i < n && s[i] == '.')
+            {
+                i++;
+                int fs = i;
+                while (i < n && s[i] >= '0' && s[i] <= '9') i++;
+                fracDigits = i - fs;
+            }
+            if (intDigits + fracDigits == 0) return double.NaN;
+            bool negativeExponent = false;
+            if (i < n && (s[i] == 'e' || s[i] == 'E'))
+            {
+                i++;
+                if (i < n && (s[i] == '+' || s[i] == '-')) { negativeExponent = s[i] == '-'; i++; }
+                int es = i;
+                while (i < n && s[i] >= '0' && s[i] <= '9') i++;
+                if (i == es) return double.NaN;
+            }
+            if (i != n) return double.NaN;
+
+            if (double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)) return value;
+            // Mono throws OverflowException-style failures for huge exponents where modern .NET returns ±Infinity
+            bool negative = s[0] == '-';
+            if (negativeExponent) return negative ? -0.0 : 0.0;
+            return negative ? double.NegativeInfinity : double.PositiveInfinity;
+        }
+
+        static int HexDigit(char c)
+            => c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
 
         public static string ToStr(object v)
         {
