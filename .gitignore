@@ -1,0 +1,16 @@
+.DS_Store
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]in/
+[Bb]uild/
+[Ll]ogs/
+UserSettings/
+node_modules/
+dev/Core.Tests/bin/
+dev/Core.Tests/obj/
+
+# Unity-generated project files live in the root only; dev/ keeps its own csproj
+/*.csproj
+/*.sln
+/*.slnx
