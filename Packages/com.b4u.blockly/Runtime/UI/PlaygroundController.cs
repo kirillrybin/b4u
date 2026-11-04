@@ -65,13 +65,14 @@ namespace Blockly.UI
         {
             if (Count == 0 || view == null) return;
             runner?.Stop();
-            if (view != null) view.BlockDragStarted -= OnDragStarted;
+            if (view != null) { view.BlockDragStarted -= OnDragStarted; view.FieldEditStarted -= OnDragStarted; }
             index = Mathf.Clamp(i, 0, Count - 1);
             var asset = programs[index];
 
             var ws = StandardBlockSet.Load(asset.text);
             view.SetWorkspace(ws);
             view.BlockDragStarted += OnDragStarted;
+            view.FieldEditStarted += OnDragStarted;
             if (cleanUpOnLoad) view.CleanUp();
             var rt = (RectTransform)view.transform;
             rt.sizeDelta += new Vector2(contentMargin, contentMargin);   // breathing room inside the scroll area

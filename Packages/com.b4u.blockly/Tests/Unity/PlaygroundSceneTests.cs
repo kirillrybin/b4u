@@ -190,6 +190,34 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void EditingFieldsThenRunningPrintsTheNewValues()
+        {
+            var c = Open();
+            ShowByName(c, "loops");
+            var ws = c.View.Workspace;
+            var text = ws.AllBlocks().First(b => b.Type == "text" && b.GetFieldValue("TEXT") == "rep");
+            var times = ws.AllBlocks().First(b => b.Type == "controls_repeat_ext").GetInputTargetBlock("TIMES");   // the number block feeding the loop
+
+            c.Step();                                                              // paused somewhere in the program
+            Assert.AreEqual(RunnerState.Paused, c.Runner.State);
+
+            Assert.IsTrue(c.View.BeginFieldEdit(text, text.GetField("TEXT")));
+            Assert.AreEqual(RunnerState.Idle, c.Runner.State, "starting an edit stops the program");
+            Assert.AreEqual("Stopped", c.Console.StatusText);
+            Assert.IsTrue(c.View.SubmitFieldEdit("ping"));
+            Assert.IsTrue(c.View.BeginFieldEdit(times, times.GetField("NUM")));
+            Assert.IsTrue(c.View.SubmitFieldEdit("2"));
+
+            c.Run();
+            RunToEnd(c);
+            var original = System.IO.File.ReadAllText("Packages/com.b4u.blockly/Tests/EditMode/Fixtures/programs/loops.expected.txt").TrimEnd('\n').Split('\n');
+            // the first block printed "rep" three times; now it prints "ping" twice, everything after is unchanged
+            var expected = new[] { "ping", "ping" }.Concat(original.Skip(3)).ToArray();
+            CollectionAssert.AreEqual(expected, c.Console.Lines.ToArray());
+            Assert.AreEqual("Finished", c.Console.StatusText);
+        }
+
+        [Test]
         public void ConsoleShowsPrintedMarkupLiterally()
         {
             var c = Open();

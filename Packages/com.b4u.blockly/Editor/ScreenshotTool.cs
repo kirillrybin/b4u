@@ -132,6 +132,20 @@ namespace Blockly.EditorTools
             if (Arg("-blocklyDrop") == "1") view.EndDrag();
         }
 
+        /// <summary>-blocklyEdit "text@0:TEXT=some typed text" opens that field's editor with the given text typed in.</summary>
+        static void OpenFieldEditorIfRequested(WorkspaceView view, Workspace ws)
+        {
+            string spec = Arg("-blocklyEdit");
+            if (spec == null) return;
+            var eq = spec.IndexOf('=');
+            string typed = eq >= 0 ? spec.Substring(eq + 1) : null;
+            var head = (eq >= 0 ? spec.Substring(0, eq) : spec).Split(':');
+            var block = Nth(ws, head[0]);
+            var field = block.GetField(head[1]) ?? throw new InvalidOperationException("no field " + head[1]);
+            if (!view.BeginFieldEdit(block, field)) throw new InvalidOperationException("cannot edit " + spec);
+            if (typed != null) view.SetFieldEditorText(typed);
+        }
+
         /// <summary>"type" or "type@2": the n-th (0-based) block of that type in workspace order.</summary>
         static Block Nth(Workspace ws, string spec)
         {
@@ -176,6 +190,7 @@ namespace Blockly.EditorTools
                 view.CleanUp();
             }
             HoldDragIfRequested(view, ws);
+            OpenFieldEditorIfRequested(view, ws);
 
             Canvas.ForceUpdateCanvases();
             foreach (var t in canvasGo.GetComponentsInChildren<TMP_Text>()) t.ForceMeshUpdate();

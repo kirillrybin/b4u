@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using Blockly.Editing;
 using Blockly.Layout;
 using NUnit.Framework;
 using TMPro;
@@ -298,6 +299,270 @@ namespace Blockly.UI.Tests
                 var back = view.ScreenToWorkspace(view.WorkspaceToScreen(p, null), null);
                 Assert.AreEqual(p.x, back.x, 1e-2f); Assert.AreEqual(p.y, back.y, 1e-2f);
             }
+        }
+
+        // ------------------------------------------------------------------ editing fields
+        const string Editable =
+            "<xml xmlns=\"https://developers.google.com/blockly/xml\">" +
+            "<block type=\"text_print\" x=\"20\" y=\"20\"><value name=\"TEXT\"><block type=\"text\"><field name=\"TEXT\">abc</field></block></value></block>" +
+            "<block type=\"math_arithmetic\" x=\"20\" y=\"120\"><field name=\"OP\">ADD</field>" +
+            "<value name=\"A\"><block type=\"math_number\"><field name=\"NUM\">1</field></block></value>" +
+            "<value name=\"B\"><shadow type=\"math_number\"><field name=\"NUM\">2</field></shadow></value></block></xml>";
+
+        sealed class NoSpawn : IBlockSpawner { public bool TrySpawn(Block b, PointerEventData e, WorkspaceView v) => false; }
+
+        (WorkspaceView view, Workspace ws, Block text, Block one, Block two) EditSetup()
+        {
+            var view = NewView();
+            var ws = StandardBlockSet.Load(Editable);
+            view.SetWorkspace(ws);
+            var add = ws.TopBlocks[1];
+            return (view, ws, ws.TopBlocks[0].GetInputTargetBlock("TEXT"), add.GetInputTargetBlock("A"), add.GetInput("B").Connection.Shadow);
+        }
+
+        static FieldClickTarget ClickTarget(WorkspaceView view, Block block, string field)
+            => view.GetComponentsInChildren<FieldClickTarget>().First(t => t.Block == block && t.Field.Name == field);
+
+        static PointerEventData Left(EventSystem es, Vector2 at)
+            => new PointerEventData(es) { button = PointerEventData.InputButton.Left, position = at, pressPosition = at };
+
+        [Test]
+        public void OnlyTextAndNumberFieldsAreClickable()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            var clickable = view.GetComponentsInChildren<FieldClickTarget>();
+            Assert.AreEqual(3, clickable.Length, "the text, the number 1 and the shadow number 2");
+            Assert.IsTrue(clickable.All(t => FieldEditing.IsEditableText(t.Field)));
+            Assert.IsFalse(clickable.Any(t => t.Field.Name == "OP"), "dropdowns are not text fields");
+            Assert.IsTrue(clickable.All(t => t.GetComponent<PolygonGraphic>().raycastTarget));
+        }
+
+        [Test]
+        public void FlyoutFieldsAreNotClickable()
+        {
+            var view = NewView();
+            view.Spawner = new NoSpawn();
+            view.SetWorkspace(StandardBlockSet.Load(Editable));
+            Assert.AreEqual(0, view.GetComponentsInChildren<FieldClickTarget>().Length);
+            Assert.IsFalse(view.BeginFieldEdit(view.Workspace.TopBlocks[0].GetInputTargetBlock("TEXT"), view.Workspace.TopBlocks[0].GetInputTargetBlock("TEXT").GetField("TEXT")));
+        }
+
+        [Test]
+        public void ClickingAFieldOpensTheEditorOverItWithTheCurrentValue()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            var es = new GameObject("EventSystem", typeof(EventSystem)).GetComponent<EventSystem>();
+            try
+            {
+                Block started = null;
+                view.FieldEditStarted += b => started = b;
+                var target = ClickTarget(view, text, "TEXT");
+                ExecuteEvents.Execute(target.gameObject, Left(es, Vector2.zero), ExecuteEvents.pointerClickHandler);
+
+                Assert.IsTrue(view.IsEditingField);
+                Assert.AreSame(text, started);
+                Assert.IsTrue(view.FieldEditor.gameObject.activeSelf);
+                Assert.AreEqual("abc", view.FieldEditor.text);
+                Assert.AreEqual(TMP_InputField.CharacterValidation.None, view.FieldEditor.characterValidation);
+
+                var box = view.Layout.ByBlock[text].Fields.First(f => f.Field.Name == "TEXT");
+                var rt = (RectTransform)view.FieldEditor.transform;
+                Assert.AreEqual(box.X - 2, rt.anchoredPosition.x, 1e-3f, "the editor sits exactly over the field");
+                Assert.AreEqual(-(box.Y - 2), rt.anchoredPosition.y, 1e-3f);
+                Assert.GreaterOrEqual(rt.sizeDelta.x, box.W);
+                Assert.AreEqual(view.transform.childCount - 1, rt.GetSiblingIndex(), "editor is drawn on top");
+            }
+            finally { Object.DestroyImmediate(es.gameObject); }
+        }
+
+        [Test]
+        public void RightClickDoesNotEdit()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            var es = new GameObject("EventSystem", typeof(EventSystem)).GetComponent<EventSystem>();
+            try
+            {
+                var ped = new PointerEventData(es) { button = PointerEventData.InputButton.Right };
+                ExecuteEvents.Execute(ClickTarget(view, text, "TEXT").gameObject, ped, ExecuteEvents.pointerClickHandler);
+                Assert.IsFalse(view.IsEditingField);
+            }
+            finally { Object.DestroyImmediate(es.gameObject); }
+        }
+
+        [Test]
+        public void NumberFieldsUseTheDecimalKeypad()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            Assert.IsTrue(view.BeginFieldEdit(one, one.GetField("NUM")));
+            Assert.AreEqual(TMP_InputField.CharacterValidation.Decimal, view.FieldEditor.characterValidation);
+            Assert.AreEqual(TouchScreenKeyboardType.DecimalPad, view.FieldEditor.keyboardType);
+            Assert.AreEqual("1", view.FieldEditor.text);
+            view.CancelFieldEdit();
+        }
+
+        [Test]
+        public void SubmittingUpdatesTheModelTheDrawingAndRaisesTheEditEvent()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            int edits = 0; view.WorkspaceEdited += () => edits++;
+            float widthBefore = view.Layout.ByBlock[text].W;
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+
+            Assert.IsTrue(view.SubmitFieldEdit("hello there, world"));
+
+            Assert.AreEqual("hello there, world", text.GetFieldValue("TEXT"));
+            Assert.IsFalse(view.IsEditingField);
+            Assert.IsFalse(view.FieldEditor.gameObject.activeSelf);
+            Assert.AreEqual(1, edits);
+            Assert.IsTrue(view.GetComponentsInChildren<TMP_Text>().Any(t => t.text == "hello there, world"), "the new text is on screen");
+            Assert.Greater(view.Layout.ByBlock[text].W, widthBefore, "the text block grew to fit its new text");
+            Assert.IsFalse(view.GetComponentsInChildren<TMP_Text>().Any(t => t.text == "abc"));
+        }
+
+        [Test]
+        public void SubmittingAnInvalidNumberOrTheSameValueChangesNothing()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            int edits = 0; view.WorkspaceEdited += () => edits++;
+            view.BeginFieldEdit(one, one.GetField("NUM"));
+            Assert.IsFalse(view.SubmitFieldEdit("not a number"));
+            Assert.AreEqual("1", one.GetFieldValue("NUM"));
+            view.BeginFieldEdit(one, one.GetField("NUM"));
+            Assert.IsFalse(view.SubmitFieldEdit("1"));
+            Assert.AreEqual(0, edits, "no edit event for a no-op");
+            Assert.IsFalse(view.IsEditingField);
+        }
+
+        [Test]
+        public void NumbersAreNormalisedLikeBlockly()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(one, one.GetField("NUM"));
+            view.SubmitFieldEdit("1,250.50");
+            Assert.AreEqual("1250.5", one.GetFieldValue("NUM"));
+            Assert.IsTrue(view.GetComponentsInChildren<TMP_Text>().Any(t => t.text == "1250.5"));
+        }
+
+        [Test]
+        public void PressingEnterOrClickingAwayGoesThroughOnEndEdit()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+            view.FieldEditor.onEndEdit.Invoke("typed by the user");      // what TMP raises on Enter / blur
+            Assert.AreEqual("typed by the user", text.GetFieldValue("TEXT"));
+            Assert.IsFalse(view.IsEditingField);
+        }
+
+        [Test]
+        public void TheEditorGrowsAsTextIsTypedSoNothingIsCutOff()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+            var rt = (RectTransform)view.FieldEditor.transform;
+            float start = rt.sizeDelta.x;
+            view.FieldEditor.text = "a much much longer piece of text than the field started with";   // raises onValueChanged like typing
+            Assert.Greater(rt.sizeDelta.x, start, "wider than before");
+            float wide = rt.sizeDelta.x;
+            view.SetFieldEditorText("short");
+            Assert.Less(rt.sizeDelta.x, wide, "and shrinks again when text is deleted");
+            Assert.GreaterOrEqual(rt.sizeDelta.x, 64f, "never narrower than the minimum");
+            view.SetFieldEditorText(new string('w', 500));
+            Assert.LessOrEqual(rt.sizeDelta.x, 520f, "capped so it cannot run off forever");
+            view.CancelFieldEdit();
+        }
+
+        [Test]
+        public void CancelKeepsTheOldValue()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+            view.CancelFieldEdit();
+            Assert.AreEqual("abc", text.GetFieldValue("TEXT"));
+            Assert.IsFalse(view.IsEditingField);
+        }
+
+        [Test]
+        public void ShadowFieldsCanBeEdited()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            Assert.IsTrue(two.IsShadow);
+            view.BeginFieldEdit(two, two.GetField("NUM"));
+            view.SubmitFieldEdit("20");
+            Assert.AreEqual("20", two.GetFieldValue("NUM"));
+            Assert.IsTrue(two.IsShadow, "still a shadow");
+        }
+
+        [Test]
+        public void OpeningAnotherFieldAcceptsTheFirstOne()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+            view.FieldEditor.SetTextWithoutNotify("first");
+            view.BeginFieldEdit(one, one.GetField("NUM"));
+            Assert.AreEqual("first", text.GetFieldValue("TEXT"));
+            Assert.AreSame(one.GetField("NUM"), view.EditedField);
+            view.CancelFieldEdit();
+        }
+
+        [Test]
+        public void StartingADragAcceptsThePendingEdit()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+            view.FieldEditor.SetTextWithoutNotify("typed before dragging");
+            var other = ws.TopBlocks[1];
+            var box = view.Layout.ByBlock[other];
+            Assert.IsTrue(view.BeginDrag(other, new Vector2(box.X + 4, box.Y + 4)));
+            Assert.AreEqual("typed before dragging", text.GetFieldValue("TEXT"));
+            Assert.IsFalse(view.IsEditingField);
+            view.CancelDrag();
+        }
+
+        [Test]
+        public void DraggingByAFieldStillDragsTheBlock()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            var es = new GameObject("EventSystem", typeof(EventSystem)).GetComponent<EventSystem>();
+            try
+            {
+                var box = view.Layout.ByBlock[text].Fields.First(f => f.Field.Name == "TEXT");
+                var at = view.WorkspaceToScreen(new Vector2(box.X + 3, box.Y + 3), null);
+                var fieldObject = ClickTarget(view, text, "TEXT").gameObject;
+                // this is how the EventSystem picks the drag handler: the nearest object up the hierarchy that handles it
+                var dragHandler = ExecuteEvents.GetEventHandler<IBeginDragHandler>(fieldObject);
+                Assert.IsNotNull(dragHandler.GetComponent<BlockDragTarget>(), "the drag bubbles up from the field to the block");
+                Assert.AreNotSame(fieldObject, dragHandler);
+                ExecuteEvents.Execute(dragHandler, Left(es, at), ExecuteEvents.beginDragHandler);
+                Assert.IsTrue(view.IsDragging);
+                Assert.AreSame(text, view.DraggedBlock);
+                view.CancelDrag();
+            }
+            finally { Object.DestroyImmediate(es.gameObject); }
+        }
+
+        [Test]
+        public void TheEditorObjectSurvivesRebuildsAndIsReused()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+            var editor = view.FieldEditor;
+            view.SubmitFieldEdit("changed");                     // rebuilds the view
+            Assert.AreSame(editor, view.FieldEditor);
+            Assert.IsTrue(editor != null, "not destroyed with the rest of the view");
+            Assert.IsTrue(view.BeginFieldEdit(one, one.GetField("NUM")));
+            Assert.AreSame(editor, view.FieldEditor, "same object, no pile-up");
+            Assert.AreEqual(1, view.GetComponentsInChildren<TMP_InputField>(true).Length);
+            view.CancelFieldEdit();
+        }
+
+        [Test]
+        public void ReplacingTheWorkspaceClosesAnOpenEditor()
+        {
+            var (view, ws, text, one, two) = EditSetup();
+            view.BeginFieldEdit(text, text.GetField("TEXT"));
+            view.SetWorkspace(StandardBlockSet.Load(Editable));
+            Assert.IsFalse(view.IsEditingField);
+            Assert.IsFalse(view.FieldEditor.gameObject.activeSelf);
         }
 
         static bool Contains(PolygonGraphic g, float x, float y)

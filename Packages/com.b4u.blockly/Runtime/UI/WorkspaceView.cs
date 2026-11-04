@@ -33,10 +33,17 @@ namespace Blockly.UI
         PolygonGraphic snapShape;
         readonly List<RectTransform> draggedObjects = new List<RectTransform>();
 
+        // field editing
+        TMP_InputField fieldInput;
+        Block editBlock;
+        Field editField;
+
         /// <summary>A drag started (the program should stop running; the model is about to change).</summary>
         public event Action<Block> BlockDragStarted;
         /// <summary>The user changed the workspace (a block was dropped, moved, reconnected, created or deleted).</summary>
         public event Action WorkspaceEdited;
+        /// <summary>The user opened a field for editing (the running program should stop; the model is about to change).</summary>
+        public event Action<Block> FieldEditStarted;
         /// <summary>The dragged blocks entered / left the delete area.</summary>
         public event Action<bool> DeleteHoverChanged;
 
@@ -105,11 +112,138 @@ namespace Blockly.UI
             return RectTransformUtility.WorldToScreenPoint(cam, world);
         }
 
+        // ------------------------------------------------------------------ editing fields
+        public bool IsEditingField => editField != null;
+        public TMP_InputField FieldEditor => fieldInput;
+        public Field EditedField => editField;
+
+        /// <summary>Opens the in-place editor over a text or number field. Returns false if the field cannot be edited here.</summary>
+        public bool BeginFieldEdit(Block block, Field field)
+        {
+            if (workspace == null || Spawner != null || IsDragging || block == null || field == null) return false;
+            if (!FieldEditing.IsEditableText(field) || Layout == null || !Layout.ByBlock.TryGetValue(block, out var blockBox)) return false;
+            var fieldBox = blockBox.Fields.Find(f => f.Field == field);
+            if (fieldBox == null) return false;
+
+            if (IsEditingField) SubmitFieldEdit(fieldInput.text);      // like Blockly, opening another field accepts the first one
+            // the rebuild above may have replaced the layout objects; look the box up again
+            if (!Layout.ByBlock.TryGetValue(block, out blockBox)) return false;
+            fieldBox = blockBox.Fields.Find(f => f.Field == field) ?? fieldBox;
+
+            FieldEditStarted?.Invoke(block);
+            EnsureFieldInput();
+            editBlock = block; editField = field;
+
+            bool number = field.Spec.FieldType == "field_number";
+            fieldInput.characterValidation = number ? TMP_InputField.CharacterValidation.Decimal : TMP_InputField.CharacterValidation.None;
+            fieldInput.keyboardType = number ? TouchScreenKeyboardType.DecimalPad : TouchScreenKeyboardType.Default;
+            fieldInput.SetTextWithoutNotify(field.Value ?? "");
+
+            var rt = (RectTransform)fieldInput.transform;
+            rt.anchoredPosition = new Vector2(fieldBox.X - 2, -(fieldBox.Y - 2));
+            rt.sizeDelta = new Vector2(Mathf.Max(fieldBox.W + 4, MinEditorWidth), fieldBox.H + 4);
+            fieldInput.gameObject.SetActive(true);
+            ResizeFieldEditor();
+            rt.SetAsLastSibling();
+            fieldInput.Select();
+            fieldInput.ActivateInputField();
+            return true;
+        }
+
+        const float MinEditorWidth = 64f, MaxEditorWidth = 520f;
+
+        /// <summary>Replaces the text in the open editor (as if typed) and resizes it to fit.</summary>
+        public void SetFieldEditorText(string text)
+        {
+            if (!IsEditingField) return;
+            fieldInput.text = text;                       // raises onValueChanged, which resizes
+            ResizeFieldEditor();
+        }
+
+        /// <summary>The editor grows with what is typed (like Blockly's widget) so the text is never cut off.</summary>
+        void ResizeFieldEditor()
+        {
+            if (fieldInput == null || editField == null) return;
+            var rt = (RectTransform)fieldInput.transform;
+            float needed = Mathf.Ceil(fieldInput.textComponent.GetPreferredValues(fieldInput.text + " ").x) + 14f;
+            rt.sizeDelta = new Vector2(Mathf.Clamp(needed, MinEditorWidth, MaxEditorWidth), rt.sizeDelta.y);
+        }
+
+        /// <summary>Applies typed text to the field being edited and closes the editor. Returns true if the value changed.</summary>
+        public bool SubmitFieldEdit(string text)
+        {
+            if (!IsEditingField) return false;
+            var block = editBlock; var field = editField;
+            editBlock = null; editField = null;
+            fieldInput.gameObject.SetActive(false);
+
+            bool changed = FieldEditing.SetValue(workspace, block, field, text);
+            if (changed)
+            {
+                Rebuild();
+                WorkspaceEdited?.Invoke();
+            }
+            return changed;
+        }
+
+        /// <summary>Closes the editor and keeps the old value.</summary>
+        public void CancelFieldEdit()
+        {
+            if (!IsEditingField) return;
+            editBlock = null; editField = null;
+            fieldInput.gameObject.SetActive(false);
+        }
+
+        void EnsureFieldInput()
+        {
+            if (fieldInput != null) return;
+
+            var go = new GameObject("FieldEditor", typeof(RectTransform), typeof(Image));
+            go.SetActive(false);                                       // finish wiring before TMP_InputField enables
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(transform, false);
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+            rt.pivot = new Vector2(0, 1);
+            var bg = go.GetComponent<Image>();
+            bg.color = Color.white;
+
+            var area = new GameObject("TextArea", typeof(RectTransform), typeof(RectMask2D));
+            var art = (RectTransform)area.transform;
+            art.SetParent(rt, false);
+            art.anchorMin = Vector2.zero; art.anchorMax = Vector2.one;
+            art.offsetMin = new Vector2(5, 1); art.offsetMax = new Vector2(-5, -1);
+
+            var textGo = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var trt = (RectTransform)textGo.transform;
+            trt.SetParent(art, false);
+            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
+            trt.offsetMin = trt.offsetMax = Vector2.zero;
+            var text = textGo.GetComponent<TextMeshProUGUI>();
+            text.fontSize = BlockStyle.FontSize;
+            text.color = BlockStyle.InputText;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.richText = false;
+
+            fieldInput = go.AddComponent<TMP_InputField>();
+            fieldInput.textViewport = art;
+            fieldInput.textComponent = text;
+            fieldInput.targetGraphic = bg;
+            fieldInput.lineType = TMP_InputField.LineType.SingleLine;
+            fieldInput.richText = false;
+            fieldInput.onFocusSelectAll = true;
+            fieldInput.restoreOriginalTextOnEscape = true;
+            // Enter, Esc (restores the old text) and clicking away all end up here
+            fieldInput.onEndEdit.AddListener(t => SubmitFieldEdit(t));
+            fieldInput.onValueChanged.AddListener(_ => ResizeFieldEditor());
+        }
+
         // ------------------------------------------------------------------ dragging blocks
         /// <summary>Starts dragging <paramref name="block"/> (and the blocks after it) grabbed at <paramref name="workspacePoint"/>.</summary>
         public bool BeginDrag(Block block, Vector2 workspacePoint, bool isNew = false)
         {
             if (workspace == null || IsDragging || block == null) return false;
+            if (IsEditingField) SubmitFieldEdit(fieldInput.text);          // accept what was typed before moving things around
             EnsureMeasurer();
             var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer));
             if (!d.Begin(block, isNew)) return false;
@@ -274,10 +408,12 @@ namespace Blockly.UI
 
         void Clear()
         {
+            if (fieldInput != null && editField != null) { editBlock = null; editField = null; fieldInput.gameObject.SetActive(false); }
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var child = transform.GetChild(i);
                 if (child.gameObject == (measureTemplate != null ? measureTemplate.gameObject : null)) continue;
+                if (child.gameObject == (fieldInput != null ? fieldInput.gameObject : null)) continue;
                 DestroyImmediateSafe(child.gameObject);
             }
             blockObjects.Clear();
@@ -363,7 +499,9 @@ namespace Blockly.UI
                 var bg = rt.gameObject.AddComponent<PolygonGraphic>();
                 bg.SetShape(rect, dropdown ? BlockStyle.DropdownFill(baseColour, box.IsShadow) : BlockStyle.InputFill,
                             BlockStyle.Stroke(baseColour, box.IsShadow), 1f);
-                bg.raycastTarget = false;
+                bool clickable = Spawner == null && FieldEditing.IsEditableText(f.Field);
+                bg.raycastTarget = clickable;                              // other fields pass clicks through to the block
+                if (clickable) rt.gameObject.AddComponent<FieldClickTarget>().Init(this, box.Block, f.Field);
             }
 
             if (f.IsDropdown)
