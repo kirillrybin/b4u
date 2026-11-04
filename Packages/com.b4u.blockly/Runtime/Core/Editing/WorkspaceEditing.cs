@@ -101,5 +101,41 @@ namespace Blockly.Editing
             }
             return WorkspaceJson.CreateBlock(ws, spec);
         }
+
+        /// <summary>The clipboard text for a block: JSON of the block with its inputs (not its followers), without ids.</summary>
+        public static string Copy(Workspace ws, Block block)
+        {
+            while (block != null && block.IsShadow) block = block.ShadowOf?.Owner;
+            return block == null ? null : Json.Json.Write(WorkspaceJson.SaveBlockCopy(ws, block));
+        }
+
+        /// <summary>Distance a pasted block is moved down-right so it does not hide the original.</summary>
+        public const float PasteOffset = 24f;
+
+        /// <summary>
+        /// Creates a block from <see cref="Copy"/> text as a new top-level block near (<paramref name="x"/>, <paramref name="y"/>),
+        /// shifted further while another top block already sits there. Returns null if the text is not a usable block
+        /// (empty, malformed, or a type this workspace does not know); the workspace is unchanged then.
+        /// </summary>
+        public static Block Paste(Workspace ws, string clipboard, float x, float y)
+        {
+            if (string.IsNullOrEmpty(clipboard)) return null;
+            Block block;
+            try
+            {
+                var spec = Json.Json.AsObject(Json.Json.Parse(clipboard));
+                if (spec == null) return null;
+                block = Spawn(ws, spec);
+            }
+            catch (System.Exception e) when (e is System.FormatException || e is KeyNotFoundException || e is System.InvalidCastException)
+            {
+                return null;
+            }
+            x += PasteOffset; y += PasteOffset;
+            while (ws.TopBlocks.Any(t => System.Math.Abs(t.X - x) < 1 && System.Math.Abs(t.Y - y) < 1)) { x += PasteOffset; y += PasteOffset; }
+            block.X = x; block.Y = y;
+            ws.TopBlocks.Add(block);
+            return block;
+        }
     }
 }

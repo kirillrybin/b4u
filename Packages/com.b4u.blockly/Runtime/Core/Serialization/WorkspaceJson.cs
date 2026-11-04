@@ -148,6 +148,34 @@ namespace Blockly
             return Json.Json.Write(root, indented);
         }
 
+        /// <summary>
+        /// A self-contained copy of one block: itself, its shadows and everything plugged into its inputs, but not the
+        /// blocks that follow it (as in Blockly's copy). Block ids and the position are left out so a paste gets fresh ones.
+        /// </summary>
+        public static Dictionary<string, object> SaveBlockCopy(Workspace ws, Block b)
+        {
+            var d = SaveBlock(ws, b, false);
+            d.Remove("next");
+            StripIds(d);
+            return d;
+        }
+
+        static void StripIds(Dictionary<string, object> block)
+        {
+            block.Remove("id");
+            var inputs = Json.Json.GetObject(block, "inputs");
+            if (inputs != null)
+                foreach (var h in inputs.Values) StripHolder(Json.Json.AsObject(h));
+            StripHolder(Json.Json.GetObject(block, "next"));
+        }
+
+        static void StripHolder(Dictionary<string, object> holder)
+        {
+            if (holder == null) return;
+            var sh = Json.Json.GetObject(holder, "shadow"); if (sh != null) StripIds(sh);
+            var bl = Json.Json.GetObject(holder, "block"); if (bl != null) StripIds(bl);
+        }
+
         static Dictionary<string, object> SaveBlock(Workspace ws, Block b, bool top)
         {
             var d = new Dictionary<string, object> { { "type", b.Type }, { "id", b.Id } };
