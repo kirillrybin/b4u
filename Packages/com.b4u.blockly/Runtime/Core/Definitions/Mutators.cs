@@ -18,7 +18,7 @@ namespace Blockly
             { "controls_if_mutator", new IfMutator() },
             { "text_join_mutator", new ItemsMutator("itemCount", "items", 2, "create text with", null) },
             { "lists_create_with_mutator", new ItemsMutator("itemCount", "items", 3, "create list with", "create empty list") },
-            { "math_number_property_mutator", new OptionalInputsMutator(new[] { new Opt("divisor_input", "DIVISOR") }) },
+            { "math_number_property_mutator", new NumberPropertyMutator() },
             { "lists_setIndex_mutator", new AtFromWhereMutator(new[] { ("WHERE", "AT") }) },
             { "lists_getIndex_mutator", new GetIndexMutator() },
             { "text_charAt_mutator", new AtFromWhereMutator(new[] { ("WHERE", "AT") }) },
@@ -206,6 +206,33 @@ namespace Blockly
         }
     }
 
+    /// <summary>math_number_property: the DIVISOR input exists exactly while the property is "divisible by".</summary>
+    sealed class NumberPropertyMutator : IBlockMutator
+    {
+        public bool SerializeAsXml => true;
+
+        public void Apply(Block b, Dictionary<string, object> state)
+        {
+            if (Mutators.Bool(state, false, "divisor_input")) Reshape(b, true);
+        }
+
+        public void FieldsChanged(Block b) => Reshape(b, b.GetFieldValue("PROPERTY") == "DIVISIBLE_BY");
+
+        static void Reshape(Block b, bool wantDivisor)
+        {
+            var input = b.GetInput("DIVISOR");
+            if (wantDivisor && input == null) b.Inputs.Add(Mutators.ValueInput(b, "DIVISOR", new[] { "Number" }));
+            else if (!wantDivisor && input != null)
+            {
+                input.Connection.Disconnect();         // the block plugged into it goes with it, as in Blockly
+                b.Inputs.Remove(input);
+            }
+        }
+
+        public Dictionary<string, object> Save(Block b)
+            => new Dictionary<string, object> { { "divisor_input", b.GetInput("DIVISOR") != null } };
+    }
+
     /// <summary>
     /// The AT input after a WHERE dropdown exists only while WHERE is "# " or "# from end"
     /// (lists_getIndex/setIndex, text_charAt, text_getSubstring, lists_getSublist).
@@ -224,8 +251,9 @@ namespace Blockly
                 int idx = b.Inputs.FindIndex(i => i.Fields.Exists(f => f.Name == whereField));
                 b.Inputs.Insert(idx < 0 ? b.Inputs.Count : idx + 1, input);
             }
-            else if (at != null && at.Connection.Target == null)
+            else if (at != null)
             {
+                at.Connection.Disconnect();            // like Blockly: the block that was plugged into AT is thrown away with it
                 b.Inputs.Remove(at);
             }
         }
@@ -259,6 +287,23 @@ namespace Blockly
         }
 
         public void FieldsChanged(Block b) => WhereAt.Reshape(b, "WHERE", "AT");
+
+        /// <summary>Statement form (no output, has previous/next) or value form. The block must already be unplugged.</summary>
+        public static void SetStatement(Block b, bool statement)
+        {
+            if (statement == (b.Output == null)) return;
+            if (statement)
+            {
+                b.Output = null;
+                b.Previous = new Connection(b, ConnectionType.PreviousStatement);
+                b.Next = new Connection(b, ConnectionType.NextStatement);
+            }
+            else
+            {
+                b.Previous = null; b.Next = null;
+                b.Output = new Connection(b, ConnectionType.OutputValue, null, b.Definition.OutputCheck);
+            }
+        }
 
         public Dictionary<string, object> Save(Block b)
         {

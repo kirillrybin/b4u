@@ -261,7 +261,7 @@ namespace Blockly.Layout
         }
 
         /// <summary>Blockly prefixes some labels with bidi control marks (U+200F); they have no glyph, so drop them.</summary>
-        static string StripBidi(string s)
+        public static string StripBidi(string s)
         {
             if (string.IsNullOrEmpty(s)) return s ?? "";
             var sb = new System.Text.StringBuilder(s.Length);

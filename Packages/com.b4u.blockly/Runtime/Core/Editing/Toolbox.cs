@@ -65,6 +65,9 @@ namespace Blockly.Editing
         }
 
         public const float Gap = 18f;
+        /// <summary>Room left above the first block for a button ("Create variable...") drawn by the UI.</summary>
+        public const float VariablesHeaderHeight = 44f;
+        public float HeaderHeight;
 
         /// <summary>Resolves dynamic categories against the main workspace and builds a ready-to-draw flyout workspace.</summary>
         public static Flyout Build(ToolboxCategory category, Workspace main, ITextMeasurer measurer)
@@ -79,6 +82,11 @@ namespace Blockly.Editing
                 flyout.Items.Add(new KeyValuePair<Block, Dictionary<string, object>>(block, spec));
             }
             new BlockLayouter(flyout.Workspace, measurer).CleanUp(Gap);
+            if (category.Kind == CategoryKind.Variables)
+            {
+                flyout.HeaderHeight = VariablesHeaderHeight;
+                foreach (var b in flyout.Workspace.TopBlocks) b.Y += VariablesHeaderHeight;
+            }
             return flyout;
         }
 

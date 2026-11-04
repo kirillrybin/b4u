@@ -35,9 +35,26 @@ namespace Blockly.Editing
         }
 
         static void RemoveOne(Workspace ws, BlockLayouter layouter, Block block, bool heal)
+            => Detach(ws, layouter, block, heal, out _);
+
+        /// <summary>
+        /// Takes a block out of its stack or input without deleting it, and makes it a top-level block again, where it
+        /// was drawn (nudged by <paramref name="bump"/> so it does not sit exactly on its former parent). With
+        /// <paramref name="heal"/> the blocks that followed it stay connected to what preceded it.
+        /// </summary>
+        public static void Unplug(Workspace ws, BlockLayouter layouter, Block block, bool heal, float bump = 0f)
         {
-            var layout = layouter.LayoutWorkspace();
-            layout.ByBlock.TryGetValue(block, out var box);
+            Detach(ws, layouter, block, heal, out var box);
+            if (box != null) { block.X = box.X + bump; block.Y = box.Y + bump; }
+            else { block.X += bump; block.Y += bump; }
+            ws.TopBlocks.Add(block);
+        }
+
+        static void Detach(Workspace ws, BlockLayouter layouter, Block block, bool heal, out BlockBox box)
+        {
+            LayoutResult layout = layouter?.LayoutWorkspace();
+            box = null;
+            layout?.ByBlock.TryGetValue(block, out box);
 
             var childSide = block.Output ?? block.Previous;
             var parentConn = childSide?.Target;
@@ -52,7 +69,7 @@ namespace Blockly.Editing
                 if (parentConn != null && next.Previous != null && parentConn.CheckCompatible(next.Previous)) parentConn.Connect(next.Previous);
                 else
                 {
-                    if (box != null && layout.ByBlock.TryGetValue(next, out var nb)) { next.X = nb.X; next.Y = nb.Y; }
+                    if (layout != null && layout.ByBlock.TryGetValue(next, out var nb)) { next.X = nb.X; next.Y = nb.Y; }
                     ws.TopBlocks.Add(next);
                 }
             }
