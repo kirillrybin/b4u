@@ -1,0 +1,1525 @@
+{
+ "blocks": {
+  "languageVersion": 0,
+  "blocks": [
+   {
+    "type": "text_print",
+    "id": "E?H/7fZz~s@x=^/D[jBy",
+    "x": 10,
+    "y": 10,
+    "inputs": {
+     "TEXT": {
+      "block": {
+       "type": "lists_create_with",
+       "id": "iwSuP5Y7aumC!kAR(:!Z",
+       "extraState": {
+        "itemCount": 4
+       },
+       "inputs": {
+        "ADD0": {
+         "block": {
+          "type": "text",
+          "id": "dGS:S{Tr!Z{3B-,c!;uj",
+          "fields": {
+           "TEXT": "a"
+          }
+         }
+        },
+        "ADD1": {
+         "block": {
+          "type": "text",
+          "id": "V/B$vqjYd%uwX#2g3=DH",
+          "fields": {
+           "TEXT": "b"
+          }
+         }
+        },
+        "ADD2": {
+         "block": {
+          "type": "text",
+          "id": "vIYS4}Buoe~z.Ya10c+,",
+          "fields": {
+           "TEXT": "c"
+          }
+         }
+        },
+        "ADD3": {
+         "block": {
+          "type": "text",
+          "id": "Ld_Fd/B1F;MiQnifAmJ3",
+          "fields": {
+           "TEXT": "d"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "next": {
+     "block": {
+      "type": "text_print",
+      "id": "8a+aOuy6,dC)y]1w;.}7",
+      "inputs": {
+       "TEXT": {
+        "block": {
+         "type": "lists_create_empty",
+         "id": "[{XiA*nPYiS2:xMCU)pK"
+        }
+       }
+      },
+      "next": {
+       "block": {
+        "type": "text_print",
+        "id": "*)v9+c|eXo[_/YKt)%tt",
+        "inputs": {
+         "TEXT": {
+          "block": {
+           "type": "lists_create_with",
+           "id": "vOnXf^:r`e889t0J`rZJ",
+           "extraState": {
+            "itemCount": 0
+           }
+          }
+         }
+        },
+        "next": {
+         "block": {
+          "type": "text_print",
+          "id": "mO.b9kW]vSfVO3k!{era",
+          "inputs": {
+           "TEXT": {
+            "block": {
+             "type": "lists_repeat",
+             "id": "EK{GlW+mZ?Kh!@w)v~xj",
+             "inputs": {
+              "ITEM": {
+               "block": {
+                "type": "text",
+                "id": "+!KF*9naf|tH(S=C;LP`",
+                "fields": {
+                 "TEXT": "x"
+                }
+               }
+              },
+              "NUM": {
+               "block": {
+                "type": "math_number",
+                "id": "F2zkBpfX:Og;l/IJJJ/J",
+                "fields": {
+                 "NUM": 3
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "next": {
+           "block": {
+            "type": "text_print",
+            "id": "6MX{cVSWsxt:Bk2,`(z5",
+            "inputs": {
+             "TEXT": {
+              "block": {
+               "type": "lists_length",
+               "id": "H=!?_0B:lxiwOouI-JMc",
+               "inputs": {
+                "VALUE": {
+                 "block": {
+                  "type": "lists_create_with",
+                  "id": ":s2b8yhQ=t`8HKZrVW.u",
+                  "extraState": {
+                   "itemCount": 4
+                  },
+                  "inputs": {
+                   "ADD0": {
+                    "block": {
+                     "type": "text",
+                     "id": "YpTG_u_frC*G-CfV`L({",
+                     "fields": {
+                      "TEXT": "a"
+                     }
+                    }
+                   },
+                   "ADD1": {
+                    "block": {
+                     "type": "text",
+                     "id": "/Pz/|`]Ho]OVxB@8eKH2",
+                     "fields": {
+                      "TEXT": "b"
+                     }
+                    }
+                   },
+                   "ADD2": {
+                    "block": {
+                     "type": "text",
+                     "id": "Tr8E*4wn5_hIm-i:r4_o",
+                     "fields": {
+                      "TEXT": "c"
+                     }
+                    }
+                   },
+                   "ADD3": {
+                    "block": {
+                     "type": "text",
+                     "id": "J)AL)$ZmF?ttaG9Sv6!7",
+                     "fields": {
+                      "TEXT": "d"
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            },
+            "next": {
+             "block": {
+              "type": "text_print",
+              "id": "c5(.dMY@tVXhfNh@`*r8",
+              "inputs": {
+               "TEXT": {
+                "block": {
+                 "type": "lists_isEmpty",
+                 "id": "~nP[usdUcm33~/2p=pj-",
+                 "inputs": {
+                  "VALUE": {
+                   "block": {
+                    "type": "lists_create_with",
+                    "id": "V22L)9jF=_XTRj}e4N)C",
+                    "extraState": {
+                     "itemCount": 4
+                    },
+                    "inputs": {
+                     "ADD0": {
+                      "block": {
+                       "type": "text",
+                       "id": "Dnt`5X4/~@o_O%k?g2[g",
+                       "fields": {
+                        "TEXT": "a"
+                       }
+                      }
+                     },
+                     "ADD1": {
+                      "block": {
+                       "type": "text",
+                       "id": ":baJ-1/JzhWXhPC~b+g8",
+                       "fields": {
+                        "TEXT": "b"
+                       }
+                      }
+                     },
+                     "ADD2": {
+                      "block": {
+                       "type": "text",
+                       "id": "Ud)hl,c7Ub2WPegY]:kN",
+                       "fields": {
+                        "TEXT": "c"
+                       }
+                      }
+                     },
+                     "ADD3": {
+                      "block": {
+                       "type": "text",
+                       "id": "Z5(_fEu4vMmM)^dF$}39",
+                       "fields": {
+                        "TEXT": "d"
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              "next": {
+               "block": {
+                "type": "text_print",
+                "id": "r[^D.-0.Lz}PjPnZYuda",
+                "inputs": {
+                 "TEXT": {
+                  "block": {
+                   "type": "lists_isEmpty",
+                   "id": "/jqOAF@.QZa8R+!KQhP@",
+                   "inputs": {
+                    "VALUE": {
+                     "block": {
+                      "type": "lists_create_empty",
+                      "id": "bu?bQ.[7GC?O6Eugm;}l"
+                     }
+                    }
+                   }
+                  }
+                 }
+                },
+                "next": {
+                 "block": {
+                  "type": "text_print",
+                  "id": "?Ve!n7Z(uA?8t=|J)tfP",
+                  "inputs": {
+                   "TEXT": {
+                    "block": {
+                     "type": "lists_getIndex",
+                     "id": "tzAJ(*VhGnL96TNeZay#",
+                     "fields": {
+                      "MODE": "GET",
+                      "WHERE": "FIRST"
+                     },
+                     "inputs": {
+                      "VALUE": {
+                       "block": {
+                        "type": "lists_create_with",
+                        "id": "jg%-Q5bs@;2!n{OfiLL^",
+                        "extraState": {
+                         "itemCount": 4
+                        },
+                        "inputs": {
+                         "ADD0": {
+                          "block": {
+                           "type": "text",
+                           "id": "tQPWXt)RkHANDAt?wx]/",
+                           "fields": {
+                            "TEXT": "a"
+                           }
+                          }
+                         },
+                         "ADD1": {
+                          "block": {
+                           "type": "text",
+                           "id": "|9do1xt2I1-!,5M*[+G|",
+                           "fields": {
+                            "TEXT": "b"
+                           }
+                          }
+                         },
+                         "ADD2": {
+                          "block": {
+                           "type": "text",
+                           "id": "`3.a#YG8]*bq370a`.MU",
+                           "fields": {
+                            "TEXT": "c"
+                           }
+                          }
+                         },
+                         "ADD3": {
+                          "block": {
+                           "type": "text",
+                           "id": "MN*hIa:ut(d@f}*NQ_}!",
+                           "fields": {
+                            "TEXT": "d"
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "next": {
+                   "block": {
+                    "type": "text_print",
+                    "id": "#Bpc7r.uG~@#C!7}||N?",
+                    "inputs": {
+                     "TEXT": {
+                      "block": {
+                       "type": "lists_getIndex",
+                       "id": "x,%k!=[T@NO1atS@51k2",
+                       "fields": {
+                        "MODE": "GET",
+                        "WHERE": "LAST"
+                       },
+                       "inputs": {
+                        "VALUE": {
+                         "block": {
+                          "type": "lists_create_with",
+                          "id": "U0H{1lnF10AMnvP.|r8p",
+                          "extraState": {
+                           "itemCount": 4
+                          },
+                          "inputs": {
+                           "ADD0": {
+                            "block": {
+                             "type": "text",
+                             "id": ";O*q1x,5%_g5d-No1`)2",
+                             "fields": {
+                              "TEXT": "a"
+                             }
+                            }
+                           },
+                           "ADD1": {
+                            "block": {
+                             "type": "text",
+                             "id": "-smsBM|s(vkWF3jh4vQ-",
+                             "fields": {
+                              "TEXT": "b"
+                             }
+                            }
+                           },
+                           "ADD2": {
+                            "block": {
+                             "type": "text",
+                             "id": "n=ldw4axZ~Odx]i`${f_",
+                             "fields": {
+                              "TEXT": "c"
+                             }
+                            }
+                           },
+                           "ADD3": {
+                            "block": {
+                             "type": "text",
+                             "id": "4XCyQC-oXp~7EY(jx$BB",
+                             "fields": {
+                              "TEXT": "d"
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    },
+                    "next": {
+                     "block": {
+                      "type": "text_print",
+                      "id": ":]XAK^nP;KA+:mu-]BKE",
+                      "inputs": {
+                       "TEXT": {
+                        "block": {
+                         "type": "lists_getIndex",
+                         "id": "(.9@gW,a^UTEIn1Apa*3",
+                         "fields": {
+                          "MODE": "GET",
+                          "WHERE": "FROM_START"
+                         },
+                         "inputs": {
+                          "VALUE": {
+                           "block": {
+                            "type": "lists_create_with",
+                            "id": "8lxnL5cn_Pj}bb3y1I|8",
+                            "extraState": {
+                             "itemCount": 4
+                            },
+                            "inputs": {
+                             "ADD0": {
+                              "block": {
+                               "type": "text",
+                               "id": "taAXLeTofHqOOX_-)EEv",
+                               "fields": {
+                                "TEXT": "a"
+                               }
+                              }
+                             },
+                             "ADD1": {
+                              "block": {
+                               "type": "text",
+                               "id": "iyn@ql,lsK%wXBM:3gT4",
+                               "fields": {
+                                "TEXT": "b"
+                               }
+                              }
+                             },
+                             "ADD2": {
+                              "block": {
+                               "type": "text",
+                               "id": "E1EM?#eAu@ITQXj-jiN]",
+                               "fields": {
+                                "TEXT": "c"
+                               }
+                              }
+                             },
+                             "ADD3": {
+                              "block": {
+                               "type": "text",
+                               "id": "]s~.4IW+^?,eszk.9A3N",
+                               "fields": {
+                                "TEXT": "d"
+                               }
+                              }
+                             }
+                            }
+                           }
+                          },
+                          "AT": {
+                           "block": {
+                            "type": "math_number",
+                            "id": "IE{_Li8#+au[ev4{%n3!",
+                            "fields": {
+                             "NUM": 2
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      },
+                      "next": {
+                       "block": {
+                        "type": "text_print",
+                        "id": "a#hHA(cM1$YVNDX500h(",
+                        "inputs": {
+                         "TEXT": {
+                          "block": {
+                           "type": "lists_getIndex",
+                           "id": "%uPs.q,vTbz_t;1C@Vle",
+                           "fields": {
+                            "MODE": "GET",
+                            "WHERE": "FROM_END"
+                           },
+                           "inputs": {
+                            "VALUE": {
+                             "block": {
+                              "type": "lists_create_with",
+                              "id": "6aRpl(KmY@oUUMa1J2Te",
+                              "extraState": {
+                               "itemCount": 4
+                              },
+                              "inputs": {
+                               "ADD0": {
+                                "block": {
+                                 "type": "text",
+                                 "id": "`qd2_o;HBV0Hg`7`n,P%",
+                                 "fields": {
+                                  "TEXT": "a"
+                                 }
+                                }
+                               },
+                               "ADD1": {
+                                "block": {
+                                 "type": "text",
+                                 "id": "Vj;Z@k3/H7d)`!2JUmhc",
+                                 "fields": {
+                                  "TEXT": "b"
+                                 }
+                                }
+                               },
+                               "ADD2": {
+                                "block": {
+                                 "type": "text",
+                                 "id": "S9so@W!7pLIW{0WJ,[!b",
+                                 "fields": {
+                                  "TEXT": "c"
+                                 }
+                                }
+                               },
+                               "ADD3": {
+                                "block": {
+                                 "type": "text",
+                                 "id": "|/Dv-BGGhWq[@2h@?e8.",
+                                 "fields": {
+                                  "TEXT": "d"
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            },
+                            "AT": {
+                             "block": {
+                              "type": "math_number",
+                              "id": "J8y}=/7auzpQMYdTn./3",
+                              "fields": {
+                               "NUM": 1
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        },
+                        "next": {
+                         "block": {
+                          "type": "text_print",
+                          "id": "j}[3k%rBVjnTKaS/KxP)",
+                          "inputs": {
+                           "TEXT": {
+                            "block": {
+                             "type": "lists_getIndex",
+                             "id": "RuL@79Vl0-yK@;51PDv:",
+                             "fields": {
+                              "MODE": "GET",
+                              "WHERE": "FROM_START"
+                             },
+                             "inputs": {
+                              "VALUE": {
+                               "block": {
+                                "type": "lists_create_with",
+                                "id": "sO9C,M]E4*V*^.}S(0x1",
+                                "extraState": {
+                                 "itemCount": 4
+                                },
+                                "inputs": {
+                                 "ADD0": {
+                                  "block": {
+                                   "type": "text",
+                                   "id": ")BJ:?N:y^vx+SsusWOU=",
+                                   "fields": {
+                                    "TEXT": "a"
+                                   }
+                                  }
+                                 },
+                                 "ADD1": {
+                                  "block": {
+                                   "type": "text",
+                                   "id": "Y[[(J$(y,:%~d]uYhAw?",
+                                   "fields": {
+                                    "TEXT": "b"
+                                   }
+                                  }
+                                 },
+                                 "ADD2": {
+                                  "block": {
+                                   "type": "text",
+                                   "id": "vK0SCa8;lnZygBNuyVP4",
+                                   "fields": {
+                                    "TEXT": "c"
+                                   }
+                                  }
+                                 },
+                                 "ADD3": {
+                                  "block": {
+                                   "type": "text",
+                                   "id": "7~#z%AC!8oynu[dk{bRt",
+                                   "fields": {
+                                    "TEXT": "d"
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              },
+                              "AT": {
+                               "block": {
+                                "type": "math_number",
+                                "id": "-z{5(k*CWtO!##:.{Q,u",
+                                "fields": {
+                                 "NUM": 9
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          },
+                          "next": {
+                           "block": {
+                            "type": "variables_set",
+                            "id": "Zy*#Fh_d(xg;0WG0t_Ok",
+                            "fields": {
+                             "VAR": {
+                              "id": "id_l"
+                             }
+                            },
+                            "inputs": {
+                             "VALUE": {
+                              "block": {
+                               "type": "lists_create_with",
+                               "id": "jG7D}SfDSyY7/%9Q3U-^",
+                               "extraState": {
+                                "itemCount": 4
+                               },
+                               "inputs": {
+                                "ADD0": {
+                                 "block": {
+                                  "type": "text",
+                                  "id": "h8J%ZOer5j2}#92Hbg37",
+                                  "fields": {
+                                   "TEXT": "a"
+                                  }
+                                 }
+                                },
+                                "ADD1": {
+                                 "block": {
+                                  "type": "text",
+                                  "id": "*S~3g4ebRcoKF]Ipg)7n",
+                                  "fields": {
+                                   "TEXT": "b"
+                                  }
+                                 }
+                                },
+                                "ADD2": {
+                                 "block": {
+                                  "type": "text",
+                                  "id": "d~oz~Z~0w67/KosWdUS%",
+                                  "fields": {
+                                   "TEXT": "c"
+                                  }
+                                 }
+                                },
+                                "ADD3": {
+                                 "block": {
+                                  "type": "text",
+                                  "id": "[Vw|AY~.K-Pp;*1WxUvy",
+                                  "fields": {
+                                   "TEXT": "d"
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            },
+                            "next": {
+                             "block": {
+                              "type": "text_print",
+                              "id": ",zwy0Mu!pB.U)Ep/~#cQ",
+                              "inputs": {
+                               "TEXT": {
+                                "block": {
+                                 "type": "lists_getIndex",
+                                 "id": "JbV#C@a+lnt.a6X?HyZw",
+                                 "fields": {
+                                  "MODE": "GET_REMOVE",
+                                  "WHERE": "FIRST"
+                                 },
+                                 "inputs": {
+                                  "VALUE": {
+                                   "block": {
+                                    "type": "variables_get",
+                                    "id": "PRD!S|_?Sf6YjPui7=,8",
+                                    "fields": {
+                                     "VAR": {
+                                      "id": "id_l"
+                                     }
+                                    }
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              },
+                              "next": {
+                               "block": {
+                                "type": "text_print",
+                                "id": "7q=#|8ENdyf}p,RL#n2Y",
+                                "inputs": {
+                                 "TEXT": {
+                                  "block": {
+                                   "type": "variables_get",
+                                   "id": "b3?AYr=O.X{;F0Ae0CM$",
+                                   "fields": {
+                                    "VAR": {
+                                     "id": "id_l"
+                                    }
+                                   }
+                                  }
+                                 }
+                                },
+                                "next": {
+                                 "block": {
+                                  "type": "text_print",
+                                  "id": "gx%lDJzwHbVjMw,^(c/U",
+                                  "inputs": {
+                                   "TEXT": {
+                                    "block": {
+                                     "type": "lists_getIndex",
+                                     "id": "2(kFtyb0kn_X?_;i;:B7",
+                                     "fields": {
+                                      "MODE": "GET_REMOVE",
+                                      "WHERE": "LAST"
+                                     },
+                                     "inputs": {
+                                      "VALUE": {
+                                       "block": {
+                                        "type": "variables_get",
+                                        "id": "2TXSld)Z7%Mr!Vlo0h-,",
+                                        "fields": {
+                                         "VAR": {
+                                          "id": "id_l"
+                                         }
+                                        }
+                                       }
+                                      }
+                                     }
+                                    }
+                                   }
+                                  },
+                                  "next": {
+                                   "block": {
+                                    "type": "text_print",
+                                    "id": "jJ7~~g!ledjHu0S+W+8a",
+                                    "inputs": {
+                                     "TEXT": {
+                                      "block": {
+                                       "type": "variables_get",
+                                       "id": "V8^P3b-2YR/p[;f1w~+Z",
+                                       "fields": {
+                                        "VAR": {
+                                         "id": "id_l"
+                                        }
+                                       }
+                                      }
+                                     }
+                                    },
+                                    "next": {
+                                     "block": {
+                                      "type": "text_print",
+                                      "id": "iuwyP~jm0PQM:u~`n|z5",
+                                      "inputs": {
+                                       "TEXT": {
+                                        "block": {
+                                         "type": "lists_getIndex",
+                                         "id": "Uu}pIh|7Af|:Z-_+nYI}",
+                                         "fields": {
+                                          "MODE": "GET_REMOVE",
+                                          "WHERE": "FROM_START"
+                                         },
+                                         "inputs": {
+                                          "VALUE": {
+                                           "block": {
+                                            "type": "variables_get",
+                                            "id": "o{(r6Kq${5!3R6Qzo#4y",
+                                            "fields": {
+                                             "VAR": {
+                                              "id": "id_l"
+                                             }
+                                            }
+                                           }
+                                          },
+                                          "AT": {
+                                           "block": {
+                                            "type": "math_number",
+                                            "id": "FEPZQN]WNBz!fWXYNtzo",
+                                            "fields": {
+                                             "NUM": 1
+                                            }
+                                           }
+                                          }
+                                         }
+                                        }
+                                       }
+                                      },
+                                      "next": {
+                                       "block": {
+                                        "type": "text_print",
+                                        "id": "O/#4`_ks9T=*Ri:@i!wP",
+                                        "inputs": {
+                                         "TEXT": {
+                                          "block": {
+                                           "type": "variables_get",
+                                           "id": "U!Y-la{hroRC$5=MDw1v",
+                                           "fields": {
+                                            "VAR": {
+                                             "id": "id_l"
+                                            }
+                                           }
+                                          }
+                                         }
+                                        },
+                                        "next": {
+                                         "block": {
+                                          "type": "variables_set",
+                                          "id": "o^nEbKfINKl@-;Z.s$^.",
+                                          "fields": {
+                                           "VAR": {
+                                            "id": "id_l"
+                                           }
+                                          },
+                                          "inputs": {
+                                           "VALUE": {
+                                            "block": {
+                                             "type": "lists_create_with",
+                                             "id": "5WJ{3ujLhKUR{1@s.J#n",
+                                             "extraState": {
+                                              "itemCount": 4
+                                             },
+                                             "inputs": {
+                                              "ADD0": {
+                                               "block": {
+                                                "type": "text",
+                                                "id": "T1#-B2;g;-HBaZ3Dp;(q",
+                                                "fields": {
+                                                 "TEXT": "a"
+                                                }
+                                               }
+                                              },
+                                              "ADD1": {
+                                               "block": {
+                                                "type": "text",
+                                                "id": "{JGVw(GqQpZ_z!ezg/hj",
+                                                "fields": {
+                                                 "TEXT": "b"
+                                                }
+                                               }
+                                              },
+                                              "ADD2": {
+                                               "block": {
+                                                "type": "text",
+                                                "id": "FJDa!#9SI~A9FTZ{}s%7",
+                                                "fields": {
+                                                 "TEXT": "c"
+                                                }
+                                               }
+                                              },
+                                              "ADD3": {
+                                               "block": {
+                                                "type": "text",
+                                                "id": "ccu[vp:|OBDUsPSf~{Lt",
+                                                "fields": {
+                                                 "TEXT": "d"
+                                                }
+                                               }
+                                              }
+                                             }
+                                            }
+                                           }
+                                          },
+                                          "next": {
+                                           "block": {
+                                            "type": "lists_getIndex",
+                                            "id": "mMgRg{9OET1AP4hJVn;.",
+                                            "extraState": {
+                                             "isStatement": true
+                                            },
+                                            "fields": {
+                                             "MODE": "REMOVE",
+                                             "WHERE": "FROM_END"
+                                            },
+                                            "inputs": {
+                                             "VALUE": {
+                                              "block": {
+                                               "type": "variables_get",
+                                               "id": "y]$_5CF}qJaSr{xH[Bq]",
+                                               "fields": {
+                                                "VAR": {
+                                                 "id": "id_l"
+                                                }
+                                               }
+                                              }
+                                             },
+                                             "AT": {
+                                              "block": {
+                                               "type": "math_number",
+                                               "id": "(#{gzMZ)`^4TwW.e^?Zs",
+                                               "fields": {
+                                                "NUM": 2
+                                               }
+                                              }
+                                             }
+                                            },
+                                            "next": {
+                                             "block": {
+                                              "type": "text_print",
+                                              "id": "S#6_]?Sgk$^aA`ZlQcfc",
+                                              "inputs": {
+                                               "TEXT": {
+                                                "block": {
+                                                 "type": "variables_get",
+                                                 "id": "dn0.0uzf2.//+@D9#Gml",
+                                                 "fields": {
+                                                  "VAR": {
+                                                   "id": "id_l"
+                                                  }
+                                                 }
+                                                }
+                                               }
+                                              },
+                                              "next": {
+                                               "block": {
+                                                "type": "lists_getIndex",
+                                                "id": "XI@fdxSGfD8n#aHV~r9x",
+                                                "extraState": {
+                                                 "isStatement": true
+                                                },
+                                                "fields": {
+                                                 "MODE": "REMOVE",
+                                                 "WHERE": "FIRST"
+                                                },
+                                                "inputs": {
+                                                 "VALUE": {
+                                                  "block": {
+                                                   "type": "variables_get",
+                                                   "id": "FxgdE(ecBm]0c/(*mG!?",
+                                                   "fields": {
+                                                    "VAR": {
+                                                     "id": "id_l"
+                                                    }
+                                                   }
+                                                  }
+                                                 }
+                                                },
+                                                "next": {
+                                                 "block": {
+                                                  "type": "text_print",
+                                                  "id": "O9g#%a[($Xy+e=pyV,;!",
+                                                  "inputs": {
+                                                   "TEXT": {
+                                                    "block": {
+                                                     "type": "variables_get",
+                                                     "id": "V-yHa{EC.bQB$b`b{?@b",
+                                                     "fields": {
+                                                      "VAR": {
+                                                       "id": "id_l"
+                                                      }
+                                                     }
+                                                    }
+                                                   }
+                                                  },
+                                                  "next": {
+                                                   "block": {
+                                                    "type": "variables_set",
+                                                    "id": "WZ*aSPy~=-`QPt$6?b`[",
+                                                    "fields": {
+                                                     "VAR": {
+                                                      "id": "id_l"
+                                                     }
+                                                    },
+                                                    "inputs": {
+                                                     "VALUE": {
+                                                      "block": {
+                                                       "type": "lists_create_with",
+                                                       "id": "Y/*}JteL3[a}KCr,pmij",
+                                                       "extraState": {
+                                                        "itemCount": 4
+                                                       },
+                                                       "inputs": {
+                                                        "ADD0": {
+                                                         "block": {
+                                                          "type": "text",
+                                                          "id": "0QRy`dC%?i+JvXb0?4Au",
+                                                          "fields": {
+                                                           "TEXT": "a"
+                                                          }
+                                                         }
+                                                        },
+                                                        "ADD1": {
+                                                         "block": {
+                                                          "type": "text",
+                                                          "id": "pge,]Wbbz[Z@%gT=3aLf",
+                                                          "fields": {
+                                                           "TEXT": "b"
+                                                          }
+                                                         }
+                                                        },
+                                                        "ADD2": {
+                                                         "block": {
+                                                          "type": "text",
+                                                          "id": "Y16e0A-7.2;g}g|?5}@/",
+                                                          "fields": {
+                                                           "TEXT": "c"
+                                                          }
+                                                         }
+                                                        },
+                                                        "ADD3": {
+                                                         "block": {
+                                                          "type": "text",
+                                                          "id": "Evvy!!9Y^HVA28:Qx?Dn",
+                                                          "fields": {
+                                                           "TEXT": "d"
+                                                          }
+                                                         }
+                                                        }
+                                                       }
+                                                      }
+                                                     }
+                                                    },
+                                                    "next": {
+                                                     "block": {
+                                                      "type": "lists_setIndex",
+                                                      "id": "ChgAEa:JU~9C6A~8$t2:",
+                                                      "fields": {
+                                                       "MODE": "SET",
+                                                       "WHERE": "FIRST"
+                                                      },
+                                                      "inputs": {
+                                                       "LIST": {
+                                                        "block": {
+                                                         "type": "variables_get",
+                                                         "id": "YM^c?TcH,B((?Zn(Q5-=",
+                                                         "fields": {
+                                                          "VAR": {
+                                                           "id": "id_l"
+                                                          }
+                                                         }
+                                                        }
+                                                       },
+                                                       "TO": {
+                                                        "block": {
+                                                         "type": "text",
+                                                         "id": "A!|!D:H=$:f}ZRAL1NVg",
+                                                         "fields": {
+                                                          "TEXT": "A"
+                                                         }
+                                                        }
+                                                       }
+                                                      },
+                                                      "next": {
+                                                       "block": {
+                                                        "type": "text_print",
+                                                        "id": "3TJ-n8+Hv9$C8`C3BR[5",
+                                                        "inputs": {
+                                                         "TEXT": {
+                                                          "block": {
+                                                           "type": "variables_get",
+                                                           "id": "PyiJ`?[Jaf2h^,9b?!pl",
+                                                           "fields": {
+                                                            "VAR": {
+                                                             "id": "id_l"
+                                                            }
+                                                           }
+                                                          }
+                                                         }
+                                                        },
+                                                        "next": {
+                                                         "block": {
+                                                          "type": "lists_setIndex",
+                                                          "id": "nM-Mr{Fr*ci%hmX[ma-|",
+                                                          "fields": {
+                                                           "MODE": "SET",
+                                                           "WHERE": "LAST"
+                                                          },
+                                                          "inputs": {
+                                                           "LIST": {
+                                                            "block": {
+                                                             "type": "variables_get",
+                                                             "id": "BeKS=mg`5?`u4aHWrB_)",
+                                                             "fields": {
+                                                              "VAR": {
+                                                               "id": "id_l"
+                                                              }
+                                                             }
+                                                            }
+                                                           },
+                                                           "TO": {
+                                                            "block": {
+                                                             "type": "text",
+                                                             "id": "J/m7gaj!?Qy,(%09jsmC",
+                                                             "fields": {
+                                                              "TEXT": "D"
+                                                             }
+                                                            }
+                                                           }
+                                                          },
+                                                          "next": {
+                                                           "block": {
+                                                            "type": "text_print",
+                                                            "id": "}JV`9Oc3%sgYGXX{B(`_",
+                                                            "inputs": {
+                                                             "TEXT": {
+                                                              "block": {
+                                                               "type": "variables_get",
+                                                               "id": "9_01+ye)mz6?OYD*rF%?",
+                                                               "fields": {
+                                                                "VAR": {
+                                                                 "id": "id_l"
+                                                                }
+                                                               }
+                                                              }
+                                                             }
+                                                            },
+                                                            "next": {
+                                                             "block": {
+                                                              "type": "lists_setIndex",
+                                                              "id": ";B-?f/#KY,Enj|GCCA|7",
+                                                              "fields": {
+                                                               "MODE": "SET",
+                                                               "WHERE": "FROM_START"
+                                                              },
+                                                              "inputs": {
+                                                               "LIST": {
+                                                                "block": {
+                                                                 "type": "variables_get",
+                                                                 "id": "Xb.#JhI4x4AdBh}E61aP",
+                                                                 "fields": {
+                                                                  "VAR": {
+                                                                   "id": "id_l"
+                                                                  }
+                                                                 }
+                                                                }
+                                                               },
+                                                               "AT": {
+                                                                "block": {
+                                                                 "type": "math_number",
+                                                                 "id": "B-p~G;.}$36amBb3Zl**",
+                                                                 "fields": {
+                                                                  "NUM": 2
+                                                                 }
+                                                                }
+                                                               },
+                                                               "TO": {
+                                                                "block": {
+                                                                 "type": "text",
+                                                                 "id": "WXJ/7j^Ppmo}LmNX/,}G",
+                                                                 "fields": {
+                                                                  "TEXT": "B"
+                                                                 }
+                                                                }
+                                                               }
+                                                              },
+                                                              "next": {
+                                                               "block": {
+                                                                "type": "text_print",
+                                                                "id": "QWk!R8w`R55tpWoX/vN_",
+                                                                "inputs": {
+                                                                 "TEXT": {
+                                                                  "block": {
+                                                                   "type": "variables_get",
+                                                                   "id": "?AN9m^O%kFPS~Oi%oxE}",
+                                                                   "fields": {
+                                                                    "VAR": {
+                                                                     "id": "id_l"
+                                                                    }
+                                                                   }
+                                                                  }
+                                                                 }
+                                                                },
+                                                                "next": {
+                                                                 "block": {
+                                                                  "type": "lists_setIndex",
+                                                                  "id": "{t%,.EuvVR[Y;A:n0t%g",
+                                                                  "fields": {
+                                                                   "MODE": "SET",
+                                                                   "WHERE": "FROM_END"
+                                                                  },
+                                                                  "inputs": {
+                                                                   "LIST": {
+                                                                    "block": {
+                                                                     "type": "variables_get",
+                                                                     "id": "Z*o%{MsG-dNlFyB591pQ",
+                                                                     "fields": {
+                                                                      "VAR": {
+                                                                       "id": "id_l"
+                                                                      }
+                                                                     }
+                                                                    }
+                                                                   },
+                                                                   "AT": {
+                                                                    "block": {
+                                                                     "type": "math_number",
+                                                                     "id": "sHf5S~+S!-|oP)a?buv^",
+                                                                     "fields": {
+                                                                      "NUM": 2
+                                                                     }
+                                                                    }
+                                                                   },
+                                                                   "TO": {
+                                                                    "block": {
+                                                                     "type": "text",
+                                                                     "id": "aoH12z$Q}$@#*-LeSK,z",
+                                                                     "fields": {
+                                                                      "TEXT": "C"
+                                                                     }
+                                                                    }
+                                                                   }
+                                                                  },
+                                                                  "next": {
+                                                                   "block": {
+                                                                    "type": "text_print",
+                                                                    "id": "^L#iSHmtrUBlG@{n8E,t",
+                                                                    "inputs": {
+                                                                     "TEXT": {
+                                                                      "block": {
+                                                                       "type": "variables_get",
+                                                                       "id": "*Qzl6bEB[7?QlQGh1O7[",
+                                                                       "fields": {
+                                                                        "VAR": {
+                                                                         "id": "id_l"
+                                                                        }
+                                                                       }
+                                                                      }
+                                                                     }
+                                                                    },
+                                                                    "next": {
+                                                                     "block": {
+                                                                      "type": "lists_setIndex",
+                                                                      "id": "XEVE4itDE8z~N$6ou(n]",
+                                                                      "fields": {
+                                                                       "MODE": "INSERT",
+                                                                       "WHERE": "FIRST"
+                                                                      },
+                                                                      "inputs": {
+                                                                       "LIST": {
+                                                                        "block": {
+                                                                         "type": "variables_get",
+                                                                         "id": "z_Y(Z8z7J`VaD4f{sevb",
+                                                                         "fields": {
+                                                                          "VAR": {
+                                                                           "id": "id_l"
+                                                                          }
+                                                                         }
+                                                                        }
+                                                                       },
+                                                                       "TO": {
+                                                                        "block": {
+                                                                         "type": "text",
+                                                                         "id": ";%G3==K:,nqb7=t(Nes$",
+                                                                         "fields": {
+                                                                          "TEXT": "0"
+                                                                         }
+                                                                        }
+                                                                       }
+                                                                      },
+                                                                      "next": {
+                                                                       "block": {
+                                                                        "type": "text_print",
+                                                                        "id": "}/rABYgwZ5m,IB|3s6#V",
+                                                                        "inputs": {
+                                                                         "TEXT": {
+                                                                          "block": {
+                                                                           "type": "variables_get",
+                                                                           "id": "FO5sNJs5L.k757U$copT",
+                                                                           "fields": {
+                                                                            "VAR": {
+                                                                             "id": "id_l"
+                                                                            }
+                                                                           }
+                                                                          }
+                                                                         }
+                                                                        },
+                                                                        "next": {
+                                                                         "block": {
+                                                                          "type": "lists_setIndex",
+                                                                          "id": "jI*H9`8:u,QaiY^?OYs|",
+                                                                          "fields": {
+                                                                           "MODE": "INSERT",
+                                                                           "WHERE": "LAST"
+                                                                          },
+                                                                          "inputs": {
+                                                                           "LIST": {
+                                                                            "block": {
+                                                                             "type": "variables_get",
+                                                                             "id": "Ee8*qde~VTyXBt.S=6Vu",
+                                                                             "fields": {
+                                                                              "VAR": {
+                                                                               "id": "id_l"
+                                                                              }
+                                                                             }
+                                                                            }
+                                                                           },
+                                                                           "TO": {
+                                                                            "block": {
+                                                                             "type": "text",
+                                                                             "id": "K[1[oViwt9nBH@IuKNDe",
+                                                                             "fields": {
+                                                                              "TEXT": "9"
+                                                                             }
+                                                                            }
+                                                                           }
+                                                                          },
+                                                                          "next": {
+                                                                           "block": {
+                                                                            "type": "text_print",
+                                                                            "id": "`s/9EVMt[FdgfMzRPwBz",
+                                                                            "inputs": {
+                                                                             "TEXT": {
+                                                                              "block": {
+                                                                               "type": "variables_get",
+                                                                               "id": "w6.-GvQt|G1R4kpoxd4A",
+                                                                               "fields": {
+                                                                                "VAR": {
+                                                                                 "id": "id_l"
+                                                                                }
+                                                                               }
+                                                                              }
+                                                                             }
+                                                                            },
+                                                                            "next": {
+                                                                             "block": {
+                                                                              "type": "lists_setIndex",
+                                                                              "id": "lmctWltqy^G#F1Eubx7(",
+                                                                              "fields": {
+                                                                               "MODE": "INSERT",
+                                                                               "WHERE": "FROM_START"
+                                                                              },
+                                                                              "inputs": {
+                                                                               "LIST": {
+                                                                                "block": {
+                                                                                 "type": "variables_get",
+                                                                                 "id": "1tiSv{xI@QX[0mfe1~Ew",
+                                                                                 "fields": {
+                                                                                  "VAR": {
+                                                                                   "id": "id_l"
+                                                                                  }
+                                                                                 }
+                                                                                }
+                                                                               },
+                                                                               "AT": {
+                                                                                "block": {
+                                                                                 "type": "math_number",
+                                                                                 "id": "76i!xhT$k}?]CW.Yru?K",
+                                                                                 "fields": {
+                                                                                  "NUM": 2
+                                                                                 }
+                                                                                }
+                                                                               },
+                                                                               "TO": {
+                                                                                "block": {
+                                                                                 "type": "text",
+                                                                                 "id": ",kd`BQ75.VRU-4c_~gsF",
+                                                                                 "fields": {
+                                                                                  "TEXT": "s"
+                                                                                 }
+                                                                                }
+                                                                               }
+                                                                              },
+                                                                              "next": {
+                                                                               "block": {
+                                                                                "type": "text_print",
+                                                                                "id": "p^WH7+l7=ob-MW;/`|v]",
+                                                                                "inputs": {
+                                                                                 "TEXT": {
+                                                                                  "block": {
+                                                                                   "type": "variables_get",
+                                                                                   "id": "rOsa(jr=cQLsH9|=9gx/",
+                                                                                   "fields": {
+                                                                                    "VAR": {
+                                                                                     "id": "id_l"
+                                                                                    }
+                                                                                   }
+                                                                                  }
+                                                                                 }
+                                                                                },
+                                                                                "next": {
+                                                                                 "block": {
+                                                                                  "type": "lists_setIndex",
+                                                                                  "id": "Ip|G+aYG|OQw6TJ[OKW.",
+                                                                                  "fields": {
+                                                                                   "MODE": "INSERT",
+                                                                                   "WHERE": "FROM_END"
+                                                                                  },
+                                                                                  "inputs": {
+                                                                                   "LIST": {
+                                                                                    "block": {
+                                                                                     "type": "variables_get",
+                                                                                     "id": "7xIRbp1iS9URwc7_g}21",
+                                                                                     "fields": {
+                                                                                      "VAR": {
+                                                                                       "id": "id_l"
+                                                                                      }
+                                                                                     }
+                                                                                    }
+                                                                                   },
+                                                                                   "AT": {
+                                                                                    "block": {
+                                                                                     "type": "math_number",
+                                                                                     "id": "c_{xOH9p/W;2%zVe`J;m",
+                                                                                     "fields": {
+                                                                                      "NUM": 2
+                                                                                     }
+                                                                                    }
+                                                                                   },
+                                                                                   "TO": {
+                                                                                    "block": {
+                                                                                     "type": "text",
+                                                                                     "id": "|~WND}x)fJMSQhd?ftw=",
+                                                                                     "fields": {
+                                                                                      "TEXT": "e"
+                                                                                     }
+                                                                                    }
+                                                                                   }
+                                                                                  },
+                                                                                  "next": {
+                                                                                   "block": {
+                                                                                    "type": "text_print",
+                                                                                    "id": "4,y8$Q/^{!]D`lHU5bC=",
+                                                                                    "inputs": {
+                                                                                     "TEXT": {
+                                                                                      "block": {
+                                                                                       "type": "variables_get",
+                                                                                       "id": "fA$(*Je%`/bOetR`SFZ@",
+                                                                                       "fields": {
+                                                                                        "VAR": {
+                                                                                         "id": "id_l"
+                                                                                        }
+                                                                                       }
+                                                                                      }
+                                                                                     }
+                                                                                    }
+                                                                                   }
+                                                                                  }
+                                                                                 }
+                                                                                }
+                                                                               }
+                                                                              }
+                                                                             }
+                                                                            }
+                                                                           }
+                                                                          }
+                                                                         }
+                                                                        }
+                                                                       }
+                                                                      }
+                                                                     }
+                                                                    }
+                                                                   }
+                                                                  }
+                                                                 }
+                                                                }
+                                                               }
+                                                              }
+                                                             }
+                                                            }
+                                                           }
+                                                          }
+                                                         }
+                                                        }
+                                                       }
+                                                      }
+                                                     }
+                                                    }
+                                                   }
+                                                  }
+                                                 }
+                                                }
+                                               }
+                                              }
+                                             }
+                                            }
+                                           }
+                                          }
+                                         }
+                                        }
+                                       }
+                                      }
+                                     }
+                                    }
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  ]
+ },
+ "variables": [
+  {
+   "name": "l",
+   "id": "id_l"
+  }
+ ]
+}
