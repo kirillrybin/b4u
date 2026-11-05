@@ -39,9 +39,9 @@ namespace Blockly.UI
             return d;
         }
 
-        public static DialogView ShowConfirm(Canvas anyCanvasInHierarchy, string title, string message, Action onYes, Action onCancel = null)
+        public static DialogView ShowConfirm(Canvas anyCanvasInHierarchy, string title, string message, Action onYes, Action onCancel = null, string confirmLabel = "Delete")
         {
-            var d = Create(anyCanvasInHierarchy, title, message, false, "Delete");
+            var d = Create(anyCanvasInHierarchy, title, message, false, confirmLabel);
             d.onSubmit = _ => onYes?.Invoke(); d.onCancel = onCancel;
             return d;
         }

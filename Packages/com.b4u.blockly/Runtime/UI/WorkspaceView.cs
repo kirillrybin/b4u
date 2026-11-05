@@ -748,6 +748,7 @@ namespace Blockly.UI
         {
             if (IsDragging && UnityEngine.Input.GetKeyDown(KeyCode.Escape)) CancelDrag();   // not Blockly.Input
             if (Spawner != null) return;
+            if (TypingInInputField) return;                  // Delete, Ctrl+C... belong to the text box (a dialog's, for instance)
             UpdateZoomInput();
             if (UnityEngine.Input.GetKeyDown(KeyCode.Delete)) HandleShortcut(KeyCode.Delete, false, false);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Backspace)) HandleShortcut(KeyCode.Backspace, false, false);
@@ -763,6 +764,16 @@ namespace Blockly.UI
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Equals) || UnityEngine.Input.GetKeyDown(KeyCode.KeypadPlus)) HandleShortcut(KeyCode.Equals, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Minus) || UnityEngine.Input.GetKeyDown(KeyCode.KeypadMinus)) HandleShortcut(KeyCode.Minus, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Alpha0) || UnityEngine.Input.GetKeyDown(KeyCode.Keypad0)) HandleShortcut(KeyCode.Alpha0, true, shift);
+        }
+
+        static bool TypingInInputField
+        {
+            get
+            {
+                var es = EventSystem.current;
+                var selected = es != null ? es.currentSelectedGameObject : null;
+                return selected != null && selected.TryGetComponent<TMP_InputField>(out var input) && input.isFocused;
+            }
         }
 
         ScrollRect parentScroll;
