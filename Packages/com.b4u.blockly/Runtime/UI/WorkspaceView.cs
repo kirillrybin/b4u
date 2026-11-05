@@ -109,6 +109,9 @@ namespace Blockly.UI
             if (IsEditingField || ActiveDialog != null) return false;
             if (key == KeyCode.Delete || key == KeyCode.Backspace) return !ctrlOrCommand && DeleteSelected();
             if (!ctrlOrCommand) return false;
+            if (key == KeyCode.Equals || key == KeyCode.Plus || key == KeyCode.KeypadPlus) return ZoomBy(ZoomStep, ViewportCentreOnScreen);
+            if (key == KeyCode.Minus || key == KeyCode.KeypadMinus) return ZoomBy(1f / ZoomStep, ViewportCentreOnScreen);
+            if (key == KeyCode.Alpha0 || key == KeyCode.Keypad0) return SetZoom(1f, ViewportCentreOnScreen);
             if (key == KeyCode.C) return CopySelected();
             if (key == KeyCode.X) return CutSelected();
             if (key == KeyCode.V) return Paste();
@@ -298,6 +301,51 @@ namespace Blockly.UI
         public Block DraggedBlock => dragger?.Dragged;
         public SnapCandidate? SnapCandidate => dragger?.Candidate;
         public static readonly Color SnapColour = new Color(1f, 0.85f, 0.1f, 0.95f);
+
+        // ------------------------------------------------------------------ zoom
+        public const float MinZoom = 0.4f, MaxZoom = 2.5f, ZoomStep = 1.25f;
+
+        /// <summary>Scale of the whole workspace (1 = normal). The view's transform is scaled, so every coordinate conversion stays valid.</summary>
+        public float Zoom => transform.localScale.x;
+
+        Camera EventCamera
+        {
+            get
+            {
+                var canvas = RootCanvas;
+                return canvas == null || canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            }
+        }
+
+        /// <summary>The middle of the visible area (the parent viewport if there is one), in screen pixels; where keyboard zoom is centred.</summary>
+        public Vector2 ViewportCentreOnScreen
+        {
+            get
+            {
+                var area = transform.parent as RectTransform ?? (RectTransform)transform;
+                return RectTransformUtility.WorldToScreenPoint(EventCamera, area.TransformPoint(area.rect.center));
+            }
+        }
+
+        /// <summary>Zooms to <paramref name="zoom"/> (clamped) keeping the workspace point under <paramref name="screenPivot"/> where it is. A flyout never zooms.</summary>
+        public bool SetZoom(float zoom, Vector2 screenPivot)
+        {
+            if (Spawner != null) return false;
+            zoom = Mathf.Clamp(zoom, MinZoom, MaxZoom);
+            if (Mathf.Approximately(zoom, Zoom)) return false;
+
+            var cam = EventCamera;
+            var rt = (RectTransform)transform;
+            var anchor = ScreenToWorkspace(screenPivot, cam);
+            rt.localScale = new Vector3(zoom, zoom, 1f);
+            var after = WorkspaceToScreen(anchor, cam);
+            if (RectTransformUtility.ScreenPointToWorldPointInRectangle(rt, after, cam, out var w1)
+                && RectTransformUtility.ScreenPointToWorldPointInRectangle(rt, screenPivot, cam, out var w2))
+                rt.position += w2 - w1;                              // slide the content so the anchored point is back under the pivot
+            return true;
+        }
+
+        public bool ZoomBy(float factor, Vector2 screenPivot) => SetZoom(Zoom * factor, screenPivot);
 
         // ------------------------------------------------------------------ coordinates
         /// <summary>Screen point to workspace units (x right, y down from the workspace's top-left corner).</summary>
@@ -700,6 +748,7 @@ namespace Blockly.UI
         {
             if (IsDragging && UnityEngine.Input.GetKeyDown(KeyCode.Escape)) CancelDrag();   // not Blockly.Input
             if (Spawner != null) return;
+            UpdateZoomInput();
             if (UnityEngine.Input.GetKeyDown(KeyCode.Delete)) HandleShortcut(KeyCode.Delete, false, false);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Backspace)) HandleShortcut(KeyCode.Backspace, false, false);
             bool ctrl = UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl)
@@ -711,6 +760,37 @@ namespace Blockly.UI
             else if (UnityEngine.Input.GetKeyDown(KeyCode.V)) HandleShortcut(KeyCode.V, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Z)) HandleShortcut(KeyCode.Z, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Y)) HandleShortcut(KeyCode.Y, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.Equals) || UnityEngine.Input.GetKeyDown(KeyCode.KeypadPlus)) HandleShortcut(KeyCode.Equals, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.Minus) || UnityEngine.Input.GetKeyDown(KeyCode.KeypadMinus)) HandleShortcut(KeyCode.Minus, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.Alpha0) || UnityEngine.Input.GetKeyDown(KeyCode.Keypad0)) HandleShortcut(KeyCode.Alpha0, true, shift);
+        }
+
+        ScrollRect parentScroll;
+        float scrollSensitivity;
+        bool pinching;
+        float lastPinchDistance;
+
+        // Ctrl/Cmd + wheel zooms (the scroll view would also scroll with the same wheel, so it is silenced meanwhile); two fingers pinch.
+        void UpdateZoomInput()
+        {
+            if (parentScroll == null) { parentScroll = GetComponentInParent<ScrollRect>(); if (parentScroll != null) scrollSensitivity = parentScroll.scrollSensitivity; }
+            bool ctrl = UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl)
+                     || UnityEngine.Input.GetKey(KeyCode.LeftCommand) || UnityEngine.Input.GetKey(KeyCode.RightCommand);
+            if (parentScroll != null) parentScroll.scrollSensitivity = ctrl ? 0f : scrollSensitivity;
+
+            if (IsDragging || IsEditingField || ActiveDialog != null) { pinching = false; return; }
+
+            float wheel = UnityEngine.Input.mouseScrollDelta.y;
+            if (ctrl && wheel != 0f) ZoomBy(Mathf.Pow(ZoomStep, Mathf.Clamp(wheel, -3f, 3f)), UnityEngine.Input.mousePosition);
+
+            if (UnityEngine.Input.touchCount == 2)
+            {
+                var a = UnityEngine.Input.GetTouch(0); var b = UnityEngine.Input.GetTouch(1);
+                float distance = Vector2.Distance(a.position, b.position);
+                if (pinching && lastPinchDistance > 1f && distance > 1f) ZoomBy(distance / lastPinchDistance, (a.position + b.position) * 0.5f);
+                pinching = true; lastPinchDistance = distance;
+            }
+            else pinching = false;
         }
 #endif
 
