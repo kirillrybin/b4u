@@ -211,6 +211,7 @@ namespace Blockly.UI
             try
             {
                 string used = Store.Save(name, WorkspaceJson.Save(view.Workspace));
+                PlatformFiles.Flush();
                 savedName = used; label = used; dirty = false;
                 RefreshTitle();
                 Status("Saved \"" + used + "\"", false);
@@ -260,6 +261,7 @@ namespace Blockly.UI
                 try
                 {
                     if (!Store.Delete(name)) { Status("No saved program \"" + name + "\"", true); return; }
+                    PlatformFiles.Flush();
                 }
                 catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot delete: " + e.Message, true); return; }
                 if (ProgramNames.Sanitize(name) == savedName) { savedName = null; dirty = true; RefreshTitle(); }
