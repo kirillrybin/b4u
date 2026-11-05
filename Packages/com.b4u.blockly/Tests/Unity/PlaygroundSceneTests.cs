@@ -279,6 +279,8 @@ namespace Blockly.UI.Tests
             Assert.IsTrue(c.UndoButton.interactable); Assert.IsFalse(c.RedoButton.interactable);
 
             c.Next();
+            Assert.IsNotNull(c.ActiveDialog, "the program was changed: leaving it asks first");
+            c.ActiveDialog.Confirm();
             Assert.IsFalse(c.UndoButton.interactable, "another program starts with a clean history");
         }
 
