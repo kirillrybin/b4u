@@ -14,3 +14,8 @@ dev/Core.Tests/obj/
 /*.csproj
 /*.sln
 /*.slnx
+
+# Build outputs
+*.apk
+*.aab
+/.utmp/
