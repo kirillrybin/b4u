@@ -69,6 +69,8 @@ public class ApplyBlockTheme : MonoBehaviour
         t.DialogPanel = Hex("#262b50");
         t.ToolbarFont.Style = FontStyles.Bold;   // bolder toolbar, slightly larger toolbox
         t.ToolboxFont.Scale = 1.1f;
+        t.SelectionColour = Hex("#7aa2ff");
+        t.Rules.Add(new BlockStyleRule { Match = "controls_*", StrokeWidth = 3.5f });     // loops and conditions get a heavier outline
         t.ButtonCornerRadius = 10f;    // rounded buttons and panels
         t.PanelCornerRadius = 14f;
         return t;
