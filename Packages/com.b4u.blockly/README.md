@@ -77,13 +77,17 @@ File > Export and Import move a program as a plain `.json` (or legacy `.xml`) fi
 
 | Platform | Status |
 |---|---|
-| WebGL | Built and run in headless Chrome and on a phone browser (Samsung Galaxy A13) |
-| Android | Built (IL2CPP, ARMv7 + ARM64) and run on a Samsung Galaxy A13; a 32-bit-only phone needs ARMv7 |
+| WebGL | Built and run in headless Chrome (desktop and an emulated phone) and on a phone browser (Samsung Galaxy A13) |
+| Android | Built (IL2CPP, ARMv7 + ARM64) and run on a Samsung Galaxy A13, layout included; a 32-bit-only phone needs ARMv7 |
 | macOS | Built and run |
 | Windows | Built (Mono); not run |
-| iOS | Xcode project generated; not built or run yet |
+| iOS | Built for Xcode's simulator (arm64) and started in an iPhone simulator, layout checked on a screenshot; touch input, a real device and code signing not tried |
 
-Command-line builds: `Unity -batchmode -executeMethod Blockly.EditorTools.BuildTool.BuildFromCommandLine -buildTarget WebGL -buildOut <dir>` (targets: WebGL, Android, iOS, Windows, macOS).
+Command-line builds: `Unity -batchmode -executeMethod Blockly.EditorTools.BuildTool.BuildFromCommandLine -buildTarget WebGL -buildOut <dir>` (targets: WebGL, Android, iOS, Windows, macOS). For the iOS simulator add `-iosSimulator` to `-buildTarget iOS`, then build the generated Xcode project with `xcodebuild -sdk iphonesimulator ARCHS=arm64`.
+
+### Phones
+
+`PlaygroundLayout` fits the Playground to the screen: the content stays inside the safe area (notch, rounded corners), phones get a UI scale from the screen density so buttons are big enough for a finger, the toolbar wraps onto more rows when it does not fit on one, and the console and flyout shrink on small screens. A desktop window keeps the original layout.
 
 ## Known limits
 

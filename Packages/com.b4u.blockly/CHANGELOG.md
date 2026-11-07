@@ -11,4 +11,5 @@ First version.
 - Playground scene and controller with a File menu to save, open, delete, copy and paste programs; saved programs persist on WebGL.
 - Backup of unsaved work, offered again at the next start; File > Export / Import of program files; File > Paste and Copy use the browser clipboard on WebGL.
 - `IBlockPackage` and `StandardBlockSet.AddPackage` for custom blocks, with a sample.
-- `BuildTool` for command-line player builds (WebGL, Android, iOS, Windows, macOS).
+- `BuildTool` for command-line player builds (WebGL, Android, iOS, iOS simulator, Windows, macOS).
+- The Playground fits phone screens: safe area, density-based scale, toolbar wrapping onto several rows (`PlaygroundLayout`).
