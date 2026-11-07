@@ -51,6 +51,54 @@ namespace Blockly.Tests
             }
         }
 
+        static BlockGeometry Roomy() => new BlockGeometry
+        {
+            RowMinHeight = 40, PadLeft = 14, PadRight = 14, ItemGap = 8, FieldHeight = 28, FieldPadX = 9, LabelHeight = 22,
+            SlotPadY = 6, BottomBarHeight = 18, StatementGap = 12, StatementMinHeight = 36,
+        };
+
+        [Test]
+        public void MoreSpacingMakesBlocksBiggerAndKeepsEverythingInsideThem()
+        {
+            var classic = Layout("text");
+            BlockGeometry.Current = Roomy();
+            var roomy = Layout("text");
+            Assert.AreEqual(classic.Boxes.Count, roomy.Boxes.Count);
+            for (int i = 0; i < classic.Boxes.Count; i++)
+            {
+                Assert.Greater(roomy.Boxes[i].H, classic.Boxes[i].H - 0.01f, "taller rows");
+                Assert.GreaterOrEqual(roomy.Boxes[i].H, 40f, "a row is at least RowMinHeight");
+            }
+            foreach (var box in roomy.Boxes)
+                foreach (var f in box.Fields)
+                {
+                    Assert.GreaterOrEqual(f.X, box.X + 14 - 0.01f, box.Block.Type + " left padding");
+                    Assert.LessOrEqual(f.Y + f.H, box.Y + box.H + 0.01f, box.Block.Type);
+                    Assert.GreaterOrEqual(f.Y, box.Y - 0.01f, box.Block.Type);
+                }
+        }
+
+        [TestCaseSource(nameof(Programs))]
+        public void RoomyOutlinesStillTriangulateAndStayConnected(string name)
+        {
+            BlockGeometry.Current = Roomy();
+            var layout = Layout(name);
+            foreach (var box in layout.Boxes)
+            {
+                var tris = Geometry.Triangulate(box.Outline);
+                Assert.AreEqual(Math.Abs(Geometry.SignedArea(box.Outline)), Geometry.TrianglesArea(box.Outline, tris), 0.5f, box.Block.Type);
+                if (box.Block.Parent != null && !box.IsShadow)
+                    Assert.IsTrue(layout.ByBlock.ContainsKey(box.Block.Parent));
+                // a connected child's connection sits exactly on its parent's
+                foreach (var kv in box.Connections)
+                    if (kv.Key.Target != null && layout.ByBlock.TryGetValue(kv.Key.Target.Owner, out var other) && other.Connections.TryGetValue(kv.Key.Target, out var at))
+                    {
+                        Assert.AreEqual(kv.Value.X, at.X, 0.01f, name);
+                        Assert.AreEqual(kv.Value.Y, at.Y, 0.01f, name);
+                    }
+            }
+        }
+
         [Test]
         public void ARoundedRectangleLosesTheCornersButKeepsTheEdges()
         {

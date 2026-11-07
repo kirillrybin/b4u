@@ -21,6 +21,9 @@ namespace Blockly.UI
                 Blockly.Layout.BlockGeometry.Current = new Blockly.Layout.BlockGeometry
                 {
                     CornerRadius = t.CornerRadius, RoundNotches = t.RoundNotches, RoundTabs = t.RoundTabs,
+                    RowMinHeight = t.RowMinHeight, PadLeft = t.PaddingX, PadRight = t.PaddingX, ItemGap = t.ItemGap,
+                    FieldHeight = t.FieldHeight, FieldPadX = t.FieldPaddingX, LabelHeight = t.LabelHeight,
+                    SlotPadY = t.SlotPaddingY, BottomBarHeight = t.BottomBarHeight, StatementGap = t.StatementGap,
                 };
                 ThemeChanged?.Invoke();
             }

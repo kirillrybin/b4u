@@ -54,6 +54,8 @@ namespace Blockly.Layout
         readonly Workspace workspace;
         readonly ITextMeasurer text;
 
+        static BlockGeometry G => BlockGeometry.Current;
+
         public BlockLayouter(Workspace workspace, ITextMeasurer text) { this.workspace = workspace; this.text = text; }
 
         // ------------------------------------------------------------------ measured tree
@@ -172,8 +174,8 @@ namespace Blockly.Layout
                     var cm = child != null ? Measure(child, childShadow) : null;
                     if (inline)
                     {
-                        float w = Metrics.TabWidth + Math.Max(cm?.TotalW ?? 0, Metrics.SlotMinWidth);
-                        float h = Math.Max(cm?.H ?? 0, Metrics.SlotMinHeight);
+                        float w = Metrics.TabWidth + Math.Max(cm?.TotalW ?? 0, G.SlotMinWidth);
+                        float h = Math.Max(cm?.H ?? 0, G.SlotMinHeight);
                         cur.Items.Add(new Item { Slot = input, SlotChild = cm, W = w, H = h });
                     }
                     else
@@ -195,24 +197,24 @@ namespace Blockly.Layout
             float stmtLabel = 0;
             foreach (var r in m.Rows)
                 if (r.Statement != null) stmtLabel = Math.Max(stmtLabel, ItemsWidth(r));
-            m.StmtX = Metrics.PadLeft + stmtLabel + (stmtLabel > 0 ? Metrics.ItemGap : 0);
+            m.StmtX = G.PadLeft + stmtLabel + (stmtLabel > 0 ? G.ItemGap : 0);
 
-            float width = Metrics.PadLeft + Metrics.PadRight;
+            float width = G.PadLeft + G.PadRight;
             foreach (var r in m.Rows)
             {
                 float itemsH = 0;
-                foreach (var it in r.Items) itemsH = Math.Max(itemsH, it.Slot != null ? it.H + 2 * Metrics.SlotPadY : it.H);
+                foreach (var it in r.Items) itemsH = Math.Max(itemsH, it.Slot != null ? it.H + 2 * G.SlotPadY : it.H);
                 if (r.Statement != null)
                 {
-                    r.InnerH = Math.Max(Metrics.StatementMinHeight, ChainHeight(r.Chain));
+                    r.InnerH = Math.Max(G.StatementMinHeight, ChainHeight(r.Chain));
                     r.H = r.InnerH;
-                    r.W = m.StmtX + Metrics.StatementMinWidth;
+                    r.W = m.StmtX + G.StatementMinWidth;
                 }
                 else
                 {
                     float extH = r.ExternalChild != null ? r.ExternalChild.H : 0;
-                    r.H = Math.Max(Metrics.RowMinHeight, Math.Max(itemsH, extH));
-                    r.W = Metrics.PadLeft + ItemsWidth(r) + Metrics.PadRight + (r.External != null ? Metrics.TabWidth : 0);
+                    r.H = Math.Max(G.RowMinHeight, Math.Max(itemsH, extH));
+                    r.W = G.PadLeft + ItemsWidth(r) + G.PadRight + (r.External != null ? Metrics.TabWidth : 0);
                 }
                 width = Math.Max(width, r.W);
             }
@@ -221,14 +223,14 @@ namespace Blockly.Layout
             foreach (var r in m.Rows)
                 if (r.ExternalChild != null) m.TotalW = Math.Max(m.TotalW, m.W + r.ExternalChild.TotalW);
 
-            m.TopPad = m.Rows[0].Statement != null ? Metrics.TopBarHeight : 0;
-            m.BottomPad = m.Rows[m.Rows.Count - 1].Statement != null ? Metrics.BottomBarHeight : 0;
+            m.TopPad = m.Rows[0].Statement != null ? G.TopBarHeight : 0;
+            m.BottomPad = m.Rows[m.Rows.Count - 1].Statement != null ? G.BottomBarHeight : 0;
             float y = m.TopPad;
             for (int i = 0; i < m.Rows.Count; i++)
             {
                 var r = m.Rows[i];
                 // Two C-arms in a row (if / else) need a bar between them, otherwise the outline pinches to a point.
-                if (i > 0 && r.Statement != null && m.Rows[i - 1].Statement != null) y += Metrics.StatementGap;
+                if (i > 0 && r.Statement != null && m.Rows[i - 1].Statement != null) y += G.StatementGap;
                 r.Y = y; y += r.H;
             }
             m.H = y + m.BottomPad;
@@ -252,15 +254,15 @@ namespace Blockly.Layout
                 }
                 if (f.Spec.FieldType == "field_checkbox")
                 {
-                    it.W = Metrics.CheckboxWidth; it.H = Metrics.FieldHeight;
+                    it.W = Metrics.CheckboxWidth; it.H = G.FieldHeight;
                 }
                 else if (label)
                 {
-                    it.W = text.Width(it.Text); it.H = Metrics.LabelHeight;
+                    it.W = text.Width(it.Text); it.H = G.LabelHeight;
                 }
                 else
                 {
-                    it.W = text.Width(it.Text) + (it.Dropdown ? 14f : 0f) + 2 * Metrics.FieldPadX; it.H = Metrics.FieldHeight;
+                    it.W = text.Width(it.Text) + (it.Dropdown ? 14f : 0f) + 2 * G.FieldPadX; it.H = G.FieldHeight;
                 }
                 if (label && it.Text.Length == 0) continue;
                 row.Items.Add(it);
@@ -296,7 +298,7 @@ namespace Blockly.Layout
         static float ItemsWidth(Row r)
         {
             float w = 0;
-            for (int i = 0; i < r.Items.Count; i++) w += r.Items[i].W + (i > 0 ? Metrics.ItemGap : 0);
+            for (int i = 0; i < r.Items.Count; i++) w += r.Items[i].W + (i > 0 ? G.ItemGap : 0);
             return w;
         }
 
@@ -325,7 +327,7 @@ namespace Blockly.Layout
             foreach (var r in m.Rows)
             {
                 float rowY = y + r.Y;
-                float cx = x + Metrics.PadLeft;
+                float cx = x + G.PadLeft;
                 if (r.External?.Connection != null) box.Connections[r.External.Connection] = new Vec2(x + m.W, rowY + Metrics.TabTop);
                 if (r.Statement?.Connection != null) box.Connections[r.Statement.Connection] = new Vec2(x + m.StmtX, rowY);
                 foreach (var it in r.Items)
@@ -343,14 +345,14 @@ namespace Blockly.Layout
                     }
                     else
                     {
-                        float fy = rowY + (r.Statement != null ? (Metrics.RowMinHeight - it.H) / 2f : (r.H - it.H) / 2f);
+                        float fy = rowY + (r.Statement != null ? (G.RowMinHeight - it.H) / 2f : (r.H - it.H) / 2f);
                         box.Fields.Add(new FieldBox
                         {
                             Field = it.Field, Text = it.Text, X = cx, Y = fy, W = it.W, H = it.H,
                             Editable = it.Editable, IsDropdown = it.Dropdown, ImageSrc = it.ImageSrc,
                         });
                     }
-                    cx += it.W + Metrics.ItemGap;
+                    cx += it.W + G.ItemGap;
                 }
                 if (r.ExternalChild != null)
                 {

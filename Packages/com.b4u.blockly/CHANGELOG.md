@@ -16,3 +16,4 @@ First version.
 - `BlockTheme` and `BlockStyle.Theme` to restyle blocks (outline, fields, font), with a sample.
 - `field_image` in blocks and an `icon` for toolbox categories, resolved through `BlockImages`.
 - Rounded block shapes in `BlockTheme` (corner radius, round notches and tabs, round field plates) through `BlockGeometry`.
+- Block spacing (row height, padding, gaps, field and label heights) in `BlockTheme`.

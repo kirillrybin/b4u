@@ -16,6 +16,14 @@ namespace Blockly.Layout
         /// <summary>Output tabs and the matching holes as a smooth bump instead of a puzzle knob.</summary>
         public bool RoundTabs;
 
+        // Spacing and sizes. The defaults are Blockly's (Metrics); notch and tab extents stay fixed.
+        public float RowMinHeight = Metrics.RowMinHeight;
+        public float PadLeft = Metrics.PadLeft, PadRight = Metrics.PadRight, ItemGap = Metrics.ItemGap;
+        public float FieldPadX = Metrics.FieldPadX, FieldHeight = Metrics.FieldHeight, LabelHeight = Metrics.LabelHeight;
+        public float SlotMinWidth = Metrics.SlotMinWidth, SlotMinHeight = Metrics.SlotMinHeight, SlotPadY = Metrics.SlotPadY;
+        public float StatementMinHeight = Metrics.StatementMinHeight, StatementMinWidth = Metrics.StatementMinWidth;
+        public float TopBarHeight = Metrics.TopBarHeight, BottomBarHeight = Metrics.BottomBarHeight, StatementGap = Metrics.StatementGap;
+
         public static readonly BlockGeometry Classic = new BlockGeometry();
 
         static BlockGeometry current = Classic;

@@ -35,6 +35,12 @@ public class ApplyBlockTheme : MonoBehaviour
         t.RoundNotches = true;
         t.RoundTabs = true;
         t.FieldCornerRadius = 4f;
+        t.RowMinHeight = 34f;          // roomier blocks
+        t.PaddingX = 12f;
+        t.ItemGap = 6f;
+        t.FieldHeight = 24f;
+        t.FieldPaddingX = 8f;
+        t.LabelHeight = 20f;
         return t;
     }
 }

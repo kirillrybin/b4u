@@ -46,6 +46,19 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void SpacingReachesTheLayout()
+        {
+            var t = BlockTheme.CreateDefault();
+            t.PaddingX = 20; t.RowMinHeight = 50;
+            BlockStyle.Theme = t;
+            Assert.AreEqual(20f, Blockly.Layout.BlockGeometry.Current.PadLeft);
+            Assert.AreEqual(20f, Blockly.Layout.BlockGeometry.Current.PadRight);
+            Assert.AreEqual(50f, Blockly.Layout.BlockGeometry.Current.RowMinHeight);
+            BlockStyle.Theme = null;
+            Assert.AreEqual(8f, Blockly.Layout.BlockGeometry.Current.PadLeft);
+        }
+
+        [Test]
         public void ChangingTheThemeRebuildsTheViewWithTheNewFont()
         {
             root = new GameObject("Canvas", typeof(Canvas));

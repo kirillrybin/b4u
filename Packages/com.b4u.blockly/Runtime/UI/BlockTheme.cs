@@ -32,6 +32,19 @@ namespace Blockly.UI
         [Tooltip("Radius of the corners of field plates (0 = square).")]
         public float FieldCornerRadius = 0f;
 
+        [Header("Spacing (workspace units; the defaults are Blockly's)")]
+        public float RowMinHeight = 24f;
+        [Tooltip("Space between a block's edge and its first / last item.")]
+        public float PaddingX = 8f;
+        public float ItemGap = 4f;
+        public float FieldHeight = 20f;
+        public float FieldPaddingX = 5f;
+        public float LabelHeight = 16f;
+        [Tooltip("Space above and below an inline value hole.")]
+        public float SlotPaddingY = 4f;
+        public float BottomBarHeight = 12f;
+        public float StatementGap = 8f;
+
         [Header("Fields")]
         public Color InputFill = Color.white;
         public Color InputText = new Color(0.08f, 0.08f, 0.08f, 1f);
