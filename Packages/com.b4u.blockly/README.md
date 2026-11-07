@@ -85,7 +85,7 @@ Command-line builds: `Unity -batchmode -executeMethod Blockly.EditorTools.BuildT
 
 ## Known limits
 
-- Pasting a program from the clipboard may not work in WebGL: browsers restrict reading the clipboard without a user gesture.
+- In WebGL, File > Paste reads the browser's clipboard, which the browser may ask the user to allow (and refuses outside a click); then the status line says the clipboard cannot be read. The Ctrl+V of copied blocks inside the editor does not use the system clipboard.
 - Only the blocks in `Runtime/Resources/Blockly` are provided; there is no code generator for other languages.
 
 ## Tests

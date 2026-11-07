@@ -275,16 +275,15 @@ namespace Blockly.UI
         public void CopyJson()
         {
             if (view == null || view.Workspace == null) return;
-            GUIUtility.systemCopyBuffer = WorkspaceJson.Save(view.Workspace);
+            PlatformClipboard.Write(WorkspaceJson.Save(view.Workspace));
             Status("Copied the program as JSON", false);
         }
 
         /// <summary>Replaces the program with Blockly JSON or XML from the clipboard.</summary>
-        public void PasteProgram() => Guard(() =>
+        public void PasteProgram() => PlatformClipboard.Read(text =>
         {
-            string text = GUIUtility.systemCopyBuffer;
-            if (string.IsNullOrWhiteSpace(text)) { Status("The clipboard is empty", true); return; }
-            LoadText(text, "pasted program", null, dirtyNow: true);
+            if (string.IsNullOrWhiteSpace(text)) { Status("The clipboard is empty or cannot be read", true); return; }
+            Guard(() => LoadText(text, "pasted program", null, dirtyNow: true));
         });
 
         // ---- the File menu
