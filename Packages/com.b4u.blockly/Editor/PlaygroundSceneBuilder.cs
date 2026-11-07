@@ -46,8 +46,12 @@ namespace Blockly.EditorTools
             scaler.matchWidthOrHeight = 0.5f;
             var canvas = (RectTransform)canvasGo.transform;
 
+            // the whole UI sits inside the safe area (notch, rounded corners); the edge around it is the same dark colour as the toolbar
+            Stretch("Background", canvas, 0, 0, 0, 0).gameObject.AddComponent<Image>().color = Dark;
+            var ui = Stretch("SafeArea", canvas, 0, 0, 0, 0);
+
             // --- workspace (pan with drag / wheel) ---
-            var scroll = Stretch("Scroll", canvas, ToolboxWidth, ConsoleHeight, 0, ToolbarHeight);
+            var scroll = Stretch("Scroll", ui, ToolboxWidth, ConsoleHeight, 0, ToolbarHeight);
             scroll.gameObject.AddComponent<Image>().color = new Color(0.97f, 0.97f, 0.97f);
             var scrollRect = scroll.gameObject.AddComponent<ScrollRect>();
             var viewport = Stretch("Viewport", scroll, 0, 0, 0, 0);
@@ -60,13 +64,13 @@ namespace Blockly.EditorTools
             scrollRect.scrollSensitivity = 30f;
 
             // --- toolbox strip (also the trash) and its flyout ---
-            var toolboxRt = Stretch("Toolbox", canvas, 0, ConsoleHeight, 0, ToolbarHeight);
+            var toolboxRt = Stretch("Toolbox", ui, 0, ConsoleHeight, 0, ToolbarHeight);
             toolboxRt.anchorMin = new Vector2(0, 0); toolboxRt.anchorMax = new Vector2(0, 1);
             toolboxRt.offsetMin = new Vector2(0, ConsoleHeight); toolboxRt.offsetMax = new Vector2(ToolboxWidth, -ToolbarHeight);
             toolboxRt.gameObject.AddComponent<Image>().color = new Color(0.22f, 0.22f, 0.26f);
             var categories = Stretch("Categories", toolboxRt, 6, 6, 6, 6);
 
-            var flyoutPanel = Stretch("Flyout", canvas, 0, ConsoleHeight, 0, ToolbarHeight);
+            var flyoutPanel = Stretch("Flyout", ui, 0, ConsoleHeight, 0, ToolbarHeight);
             flyoutPanel.anchorMin = new Vector2(0, 0); flyoutPanel.anchorMax = new Vector2(0, 1);
             flyoutPanel.offsetMin = new Vector2(ToolboxWidth, ConsoleHeight); flyoutPanel.offsetMax = new Vector2(ToolboxWidth + FlyoutWidth, -ToolbarHeight);
             flyoutPanel.gameObject.AddComponent<Image>().color = new Color(0.9f, 0.9f, 0.93f, 1f);
@@ -86,7 +90,7 @@ namespace Blockly.EditorTools
             flyoutPanel.gameObject.SetActive(false);
 
             // --- console ---
-            var panel = Anchored("Console", canvas, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, ConsoleHeight));
+            var panel = Anchored("Console", ui, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, ConsoleHeight));
             panel.gameObject.AddComponent<Image>().color = new Color(0.1f, 0.1f, 0.12f);
             var status = Label("Status", panel, 14, 18, TextAlignmentOptions.MidlineLeft);
             status.rectTransform.anchorMin = new Vector2(0, 1); status.rectTransform.anchorMax = new Vector2(1, 1);
@@ -115,7 +119,7 @@ namespace Blockly.EditorTools
             consoleView.Configure(outText, status, outRect);
 
             // --- toolbar ---
-            var bar = Anchored("Toolbar", canvas, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, ToolbarHeight));
+            var bar = Anchored("Toolbar", ui, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, ToolbarHeight));
             bar.gameObject.AddComponent<Image>().color = Dark;
             var prev = Button("Prev", bar, "<", 8, 56);
             var next = Button("Next", bar, ">", 70, 56);
@@ -136,6 +140,12 @@ namespace Blockly.EditorTools
             Wire(stop, controller.Stop); Wire(slow, controller.ToggleSlow);
             Wire(undo, controller.Undo); Wire(redo, controller.Redo);
             Wire(file, controller.ShowFileMenu);
+
+            var layout = canvasGo.AddComponent<PlaygroundLayout>();
+            layout.Configure(scaler, ui, bar,
+                new[] { (RectTransform)prev.transform, (RectTransform)next.transform, (RectTransform)run.transform, (RectTransform)step.transform, (RectTransform)stop.transform,
+                        (RectTransform)slow.transform, (RectTransform)undo.transform, (RectTransform)redo.transform, (RectTransform)file.transform },
+                title.rectTransform, scroll, toolboxRt, flyoutPanel, panel);
 
             Directory.CreateDirectory(Root);
             string scenePath = Root + "/Playground.unity";
