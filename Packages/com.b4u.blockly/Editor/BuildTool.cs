@@ -36,7 +36,14 @@ namespace Blockly.EditorTools
             // (IL2CPP there needs an extra module).
             if (target == BuildTarget.Android || target == BuildTarget.iOS || target == BuildTarget.WebGL)
                 PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(group), ScriptingImplementation.IL2CPP);
-            if (target == BuildTarget.Android) PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+            // Both ABIs: some current phones (e.g. the Galaxy A13) still run a 32-bit-only Android userland and cannot install an ARM64-only APK.
+            if (target == BuildTarget.Android) PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARMv7 | AndroidArchitecture.ARM64;
+            if (target == BuildTarget.WebGL)
+            {
+                // A phone's browser tab has little memory and has to compile the whole wasm module: build for size, strip what is unused.
+                UnityEditor.WebGL.UserBuildSettings.codeOptimization = UnityEditor.WebGL.WasmCodeOptimization.DiskSize;
+                PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
+            }
 
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
             if (scenes.Length == 0) { Debug.LogError("[Build] No enabled scenes in Build Settings."); return false; }
