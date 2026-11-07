@@ -48,7 +48,9 @@ namespace Blockly.UI
             Paint(toolbar, BlockStyle.ToolbarBackground);
             Paint(console, BlockStyle.ConsoleBackground);
             Paint(flyout, BlockStyle.FlyoutBackground);
-            if (buttons != null) foreach (var b in buttons) Paint(b, BlockStyle.ButtonColour);
+            UiShape.Round(console, BlockStyle.PanelCornerRadius);
+            UiShape.Round(flyout, BlockStyle.PanelCornerRadius);
+            if (buttons != null) foreach (var b in buttons) { Paint(b, BlockStyle.ButtonColour); UiShape.Round(b, BlockStyle.ButtonCornerRadius); }
             if (toolbarTexts != null) foreach (var t in toolbarTexts) if (t != null) t.color = BlockStyle.ButtonText;
             if (consoleText != null) consoleText.color = BlockStyle.ConsoleText;
         }

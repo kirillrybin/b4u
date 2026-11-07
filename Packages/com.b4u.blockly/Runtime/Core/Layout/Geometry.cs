@@ -51,7 +51,7 @@ namespace Blockly.Layout
         /// Replaces every right-angle corner (both neighbours at 90 degrees) by a circular arc of at most
         /// <paramref name="radius"/>, never more than half of the shorter adjacent edge. Other vertices stay as they are.
         /// </summary>
-        public static List<Vec2> RoundCorners(IList<Vec2> p, float radius, int steps = 4)
+        public static List<Vec2> RoundCorners(IList<Vec2> p, float radius, int steps = 8)
         {
             var r = new List<Vec2>(p.Count * 2);
             int n = p.Count;

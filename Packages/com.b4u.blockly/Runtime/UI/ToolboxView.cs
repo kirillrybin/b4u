@@ -51,8 +51,14 @@ namespace Blockly.UI
         {
             if (this == null) { BlockStyle.ThemeChanged -= OnThemeChanged; return; }
             var bg = GetComponent<Image>();
-            if (bg != null) bg.color = DefaultBackground;
-            if (flyoutPanel != null) { var fp = flyoutPanel.GetComponent<Image>(); if (fp != null) fp.color = BlockStyle.FlyoutBackground; }
+            if (bg != null) { bg.color = DefaultBackground; UiShape.Round(bg, BlockStyle.PanelCornerRadius); }
+            if (flyoutPanel != null)
+            {
+                var fp = flyoutPanel.GetComponent<Image>();
+                if (fp != null) { fp.color = BlockStyle.FlyoutBackground; UiShape.Round(fp, BlockStyle.PanelCornerRadius); }
+            }
+            if (categoryList != null) foreach (var b in categoryList.GetComponentsInChildren<Button>(true)) UiShape.Round(b.targetGraphic, BlockStyle.ButtonCornerRadius);
+            if (createVariableButton != null) UiShape.Round(createVariableButton.targetGraphic, BlockStyle.ButtonCornerRadius);
             if (categoryList != null)
                 foreach (var t in categoryList.GetComponentsInChildren<TMP_Text>(true)) t.color = ButtonText;
             if (createVariableButton != null && createVariableButton.targetGraphic != null) createVariableButton.targetGraphic.color = BlockStyle.VariableButton;
@@ -74,6 +80,7 @@ namespace Blockly.UI
             }
             BuildButtons();
             CloseFlyout();
+            OnThemeChanged();                      // a theme that was set before this scene loaded
         }
 
         static Color DefaultBackground => BlockStyle.ToolboxBackground;
@@ -112,6 +119,7 @@ namespace Blockly.UI
 
                 var img = go.GetComponent<Image>();
                 img.color = Shade(BlockStyle.Parse(cat.ColourHex), BlockStyle.CategoryShade);
+                UiShape.Round(img, BlockStyle.ButtonCornerRadius);
                 go.GetComponent<Button>().targetGraphic = img;
                 go.GetComponent<Button>().onClick.AddListener(() => ToggleCategory(index));
                 buttons.Add(img);
@@ -200,6 +208,7 @@ namespace Blockly.UI
             rt.anchoredPosition = new Vector2(8, -6); rt.sizeDelta = new Vector2(190, 32);
             var img = go.GetComponent<Image>();
             img.color = BlockStyle.VariableButton;
+            UiShape.Round(img, BlockStyle.ButtonCornerRadius);
             createVariableButton = go.GetComponent<Button>();
             createVariableButton.targetGraphic = img;
             createVariableButton.onClick.AddListener(() => main.RequestCreateVariable());

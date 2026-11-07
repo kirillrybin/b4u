@@ -272,6 +272,46 @@ namespace Blockly.UI
 
         // subscribed in SetWorkspace as well, because EditMode never calls OnEnable
         void SubscribeToTheme() { BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged; }
+        // soft edges: about one screen pixel in local units, so it depends on the canvas scale and the zoom
+        float edgeWidth;
+        float lastEdgeScale = -1f, edgeRefreshAt = -1f;
+
+        Canvas rootCanvas;
+
+        float CanvasScale()
+        {
+            if (rootCanvas == null) { var c = GetComponentInParent<Canvas>(); rootCanvas = c != null ? c.rootCanvas : null; }
+            return rootCanvas != null ? Mathf.Max(rootCanvas.scaleFactor, 0.01f) : 1f;
+        }
+
+        float PixelsToLocal(float pixels) => pixels <= 0f ? 0f : pixels / (CanvasScale() * Mathf.Max(Zoom, 0.05f));
+
+        float CurrentEdgeScale() => CanvasScale() * Zoom;
+
+        void RefreshEdgeWidth()
+        {
+            edgeWidth = PixelsToLocal(BlockStyle.EdgeSmoothing);
+            lastEdgeScale = CurrentEdgeScale();
+        }
+
+        /// <summary>Re-fits the soft edge of every shape to the current canvas scale and zoom.</summary>
+        public void RefreshEdges()
+        {
+            RefreshEdgeWidth();
+            edgeRefreshAt = -1f;
+            foreach (var g in GetComponentsInChildren<PolygonGraphic>(true)) g.EdgeWidth = edgeWidth;
+        }
+
+        void LateUpdate()
+        {
+            if (lastEdgeScale < 0f) return;
+            float scale = CurrentEdgeScale();
+            if (Mathf.Approximately(scale, lastEdgeScale)) { edgeRefreshAt = -1f; return; }
+            if (!Mathf.Approximately(scale, pendingEdgeScale)) { pendingEdgeScale = scale; edgeRefreshAt = Time.unscaledTime + 0.2f; }   // still changing
+            else if (edgeRefreshAt >= 0f && Time.unscaledTime >= edgeRefreshAt) RefreshEdges();
+        }
+        float pendingEdgeScale;
+
         void OnEnable() { SubscribeToTheme(); }
         void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; }
         void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; }
@@ -289,6 +329,7 @@ namespace Blockly.UI
             if (workspace == null) return;
             EnsureMeasurer();
             Layout = new BlockLayouter(workspace, measurer).LayoutWorkspace();
+            RefreshEdgeWidth();
             foreach (var box in Layout.Boxes) CreateBlock(box);
 
             var rt = (RectTransform)transform;
@@ -932,12 +973,14 @@ namespace Blockly.UI
             dragTarget.Init(this, box.Block);
             var body = root.gameObject.AddComponent<PolygonGraphic>();
             body.SetShape(Translate(box.Outline, box.X, box.Y), BlockStyle.Fill(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.StrokeWidth);
+            body.EdgeWidth = edgeWidth;
 
             foreach (var slot in box.Slots)
             {
                 var s = NewRect("slot " + slot.Input.Name, root, 0, 0, box.W, box.H);
                 s.gameObject.AddComponent<PolygonGraphic>().SetShape(Translate(slot.Polygon, box.X, box.Y), BlockStyle.Hole(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.FieldStrokeWidth);
                 s.GetComponent<PolygonGraphic>().raycastTarget = false;
+                s.GetComponent<PolygonGraphic>().EdgeWidth = edgeWidth;
             }
 
             foreach (var f in box.Fields) CreateField(root, box, f, baseColour);
@@ -966,6 +1009,7 @@ namespace Blockly.UI
                 bg.SetShape(rect, dropdown ? BlockStyle.DropdownFill(baseColour, box.IsShadow) : BlockStyle.InputFill,
                             BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.FieldStrokeWidth);
                 bool clickable = Spawner == null && (FieldEditing.IsEditableText(f.Field) || FieldEditing.IsDropdown(f.Field));
+                bg.EdgeWidth = edgeWidth;
                 bg.raycastTarget = clickable;                              // other fields pass clicks through to the block
                 if (clickable) rt.gameObject.AddComponent<FieldClickTarget>().Init(this, box.Block, f.Field);
             }

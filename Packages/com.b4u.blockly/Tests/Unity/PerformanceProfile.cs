@@ -76,6 +76,18 @@ namespace Blockly.UI.Tests
             int graphics = go.GetComponentsInChildren<Graphic>(true).Length;
             int objects = go.GetComponentsInChildren<Transform>(true).Length;
 
+            // meshes: hard edges against a one-pixel soft edge (vertices and the time the canvas needs to build them)
+            foreach (var px in new[] { 0f, 1f })
+            {
+                var theme = BlockTheme.CreateDefault(); theme.EdgeSmoothing = px; BlockStyle.Theme = theme;
+                view.Rebuild();
+                double ms = Time(() => { foreach (var g in go.GetComponentsInChildren<PolygonGraphic>()) g.Rebuild(CanvasUpdate.PreRender); });
+                int vertices = go.GetComponentsInChildren<PolygonGraphic>().Sum(g => g.canvasRenderer.GetMesh() != null ? g.canvasRenderer.GetMesh().vertexCount : 0);
+                Report("meshes, edge " + px + " px (" + vertices + " vertices)", ms);
+            }
+            BlockStyle.Theme = null;
+            view.Rebuild();
+
             var target = ws.TopBlocks[0].NextBlock.NextBlock.NextBlock;       // a statement inside the first stack
             Report("select (outline)", Time(() => { view.Select(target); view.Select(ws.TopBlocks[1]); }, 10) / 2);
 

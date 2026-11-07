@@ -60,6 +60,7 @@ namespace Blockly.UI
             Panel = (RectTransform)panel.transform;
             Panel.SetParent(rootRt, false);
             panel.GetComponent<Image>().color = Back;
+            UiShape.Round(panel.GetComponent<Image>(), BlockStyle.PanelCornerRadius);
 
             // measure with the real font so labels never wrap or clip
             var probe = MakeLabel(Panel, "probe", "");

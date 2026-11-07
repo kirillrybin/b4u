@@ -31,39 +31,87 @@ namespace Blockly.UI
             SetVerticesDirty();
         }
 
+        /// <summary>
+        /// Width of the soft edge in local units (about one screen pixel; 0 = hard edges). The owner keeps it matched to the
+        /// canvas scale and zoom with <see cref="WorkspaceView"/>.
+        /// </summary>
+        public float EdgeWidth
+        {
+            get => edgeWidth;
+            set { if (Mathf.Abs(value - edgeWidth) > 1e-4f) { edgeWidth = value; SetVerticesDirty(); } }
+        }
+        float edgeWidth;
+
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();
             if (simplified == null || triangles == null || triangles.Length == 0) return;
 
+            int n = simplified.Count;
+            float f = Mathf.Clamp(edgeWidth, 0f, 6f);
+            float h = strokeWidth * 0.5f;
+            bool stroked = strokeWidth > 0f && strokeColor.a > 0f;
+
             Color32 fill = color;
             foreach (var p in simplified) vh.AddVert(new Vector3(p.X, -p.Y, 0), fill, Vector2.zero);
             for (int i = 0; i < triangles.Length; i += 3) vh.AddTriangle(triangles[i], triangles[i + 1], triangles[i + 2]);
 
-            if (strokeWidth <= 0f || strokeColor.a <= 0f) return;
-            Color32 sc = strokeColor;
-            float h = strokeWidth * 0.5f;
-            int n = simplified.Count;
+            if (n < 3 || (f <= 0f && !stroked)) return;
+
+            // outward miter offsets, one per vertex, for a distance of 1
+            var miter = new Vector2[n];
+            float sign = Geometry.SignedArea(simplified) >= 0 ? 1f : -1f;
+            var normals = new Vector2[n];                                        // outward normal of the edge i -> i + 1
             for (int i = 0; i < n; i++)
             {
                 var a = simplified[i]; var b = simplified[(i + 1) % n];
-                float dx = b.X - a.X, dy = b.Y - a.Y;
-                float len = Mathf.Sqrt(dx * dx + dy * dy);
-                if (len < 1e-4f) continue;
-                float nx = -dy / len * h, ny = dx / len * h;
-                int v = vh.currentVertCount;
-                vh.AddVert(new Vector3(a.X + nx, -(a.Y + ny), 0), sc, Vector2.zero);
-                vh.AddVert(new Vector3(b.X + nx, -(b.Y + ny), 0), sc, Vector2.zero);
-                vh.AddVert(new Vector3(b.X - nx, -(b.Y - ny), 0), sc, Vector2.zero);
-                vh.AddVert(new Vector3(a.X - nx, -(a.Y - ny), 0), sc, Vector2.zero);
-                vh.AddTriangle(v, v + 1, v + 2); vh.AddTriangle(v, v + 2, v + 3);
-                // square at the corner so consecutive segments join without a notch
-                int c = vh.currentVertCount;
-                vh.AddVert(new Vector3(a.X - h, -(a.Y - h), 0), sc, Vector2.zero);
-                vh.AddVert(new Vector3(a.X + h, -(a.Y - h), 0), sc, Vector2.zero);
-                vh.AddVert(new Vector3(a.X + h, -(a.Y + h), 0), sc, Vector2.zero);
-                vh.AddVert(new Vector3(a.X - h, -(a.Y + h), 0), sc, Vector2.zero);
-                vh.AddTriangle(c, c + 1, c + 2); vh.AddTriangle(c, c + 2, c + 3);
+                float dx = b.X - a.X, dy = b.Y - a.Y, len = Mathf.Sqrt(dx * dx + dy * dy);
+                normals[i] = len < 1e-5f ? Vector2.zero : new Vector2(dy, -dx) * (sign / len);
+            }
+            for (int i = 0; i < n; i++)
+            {
+                var np = normals[(i + n - 1) % n]; var nn = normals[i];
+                float k = 1f + Vector2.Dot(np, nn);
+                miter[i] = (np + nn) / Mathf.Max(k, 0.5f);                       // capped so sharp spikes do not shoot out
+            }
+
+            // a soft edge on a fill that has no stroke covering it
+            if (f > 0f && !(stroked && h >= f))
+                AddRing(vh, simplified, miter, n, new[] { 0f, f }, new[] { fill, new Color32(fill.r, fill.g, fill.b, 0) });
+
+            if (!stroked) return;
+            Color32 sc = strokeColor;
+            if (f <= 0f)
+            {
+                AddRing(vh, simplified, miter, n, new[] { -h, h }, new[] { sc, sc });      // a hard-edged band
+                return;
+            }
+            // a band of the stroke's width with both edges feathered across about one pixel, centred on the edges
+            float core = Mathf.Max(h - f * 0.5f, 0f);
+            byte alpha = (byte)(sc.a * Mathf.Min(1f, 2f * h / f));
+            var solid = new Color32(sc.r, sc.g, sc.b, alpha);
+            var clear = new Color32(sc.r, sc.g, sc.b, 0);
+            AddRing(vh, simplified, miter, n, new[] { -core - f, -core, core, core + f }, new[] { clear, solid, solid, clear });
+        }
+
+        /// <summary>
+        /// Strips of quads along the outline: one vertex per offset at each outline vertex (positive offsets point outwards),
+        /// each with its own colour, joined to the next offset.
+        /// </summary>
+        static void AddRing(VertexHelper vh, List<Vec2> p, Vector2[] miter, int n, float[] offsets, Color32[] colours)
+        {
+            int k = offsets.Length, baseIndex = vh.currentVertCount;
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < k; j++)
+                    vh.AddVert(new Vector3(p[i].X + miter[i].x * offsets[j], -(p[i].Y + miter[i].y * offsets[j]), 0), colours[j], Vector2.zero);
+            for (int i = 0; i < n; i++)
+            {
+                int a = baseIndex + i * k, b = baseIndex + ((i + 1) % n) * k;
+                for (int j = 0; j < k - 1; j++)
+                {
+                    vh.AddTriangle(a + j, a + j + 1, b + j + 1);
+                    vh.AddTriangle(a + j, b + j + 1, b + j);
+                }
             }
         }
 

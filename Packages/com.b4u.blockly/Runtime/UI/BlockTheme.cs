@@ -45,6 +45,10 @@ namespace Blockly.UI
         public float BottomBarHeight = 12f;
         public float StatementGap = 8f;
 
+        [Header("Quality")]
+        [Tooltip("Soft edges on block shapes, in screen pixels (0 = hard edges). About 1 removes the stair-steps without MSAA.")]
+        public float EdgeSmoothing = 1f;
+
         [Header("Fields")]
         public Color InputFill = Color.white;
         public Color InputText = new Color(0.08f, 0.08f, 0.08f, 1f);
@@ -71,6 +75,10 @@ namespace Blockly.UI
         public Color MenuBackground = new Color(0.17f, 0.17f, 0.2f, 0.98f);
         public Color MenuHover = new Color(0.32f, 0.36f, 0.5f, 1f);
         public Color MenuSelected = new Color(0.25f, 0.45f, 0.75f, 1f);
+        [Tooltip("Corner radius of toolbar, category, dialog and variable buttons (0 = square).")]
+        public float ButtonCornerRadius = 0f;
+        [Tooltip("Corner radius of the toolbox, flyout, console, menus and dialogs (0 = square).")]
+        public float PanelCornerRadius = 0f;
         public Color DialogPanel = new Color(0.2f, 0.2f, 0.24f, 1f);
 
         [Header("Text")]

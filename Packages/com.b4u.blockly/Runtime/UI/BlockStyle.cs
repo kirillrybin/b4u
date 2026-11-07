@@ -46,7 +46,10 @@ namespace Blockly.UI
         public static Color MenuBackground => Theme.MenuBackground;
         public static Color MenuHover => Theme.MenuHover;
         public static Color MenuSelected => Theme.MenuSelected;
+        public static float ButtonCornerRadius => Theme.ButtonCornerRadius;
+        public static float PanelCornerRadius => Theme.PanelCornerRadius;
         public static Color DialogPanel => Theme.DialogPanel;
+        public static float EdgeSmoothing => Theme.EdgeSmoothing;
         public static float FieldCornerRadius => Theme.FieldCornerRadius;
         public static float StrokeWidth => Theme.StrokeWidth;
         public static float FieldStrokeWidth => Theme.FieldStrokeWidth;

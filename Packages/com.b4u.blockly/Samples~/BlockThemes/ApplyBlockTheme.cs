@@ -58,6 +58,8 @@ public class ApplyBlockTheme : MonoBehaviour
         t.MenuHover = Hex("#3d4377");
         t.MenuSelected = Hex("#4a63c8");
         t.DialogPanel = Hex("#262b50");
+        t.ButtonCornerRadius = 10f;    // rounded buttons and panels
+        t.PanelCornerRadius = 14f;
         return t;
     }
 }

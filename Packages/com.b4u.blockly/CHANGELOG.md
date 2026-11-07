@@ -18,3 +18,5 @@ First version.
 - Rounded block shapes in `BlockTheme` (corner radius, round notches and tabs, round field plates) through `BlockGeometry`.
 - Block spacing (row height, padding, gaps, field and label heights) in `BlockTheme`.
 - Interface colours in `BlockTheme`, applied to the Playground by `PlaygroundSkin`, the toolbox, menus and dialogs.
+- Rounded buttons and panels (`ButtonCornerRadius`, `PanelCornerRadius`) through a generated nine-sliced sprite (`UiShape`).
+- Soft block edges (`EdgeSmoothing`) built into the mesh, matched to the canvas scale and zoom; smoother joins on rounded outlines.

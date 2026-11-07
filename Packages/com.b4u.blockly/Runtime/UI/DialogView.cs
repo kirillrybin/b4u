@@ -108,6 +108,7 @@ namespace Blockly.UI
             panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
             panel.sizeDelta = new Vector2(440, height);
             panel.GetComponent<Image>().color = BlockStyle.DialogPanel;
+            UiShape.Round(panel.GetComponent<Image>(), BlockStyle.PanelCornerRadius);
 
             dialog.Title = Label(panel, "Title", title, 18, TextAlignmentOptions.TopLeft, Color.white, new Vector2(20, -14), new Vector2(-40, 28));
             if (prompt)
@@ -161,6 +162,7 @@ namespace Blockly.UI
             rt.anchorMin = rt.anchorMax = new Vector2(1, 0); rt.pivot = new Vector2(1, 0);
             rt.anchoredPosition = fromBottomRight; rt.sizeDelta = size;
             var img = rt.GetComponent<Image>(); img.color = colour;
+            UiShape.Round(img, BlockStyle.ButtonCornerRadius);
             rt.GetComponent<Button>().targetGraphic = img;
             var l = Label(rt, "Text", text, 16, TextAlignmentOptions.Center, Color.white, Vector2.zero, Vector2.zero);
             Stretch(l.rectTransform);
