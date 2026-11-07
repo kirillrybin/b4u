@@ -75,7 +75,7 @@ namespace Blockly.UI
         public event Action<Block> SelectionChanged;
         RectTransform selectionObject;
         PolygonGraphic selectionShape;
-        public static readonly Color SelectionColour = new Color(0.15f, 0.45f, 0.95f, 1f);
+        public static Color SelectionColour => BlockStyle.SelectionColour;
 
         public void SetWorkspace(Workspace ws)
         {
@@ -262,7 +262,7 @@ namespace Blockly.UI
             selectionObject.gameObject.SetActive(true);
             selectionObject.anchoredPosition = new Vector2(box.X, -box.Y);
             selectionObject.sizeDelta = new Vector2(box.W, box.H);
-            selectionShape.SetShape(Translate(box.Outline, box.X, box.Y), Color.clear, SelectionColour, 3f);
+            selectionShape.SetShape(Translate(box.Outline, box.X, box.Y), Color.clear, SelectionColour, BlockStyle.SelectionWidth);
             selectionObject.SetAsLastSibling();
             if (highlightObject != null && highlightObject.gameObject.activeSelf) highlightObject.SetAsLastSibling();   // "executing" stays on top
         }
@@ -355,7 +355,7 @@ namespace Blockly.UI
         public bool IsDragging => dragger != null && dragger.IsDragging;
         public Block DraggedBlock => dragger?.Dragged;
         public SnapCandidate? SnapCandidate => dragger?.Candidate;
-        public static readonly Color SnapColour = new Color(1f, 0.85f, 0.1f, 0.95f);
+        public static Color SnapColour => BlockStyle.SnapColour;
 
         // ------------------------------------------------------------------ zoom
         public const float MinZoom = 0.4f, MaxZoom = 2.5f, ZoomStep = 1.25f;
@@ -783,7 +783,7 @@ namespace Blockly.UI
                     float a = i * Mathf.PI * 2f / circle.Length;
                     circle[i] = new Vec2(Mathf.Cos(a) * 7f, Mathf.Sin(a) * 7f);
                 }
-                snapShape.SetShape(circle, SnapColour, new Color(0.45f, 0.35f, 0f, 1f), 1.5f);
+                snapShape.SetShape(circle, SnapColour, BlockStyle.SnapOutline, 1.5f);
             }
             snapMarker.gameObject.SetActive(true);
             snapMarker.anchoredPosition = new Vector2(cand.Value.TargetPoint.X, -cand.Value.TargetPoint.Y);
@@ -862,7 +862,7 @@ namespace Blockly.UI
         }
 #endif
 
-        public static readonly Color HighlightColour = new Color(1f, 0.85f, 0.1f, 1f);
+        public static Color HighlightColour => BlockStyle.HighlightColour;
 
         /// <summary>Outlines a block (drawn above everything, including its children). Pass null to clear.</summary>
         public void SetHighlight(Block block)
@@ -885,7 +885,7 @@ namespace Blockly.UI
             highlightObject.gameObject.SetActive(true);
             highlightObject.anchoredPosition = new Vector2(box.X, -box.Y);
             highlightObject.sizeDelta = new Vector2(box.W, box.H);
-            highlightShape.SetShape(Translate(box.Outline, box.X, box.Y), Color.clear, HighlightColour, 3.5f);
+            highlightShape.SetShape(Translate(box.Outline, box.X, box.Y), Color.clear, HighlightColour, BlockStyle.HighlightWidth);
             highlightObject.SetAsLastSibling();
         }
 
@@ -967,28 +967,28 @@ namespace Blockly.UI
 
         void CreateBlock(BlockBox box)
         {
-            var baseColour = BlockStyle.Parse(box.Block.Definition.ColourHex);
+            var look = BlockStyle.Look(box.Block, box.IsShadow);
             var root = NewRect(box.Block.Type, transform, box.X, box.Y, box.W, box.H);
             blockObjects[box.Block] = root;
 
             var dragTarget = root.gameObject.AddComponent<BlockDragTarget>();
             dragTarget.Init(this, box.Block);
             var body = root.gameObject.AddComponent<PolygonGraphic>();
-            body.SetShape(Translate(box.Outline, box.X, box.Y), BlockStyle.Fill(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.StrokeWidth);
+            body.SetShape(Translate(box.Outline, box.X, box.Y), look.Fill, look.Stroke, look.StrokeWidth);
             body.EdgeWidth = edgeWidth;
 
             foreach (var slot in box.Slots)
             {
                 var s = NewRect("slot " + slot.Input.Name, root, 0, 0, box.W, box.H);
-                s.gameObject.AddComponent<PolygonGraphic>().SetShape(Translate(slot.Polygon, box.X, box.Y), BlockStyle.Hole(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.FieldStrokeWidth);
+                s.gameObject.AddComponent<PolygonGraphic>().SetShape(Translate(slot.Polygon, box.X, box.Y), look.Hole, look.Stroke, BlockStyle.FieldStrokeWidth);
                 s.GetComponent<PolygonGraphic>().raycastTarget = false;
                 s.GetComponent<PolygonGraphic>().EdgeWidth = edgeWidth;
             }
 
-            foreach (var f in box.Fields) CreateField(root, box, f, baseColour);
+            foreach (var f in box.Fields) CreateField(root, box, f, look);
         }
 
-        void CreateField(RectTransform parent, BlockBox box, FieldBox f, Color baseColour)
+        void CreateField(RectTransform parent, BlockBox box, FieldBox f, BlockStyle.BlockLook look)
         {
             float lx = f.X - box.X, ly = f.Y - box.Y;
             var rt = NewRect(f.Field.Name ?? "label", parent, lx, ly, f.W, f.H);
@@ -1008,8 +1008,7 @@ namespace Blockly.UI
                 var rect = new[] { new Vec2(0, 0), new Vec2(f.W, 0), new Vec2(f.W, f.H), new Vec2(0, f.H) };
                 if (BlockStyle.FieldCornerRadius > 0) rect = Geometry.RoundCorners(rect, BlockStyle.FieldCornerRadius).ToArray();
                 var bg = rt.gameObject.AddComponent<PolygonGraphic>();
-                bg.SetShape(rect, dropdown ? BlockStyle.DropdownFill(baseColour, box.IsShadow) : BlockStyle.InputFill,
-                            BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.FieldStrokeWidth);
+                bg.SetShape(rect, dropdown ? look.DropdownFill : look.InputFill, look.Stroke, BlockStyle.FieldStrokeWidth);
                 bool clickable = Spawner == null && (FieldEditing.IsEditableText(f.Field) || FieldEditing.IsDropdown(f.Field));
                 bg.EdgeWidth = edgeWidth;
                 bg.raycastTarget = clickable;                              // other fields pass clicks through to the block
@@ -1030,7 +1029,7 @@ namespace Blockly.UI
             var t = textRt.gameObject.AddComponent<TextMeshProUGUI>();
             Configure(t);
             t.text = f.Text;
-            t.color = f.Editable && !f.IsDropdown ? BlockStyle.InputText : BlockStyle.LabelText;
+            t.color = f.Editable && !f.IsDropdown ? look.InputText : look.LabelText;
             t.alignment = f.Editable ? TextAlignmentOptions.Center : TextAlignmentOptions.MidlineLeft;
             if (f.IsDropdown) t.rectTransform.sizeDelta = new Vector2(f.W - 12f, f.H);
         }

@@ -99,6 +99,50 @@ namespace Blockly.Tests
             }
         }
 
+        static BlockGeometry BigConnections(bool round = false) => new BlockGeometry
+        {
+            TabWidth = 12, TabHeight = 18, TabTop = 3, NotchX = 10, NotchWidth = 20, NotchDepth = 6, RoundNotches = round, RoundTabs = round,
+        };
+
+        [TestCaseSource(nameof(Programs))]
+        public void BiggerNotchesAndTabsStillTriangulateAndStayConnected(string name)
+        {
+            foreach (var round in new[] { false, true })
+            {
+                BlockGeometry.Current = BigConnections(round);
+                var layout = Layout(name);
+                foreach (var box in layout.Boxes)
+                {
+                    var tris = Geometry.Triangulate(box.Outline);
+                    Assert.AreEqual(Math.Abs(Geometry.SignedArea(box.Outline)), Geometry.TrianglesArea(box.Outline, tris), 0.5f, name + " " + box.Block.Type);
+                    foreach (var kv in box.Connections)
+                        if (kv.Key.Target != null && layout.ByBlock.TryGetValue(kv.Key.Target.Owner, out var other) && other.Connections.TryGetValue(kv.Key.Target, out var at))
+                        {
+                            Assert.AreEqual(kv.Value.X, at.X, 0.01f, name);
+                            Assert.AreEqual(kv.Value.Y, at.Y, 0.01f, name);
+                        }
+                }
+            }
+        }
+
+        [Test]
+        public void ATallerWiderTabWidensBlocksThatHaveInlineInputsOrAnOutput()
+        {
+            var classic = Layout("arithmetic");
+            BlockGeometry.Current = BigConnections();
+            var big = Layout("arithmetic");
+            Assert.Greater(big.Boxes.Sum(b => b.W), classic.Boxes.Sum(b => b.W), "a wider tab takes room in the rows");
+        }
+
+        [Test]
+        public void TheOutputConnectionSitsAtTheTabTop()
+        {
+            BlockGeometry.Current = BigConnections();
+            var layout = Layout("arithmetic");
+            var box = layout.Boxes.First(b => b.Block.Output != null);
+            Assert.AreEqual(3f, box.Connections[box.Block.Output].Y - box.Y, 1e-3f, "TabTop");
+        }
+
         [Test]
         public void ARoundedRectangleLosesTheCornersButKeepsTheEdges()
         {
