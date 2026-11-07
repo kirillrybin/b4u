@@ -649,6 +649,7 @@ namespace Blockly.UI
             var text = textGo.GetComponent<TextMeshProUGUI>();
             text.fontSize = BlockStyle.FontSize;
             if (BlockStyle.Theme.Font != null) text.font = BlockStyle.Theme.Font;
+            text.fontStyle = BlockStyle.FontStyle;
             text.color = BlockStyle.InputText;
             text.alignment = TextAlignmentOptions.MidlineLeft;
             text.textWrappingMode = TextWrappingModes.NoWrap;
@@ -939,6 +940,7 @@ namespace Blockly.UI
         {
             t.fontSize = BlockStyle.FontSize;
             if (BlockStyle.Theme.Font != null) t.font = BlockStyle.Theme.Font;
+            t.fontStyle = BlockStyle.FontStyle;
             t.textWrappingMode = TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
             t.raycastTarget = false;

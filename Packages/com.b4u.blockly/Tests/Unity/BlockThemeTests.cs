@@ -59,6 +59,35 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void AThemeFontAppliesFontStyleAndScaledSize()
+        {
+            var go = new GameObject("t", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var text = go.GetComponent<TextMeshProUGUI>();
+            var font = TMP_Settings.defaultFontAsset;
+            new ThemeFont { Font = font, Scale = 1.5f, Style = FontStyles.Bold | FontStyles.Italic }.Apply(text, 16f);
+            Assert.AreEqual(24f, text.fontSize);
+            Assert.AreEqual(FontStyles.Bold | FontStyles.Italic, text.fontStyle);
+            Assert.AreSame(font, text.font);
+            new ThemeFont { Scale = 0f }.Apply(text, 10f);
+            Assert.AreEqual(10f, text.fontSize, "a zero scale means unchanged");
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TheBlockFontStyleReachesBlockText()
+        {
+            root = new GameObject("Canvas", typeof(Canvas));
+            var go = new GameObject("View", typeof(RectTransform), typeof(WorkspaceView));
+            go.transform.SetParent(root.transform, false);
+            var view = go.GetComponent<WorkspaceView>();
+            view.SetWorkspace(StandardBlockSet.Load("{\"blocks\":{\"languageVersion\":0,\"blocks\":[{\"type\":\"text_print\",\"x\":10,\"y\":10}]}}"));
+            var t = BlockTheme.CreateDefault();
+            t.FontStyle = FontStyles.Bold;
+            BlockStyle.Theme = t;
+            Assert.IsTrue(go.GetComponentsInChildren<TextMeshProUGUI>().Where(x => x.text == "print").All(x => x.fontStyle == FontStyles.Bold));
+        }
+
+        [Test]
         public void ChangingTheThemeRebuildsTheViewWithTheNewFont()
         {
             root = new GameObject("Canvas", typeof(Canvas));

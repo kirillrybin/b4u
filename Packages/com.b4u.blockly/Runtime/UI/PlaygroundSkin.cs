@@ -17,6 +17,8 @@ namespace Blockly.UI
         [SerializeField] TMP_Text[] toolbarTexts;
         [SerializeField] TMP_Text consoleText;
 
+        readonly Dictionary<TMP_Text, float> baseSizes = new Dictionary<TMP_Text, float>();
+
         public void Configure(Image app, Image workspaceBackground, Image toolbarBackground, Image consoleBackground, Image flyoutBackground,
                               IEnumerable<Image> buttonImages, IEnumerable<TMP_Text> texts, TMP_Text consoleOutput)
         {
@@ -51,7 +53,14 @@ namespace Blockly.UI
             UiShape.Round(console, BlockStyle.PanelCornerRadius);
             UiShape.Round(flyout, BlockStyle.PanelCornerRadius);
             if (buttons != null) foreach (var b in buttons) { Paint(b, BlockStyle.ButtonColour); UiShape.Round(b, BlockStyle.ButtonCornerRadius); }
-            if (toolbarTexts != null) foreach (var t in toolbarTexts) if (t != null) t.color = BlockStyle.ButtonText;
+            if (toolbarTexts != null)
+                foreach (var t in toolbarTexts)
+                {
+                    if (t == null) continue;
+                    t.color = BlockStyle.ButtonText;
+                    if (!baseSizes.TryGetValue(t, out var size)) baseSizes[t] = size = t.fontSize;     // the size the scene was built with
+                    BlockStyle.ToolbarFont.Apply(t, size);
+                }
             if (consoleText != null) consoleText.color = BlockStyle.ConsoleText;
         }
 

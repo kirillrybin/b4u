@@ -24,6 +24,34 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void InterfaceFontsScaleToolbarToolboxAndConsoleAndComeBack()
+        {
+            var skin = Object.FindFirstObjectByType<PlaygroundSkin>();
+            skin.Apply();
+            var toolbox = Object.FindFirstObjectByType<ToolboxView>();
+            toolbox.SetDefinition(StandardBlockSet.LoadToolbox());
+            var console = Object.FindFirstObjectByType<ConsoleView>();
+            console.ApplyTheme();
+            var run = GameObject.Find("Run").GetComponentInChildren<TMP_Text>();
+            var category = toolbox.GetComponentsInChildren<TMP_Text>(true).First();
+            var output = console.GetComponentsInChildren<TMP_Text>(true).First(x => x.name == "Text");
+            float runSize = run.fontSize, categorySize = category.fontSize, outputSize = output.fontSize;
+
+            var t = BlockTheme.CreateDefault();
+            t.ToolbarFont.Scale = 1.5f; t.ToolboxFont.Scale = 2f; t.ToolboxFont.Style = FontStyles.Bold; t.ConsoleFont.Scale = 0.5f;
+            BlockStyle.Theme = t;
+            Assert.AreEqual(runSize * 1.5f, run.fontSize, 1e-3f);
+            Assert.AreEqual(categorySize * 2f, category.fontSize, 1e-3f);
+            Assert.AreEqual(FontStyles.Bold, category.fontStyle);
+            Assert.AreEqual(outputSize * 0.5f, output.fontSize, 1e-3f);
+
+            BlockStyle.Theme = null;
+            Assert.AreEqual(runSize, run.fontSize, 1e-3f);
+            Assert.AreEqual(categorySize, category.fontSize, 1e-3f);
+            Assert.AreEqual(outputSize, output.fontSize, 1e-3f);
+        }
+
+        [Test]
         public void ChangingTheThemeRepaintsPanelsButtonsAndTheToolbox()
         {
             var skin = Object.FindFirstObjectByType<PlaygroundSkin>();

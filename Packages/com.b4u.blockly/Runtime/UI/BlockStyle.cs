@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace Blockly.UI
@@ -49,6 +50,12 @@ namespace Blockly.UI
         public static float ButtonCornerRadius => Theme.ButtonCornerRadius;
         public static float PanelCornerRadius => Theme.PanelCornerRadius;
         public static Color DialogPanel => Theme.DialogPanel;
+        public static FontStyles FontStyle => Theme.FontStyle;
+        public static ThemeFont ToolbarFont => Theme.ToolbarFont ?? (Theme.ToolbarFont = new ThemeFont());
+        public static ThemeFont ToolboxFont => Theme.ToolboxFont ?? (Theme.ToolboxFont = new ThemeFont());
+        public static ThemeFont ConsoleFont => Theme.ConsoleFont ?? (Theme.ConsoleFont = new ThemeFont());
+        public static ThemeFont MenuFont => Theme.MenuFont ?? (Theme.MenuFont = new ThemeFont());
+        public static ThemeFont DialogFont => Theme.DialogFont ?? (Theme.DialogFont = new ThemeFont());
         public static float EdgeSmoothing => Theme.EdgeSmoothing;
         public static float FieldCornerRadius => Theme.FieldCornerRadius;
         public static float StrokeWidth => Theme.StrokeWidth;

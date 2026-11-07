@@ -151,7 +151,7 @@ namespace Blockly.UI
             rt.anchorMin = new Vector2(0, 1); rt.anchorMax = new Vector2(1, 1); rt.pivot = new Vector2(0, 1);
             rt.anchoredPosition = offset; rt.sizeDelta = sizeDelta;
             var t = rt.GetComponent<TextMeshProUGUI>();
-            t.text = text; t.fontSize = size; t.color = colour; t.alignment = align; t.raycastTarget = false;
+            t.text = text; BlockStyle.DialogFont.Apply(t, size); t.color = colour; t.alignment = align; t.raycastTarget = false;
             t.textWrappingMode = TextWrappingModes.Normal;
             return t;
         }
@@ -181,7 +181,7 @@ namespace Blockly.UI
             var text = Child(area, "Text", typeof(TextMeshProUGUI));
             Stretch(text);
             var t = text.GetComponent<TextMeshProUGUI>();
-            t.fontSize = 17; t.color = new Color(0.08f, 0.08f, 0.08f); t.alignment = TextAlignmentOptions.MidlineLeft; t.richText = false;
+            BlockStyle.DialogFont.Apply(t, 17); t.color = new Color(0.08f, 0.08f, 0.08f); t.alignment = TextAlignmentOptions.MidlineLeft; t.richText = false;
             t.textWrappingMode = TextWrappingModes.NoWrap;
 
             var input = go.gameObject.AddComponent<TMP_InputField>();

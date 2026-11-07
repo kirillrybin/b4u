@@ -165,7 +165,7 @@ namespace Blockly.UI
             var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             go.transform.SetParent(parent, false);
             var t = go.GetComponent<TextMeshProUGUI>();
-            t.text = text; t.fontSize = FontSize; t.color = Color.white; t.raycastTarget = false;
+            t.text = text; BlockStyle.MenuFont.Apply(t, FontSize); t.color = Color.white; t.raycastTarget = false;
             t.alignment = TextAlignmentOptions.MidlineLeft;
             t.textWrappingMode = TextWrappingModes.NoWrap;
             return t;

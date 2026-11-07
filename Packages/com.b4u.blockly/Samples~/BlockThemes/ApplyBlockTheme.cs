@@ -1,18 +1,22 @@
 using Blockly.UI;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
 /// Add this component to any object in the Playground scene and press Play.
 /// With no theme assigned it builds a light-outline "Candy" look; assign a BlockTheme asset
-/// (Assets > Create > Blockly > Block Theme) to use your own. Toggle the component to re-apply after editing the asset.
+/// (Assets > Create > Blockly > Block Theme) to use your own. Drop a TMP font asset into "font" to change every font of Candy. Toggle the component to re-apply after editing the asset.
 /// </summary>
 public class ApplyBlockTheme : MonoBehaviour
 {
     public BlockTheme theme;
 
+    [Tooltip("Optional TextMeshPro font asset for every text of the built-in Candy theme (blocks, toolbar, toolbox, console, menus, dialogs).")]
+    public TMP_FontAsset font;
+
     void OnEnable()
     {
-        BlockStyle.Theme = theme != null ? theme : Candy();
+        BlockStyle.Theme = theme != null ? theme : Candy(font);
     }
 
     void OnDisable()
@@ -22,9 +26,14 @@ public class ApplyBlockTheme : MonoBehaviour
 
     static Color Hex(string html) { ColorUtility.TryParseHtmlString(html, out var c); return c; }
 
-    static BlockTheme Candy()
+    static BlockTheme Candy(TMP_FontAsset font)
     {
         var t = BlockTheme.CreateDefault();
+        if (font != null)
+        {
+            t.Font = font;
+            t.ToolbarFont.Font = t.ToolboxFont.Font = t.ConsoleFont.Font = t.MenuFont.Font = t.DialogFont.Font = font;
+        }
         t.name = "Candy";
         t.StrokeScale = 1.35f;         // outline lighter than the fill
         t.StrokeWidth = 2.2f;
@@ -58,6 +67,8 @@ public class ApplyBlockTheme : MonoBehaviour
         t.MenuHover = Hex("#3d4377");
         t.MenuSelected = Hex("#4a63c8");
         t.DialogPanel = Hex("#262b50");
+        t.ToolbarFont.Style = FontStyles.Bold;   // bolder toolbar, slightly larger toolbox
+        t.ToolboxFont.Scale = 1.1f;
         t.ButtonCornerRadius = 10f;    // rounded buttons and panels
         t.PanelCornerRadius = 14f;
         return t;

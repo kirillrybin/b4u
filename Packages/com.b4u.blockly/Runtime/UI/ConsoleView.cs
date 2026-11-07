@@ -31,6 +31,23 @@ namespace Blockly.UI
         {
             output = outputText; status = statusText; scroll = scrollRect;
             if (output != null) output.richText = false;
+            ApplyTheme();
+        }
+
+        (float output, float status)? fontBase;
+
+        void OnEnable() { ApplyTheme(); }
+        void OnDisable() { BlockStyle.ThemeChanged -= ApplyTheme; }
+        void OnDestroy() { BlockStyle.ThemeChanged -= ApplyTheme; }
+
+        /// <summary>Applies the theme's console font, now and after every theme change (EditMode never calls OnEnable, so it subscribes here).</summary>
+        public void ApplyTheme()
+        {
+            if (this == null) { BlockStyle.ThemeChanged -= ApplyTheme; return; }
+            BlockStyle.ThemeChanged -= ApplyTheme; BlockStyle.ThemeChanged += ApplyTheme;
+            if (!fontBase.HasValue) fontBase = (output != null ? output.fontSize : 14f, status != null ? status.fontSize : 14f);
+            BlockStyle.ConsoleFont.Apply(output, fontBase.Value.output);
+            BlockStyle.ConsoleFont.Apply(status, fontBase.Value.status);
         }
 
         public void Append(string line)

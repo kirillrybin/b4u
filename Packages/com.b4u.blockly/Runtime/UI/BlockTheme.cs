@@ -1,8 +1,29 @@
+using System;
 using TMPro;
 using UnityEngine;
 
 namespace Blockly.UI
 {
+    /// <summary>A font for one part of the interface: its own font asset, a size multiplier and a style.</summary>
+    [Serializable]
+    public class ThemeFont
+    {
+        [Tooltip("Leave empty for the TextMeshPro default font.")]
+        public TMP_FontAsset Font;
+        [Tooltip("Multiplies the size the package would use (1 = unchanged).")]
+        public float Scale = 1f;
+        public FontStyles Style = FontStyles.Normal;
+
+        /// <summary>Applies font, style and <paramref name="baseSize"/> times <see cref="Scale"/> to a text.</summary>
+        public void Apply(TMP_Text text, float baseSize)
+        {
+            if (text == null) return;
+            if (Font != null) text.font = Font;
+            text.fontStyle = Style;
+            text.fontSize = baseSize * (Scale > 0f ? Scale : 1f);
+        }
+    }
+
     /// <summary>
     /// The look of blocks: how the outline, slots and fields are coloured and which font is used.
     /// Block fill colours still come from the block definitions. Assign an instance to <see cref="BlockStyle.Theme"/>.
@@ -85,6 +106,14 @@ namespace Blockly.UI
         public float FontSize = 12f;
         [Tooltip("Leave empty for the TextMeshPro default font.")]
         public TMP_FontAsset Font;
+        public FontStyles FontStyle = FontStyles.Normal;
+
+        [Header("Fonts of the interface")]
+        public ThemeFont ToolbarFont = new ThemeFont();
+        public ThemeFont ToolboxFont = new ThemeFont();
+        public ThemeFont ConsoleFont = new ThemeFont();
+        public ThemeFont MenuFont = new ThemeFont();
+        public ThemeFont DialogFont = new ThemeFont();
 
         /// <summary>The classic Blockly look.</summary>
         public static BlockTheme CreateDefault()

@@ -60,7 +60,9 @@ namespace Blockly.UI
             if (categoryList != null) foreach (var b in categoryList.GetComponentsInChildren<Button>(true)) UiShape.Round(b.targetGraphic, BlockStyle.ButtonCornerRadius);
             if (createVariableButton != null) UiShape.Round(createVariableButton.targetGraphic, BlockStyle.ButtonCornerRadius);
             if (categoryList != null)
-                foreach (var t in categoryList.GetComponentsInChildren<TMP_Text>(true)) t.color = ButtonText;
+                foreach (var t in categoryList.GetComponentsInChildren<TMP_Text>(true)) { t.color = ButtonText; BlockStyle.ToolboxFont.Apply(t, 16); }
+            if (createVariableButton != null)
+                foreach (var t in createVariableButton.GetComponentsInChildren<TMP_Text>(true)) BlockStyle.ToolboxFont.Apply(t, 15);
             if (createVariableButton != null && createVariableButton.targetGraphic != null) createVariableButton.targetGraphic.color = BlockStyle.VariableButton;
             if (definition != null) HighlightSelected();
         }
@@ -141,7 +143,7 @@ namespace Blockly.UI
                 }
                 lrt.offsetMin = new Vector2(icon != null ? 38 : 10, 0); lrt.offsetMax = new Vector2(-4, 0);
                 var t = label.GetComponent<TextMeshProUGUI>();
-                t.text = cat.Name; t.fontSize = 16; t.color = ButtonText;
+                t.text = cat.Name; BlockStyle.ToolboxFont.Apply(t, 16); t.color = ButtonText;
                 t.alignment = TextAlignmentOptions.MidlineLeft; t.raycastTarget = false;
                 t.textWrappingMode = TextWrappingModes.NoWrap;
             }
@@ -218,7 +220,7 @@ namespace Blockly.UI
             lrt.SetParent(rt, false);
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one; lrt.offsetMin = lrt.offsetMax = Vector2.zero;
             var t = label.GetComponent<TextMeshProUGUI>();
-            t.text = "Create variable..."; t.fontSize = 15; t.color = Color.white; t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
+            t.text = "Create variable..."; BlockStyle.ToolboxFont.Apply(t, 15); t.color = Color.white; t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
         }
 
         // ------------------------------------------------------------------ spawning
