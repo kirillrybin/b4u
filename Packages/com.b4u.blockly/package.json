@@ -12,6 +12,11 @@
       "displayName": "Custom blocks",
       "description": "Adds two custom blocks (a dice roll and a shout) with their interpreter handlers and a toolbox category.",
       "path": "Samples~/CustomBlocks"
+    },
+    {
+      "displayName": "Block themes",
+      "description": "A component that applies a block theme (a built-in Candy look, or your own BlockTheme asset) to the Playground.",
+      "path": "Samples~/BlockThemes"
     }
   ]
 }

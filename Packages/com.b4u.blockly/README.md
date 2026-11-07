@@ -67,6 +67,10 @@ StandardBlockSet.AddPackage(new MyBlocks());
 
 The **Custom blocks** sample (Package Manager > Blockly for Unity > Samples) is a complete example with a toolbox category.
 
+## Block appearance
+
+A `BlockTheme` asset (Assets > Create > Blockly > Block Theme) sets the outline colour and width, slot and field colours, font and font size. Assign it with `BlockStyle.Theme = theme;`; open views redraw themselves. Block fill colours come from the block definitions. The **Block themes** sample applies a ready-made look with one component.
+
 ## Saving programs
 
 `PlaygroundController` saves to `Application.persistentDataPath/programs` through `IProgramStore` (`FileProgramStore`; `MemoryProgramStore` for tests). On WebGL the files are flushed to the browser's IndexedDB so they survive a page reload. Unsaved work is backed up a moment after each edit and offered again at the next start.

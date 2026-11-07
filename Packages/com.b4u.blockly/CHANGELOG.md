@@ -13,3 +13,4 @@ First version.
 - `IBlockPackage` and `StandardBlockSet.AddPackage` for custom blocks, with a sample.
 - `BuildTool` for command-line player builds (WebGL, Android, iOS, iOS simulator, Windows, macOS).
 - The Playground fits phone screens: safe area, density-based scale, toolbar wrapping onto several rows (`PlaygroundLayout`).
+- `BlockTheme` and `BlockStyle.Theme` to restyle blocks (outline, fields, font), with a sample.

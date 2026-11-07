@@ -80,6 +80,7 @@ namespace Blockly.UI
         public void SetWorkspace(Workspace ws)
         {
             workspace = ws;
+            SubscribeToTheme();
             SelectedBlock = null;
             History = ws != null && Spawner == null ? new UndoHistory(ws) : null;
             if (History != null) History.Changed += () => HistoryChanged?.Invoke();
@@ -268,6 +269,19 @@ namespace Blockly.UI
 
         string SnapshotForUndo() => History?.Snapshot();
         void RecordForUndo(string before) { if (before != null) History?.Commit(before); }
+
+        // subscribed in SetWorkspace as well, because EditMode never calls OnEnable
+        void SubscribeToTheme() { BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged; }
+        void OnEnable() { SubscribeToTheme(); }
+        void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; }
+        void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; }
+
+        void OnThemeChanged()
+        {
+            if (this == null) { BlockStyle.ThemeChanged -= OnThemeChanged; return; }   // destroyed without OnDestroy (EditMode)
+            if (measureTemplate != null) { Configure(measureTemplate); measurer.Clear(); }
+            Rebuild();
+        }
 
         public void Rebuild()
         {
@@ -593,6 +607,7 @@ namespace Blockly.UI
             trt.offsetMin = trt.offsetMax = Vector2.zero;
             var text = textGo.GetComponent<TextMeshProUGUI>();
             text.fontSize = BlockStyle.FontSize;
+            if (BlockStyle.Theme.Font != null) text.font = BlockStyle.Theme.Font;
             text.color = BlockStyle.InputText;
             text.alignment = TextAlignmentOptions.MidlineLeft;
             text.textWrappingMode = TextWrappingModes.NoWrap;
@@ -882,6 +897,7 @@ namespace Blockly.UI
         static void Configure(TMP_Text t)
         {
             t.fontSize = BlockStyle.FontSize;
+            if (BlockStyle.Theme.Font != null) t.font = BlockStyle.Theme.Font;
             t.textWrappingMode = TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
             t.raycastTarget = false;
@@ -915,12 +931,12 @@ namespace Blockly.UI
             var dragTarget = root.gameObject.AddComponent<BlockDragTarget>();
             dragTarget.Init(this, box.Block);
             var body = root.gameObject.AddComponent<PolygonGraphic>();
-            body.SetShape(Translate(box.Outline, box.X, box.Y), BlockStyle.Fill(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow));
+            body.SetShape(Translate(box.Outline, box.X, box.Y), BlockStyle.Fill(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.StrokeWidth);
 
             foreach (var slot in box.Slots)
             {
                 var s = NewRect("slot " + slot.Input.Name, root, 0, 0, box.W, box.H);
-                s.gameObject.AddComponent<PolygonGraphic>().SetShape(Translate(slot.Polygon, box.X, box.Y), BlockStyle.Hole(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow), 1f);
+                s.gameObject.AddComponent<PolygonGraphic>().SetShape(Translate(slot.Polygon, box.X, box.Y), BlockStyle.Hole(baseColour, box.IsShadow), BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.FieldStrokeWidth);
                 s.GetComponent<PolygonGraphic>().raycastTarget = false;
             }
 
@@ -938,7 +954,7 @@ namespace Blockly.UI
                 var rect = new[] { new Vec2(0, 0), new Vec2(f.W, 0), new Vec2(f.W, f.H), new Vec2(0, f.H) };
                 var bg = rt.gameObject.AddComponent<PolygonGraphic>();
                 bg.SetShape(rect, dropdown ? BlockStyle.DropdownFill(baseColour, box.IsShadow) : BlockStyle.InputFill,
-                            BlockStyle.Stroke(baseColour, box.IsShadow), 1f);
+                            BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.FieldStrokeWidth);
                 bool clickable = Spawner == null && (FieldEditing.IsEditableText(f.Field) || FieldEditing.IsDropdown(f.Field));
                 bg.raycastTarget = clickable;                              // other fields pass clicks through to the block
                 if (clickable) rt.gameObject.AddComponent<FieldClickTarget>().Init(this, box.Block, f.Field);
@@ -949,7 +965,7 @@ namespace Blockly.UI
                 var arrow = NewRect("arrow", rt, 0, 0, f.W, f.H);
                 var ag = arrow.gameObject.AddComponent<PolygonGraphic>();
                 float cx = f.W - 9f, cy = f.H * 0.5f;
-                ag.SetShape(new[] { new Vec2(cx - 3.5f, cy - 2f), new Vec2(cx + 3.5f, cy - 2f), new Vec2(cx, cy + 2.5f) }, new Color(1f, 1f, 1f, 0.9f));
+                ag.SetShape(new[] { new Vec2(cx - 3.5f, cy - 2f), new Vec2(cx + 3.5f, cy - 2f), new Vec2(cx, cy + 2.5f) }, BlockStyle.DropdownArrow);
                 ag.raycastTarget = false;
             }
 

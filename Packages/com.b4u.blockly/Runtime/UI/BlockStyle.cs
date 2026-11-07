@@ -5,21 +5,36 @@ namespace Blockly.UI
     /// <summary>Colours derived from a block's base colour, following Blockly's look.</summary>
     public static class BlockStyle
     {
-        public const float FontSize = 12f;
+        static BlockTheme theme;
+
+        /// <summary>Raised after <see cref="Theme"/> is replaced; views rebuild themselves.</summary>
+        public static event System.Action ThemeChanged;
+
+        /// <summary>The active look. Setting null restores the classic one.</summary>
+        public static BlockTheme Theme
+        {
+            get { if (theme == null) theme = BlockTheme.CreateDefault(); return theme; }
+            set { theme = value; ThemeChanged?.Invoke(); }
+        }
+
+        public static float FontSize => Theme.FontSize;
+        public static float StrokeWidth => Theme.StrokeWidth;
+        public static float FieldStrokeWidth => Theme.FieldStrokeWidth;
+        public static Color DropdownArrow => Theme.DropdownArrow;
 
         public static Color Parse(string hex)
         {
             return ColorUtility.TryParseHtmlString(hex, out var c) ? c : new Color(0.65f, 0.65f, 0.65f);
         }
 
-        public static Color Fill(Color baseColour, bool shadow) => shadow ? Color.Lerp(baseColour, new Color(0.78f, 0.78f, 0.78f), 0.55f) : baseColour;
-        public static Color Stroke(Color baseColour, bool shadow) => Scale(Fill(baseColour, shadow), 0.7f);
-        public static Color Hole(Color baseColour, bool shadow) => Scale(Fill(baseColour, shadow), 0.8f);
-        public static Color DropdownFill(Color baseColour, bool shadow) => Scale(Fill(baseColour, shadow), 0.85f);
-        public static readonly Color InputFill = new Color(1f, 1f, 1f, 1f);
-        public static readonly Color InputText = new Color(0.08f, 0.08f, 0.08f, 1f);
-        public static readonly Color LabelText = Color.white;
+        public static Color Fill(Color baseColour, bool shadow) => shadow ? Color.Lerp(baseColour, new Color(0.78f, 0.78f, 0.78f), Theme.ShadowBlend) : baseColour;
+        public static Color Stroke(Color baseColour, bool shadow) => Scale(Fill(baseColour, shadow), Theme.StrokeScale);
+        public static Color Hole(Color baseColour, bool shadow) => Scale(Fill(baseColour, shadow), Theme.HoleScale);
+        public static Color DropdownFill(Color baseColour, bool shadow) => Scale(Fill(baseColour, shadow), Theme.DropdownScale);
+        public static Color InputFill => Theme.InputFill;
+        public static Color InputText => Theme.InputText;
+        public static Color LabelText => Theme.LabelText;
 
-        static Color Scale(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, c.a);
+        static Color Scale(Color c, float k) => new Color(Mathf.Min(1f, c.r * k), Mathf.Min(1f, c.g * k), Mathf.Min(1f, c.b * k), c.a);
     }
 }
