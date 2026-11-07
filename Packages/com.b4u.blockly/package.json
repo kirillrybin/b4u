@@ -6,5 +6,12 @@
   "description": "Native C# port of Blockly: block model, JSON/XML serialization, UGUI rendering and interpreter.",
   "dependencies": {
     "com.unity.ugui": "2.0.0"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Custom blocks",
+      "description": "Adds two custom blocks (a dice roll and a shout) with their interpreter handlers and a toolbox category.",
+      "path": "Samples~/CustomBlocks"
+    }
+  ]
 }
