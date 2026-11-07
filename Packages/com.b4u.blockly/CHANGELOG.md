@@ -22,3 +22,5 @@ First version.
 - Soft block edges (`EdgeSmoothing`) built into the mesh, matched to the canvas scale and zoom; smoother joins on rounded outlines.
 - Fonts per part of the interface (`ThemeFont`: font asset, size scale, style) and a block font style in `BlockTheme`.
 - Theme: size of the notch and the output tab, per-block style rules (`BlockStyleRule`), disabled-block look, and selection, highlight and snap colours.
+- Hats: a cap above stack-starting blocks chosen by a style rule (`Hat`, `HatHeight`, `HatWidth`).
+- A dome-shaped hat (`HatStyle`, `HatPeak`, `HatFillet`) next to the bump.

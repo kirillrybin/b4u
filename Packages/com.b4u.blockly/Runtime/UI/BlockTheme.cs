@@ -1,4 +1,5 @@
 using System;
+using Blockly.Layout;
 using TMPro;
 using UnityEngine;
 
@@ -40,6 +41,8 @@ namespace Blockly.UI
         public bool OverrideLabelText; public Color LabelText = Color.white;
         public bool OverrideInputFill; public Color InputFill = Color.white;
         public bool OverrideInputText; public Color InputText = Color.black;
+        [Tooltip("Draws the theme's hat (a cap above the block) on matching blocks that start a stack.")]
+        public bool Hat;
 
         public bool Matches(string blockType)
         {
@@ -103,6 +106,17 @@ namespace Blockly.UI
         [Header("Quality")]
         [Tooltip("Soft edges on block shapes, in screen pixels (0 = hard edges). About 1 removes the stair-steps without MSAA.")]
         public float EdgeSmoothing = 1f;
+
+        [Header("Hats (for rules with Hat ticked)")]
+        public float HatHeight = 14f;
+        [Tooltip("Width of the cap (0 = 60% of the block).")]
+        public float HatWidth = 0f;
+        [Tooltip("Bump: a symmetric hump. Dome: the left edge rises, turns round and slopes down to the top edge.")]
+        public HatShape HatStyle = HatShape.Bump;
+        [Tooltip("Dome only: where the peak is, as a share of the cap's width.")]
+        [Range(0.1f, 0.9f)] public float HatPeak = 0.45f;
+        [Tooltip("Dome only: radius of the concave curve where the dome meets the top edge (0 = a quarter of the height).")]
+        public float HatFillet = 0f;
 
         [Header("Block states")]
         [Tooltip("How far disabled blocks are pulled towards grey (0 = look like any block).")]
