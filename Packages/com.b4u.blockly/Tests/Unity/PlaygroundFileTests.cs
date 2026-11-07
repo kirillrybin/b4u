@@ -234,6 +234,122 @@ namespace Blockly.UI.Tests
             StringAssert.Contains("empty", c.Console.StatusText);
         }
 
+        // ---- autosave of unsaved work
+
+        [Test]
+        public void EditsAreBackedUpAfterTheDelayAndAreOnlyOneEntry()
+        {
+            var c = Open();
+            c.ShowByName("arithmetic");
+            EditSomething(c);
+            c.TickAutosave(0.5f);
+            Assert.IsFalse(c.Store.Exists(ProgramNames.DraftName), "not yet: the delay has not passed");
+            c.TickAutosave(10f);
+            Assert.IsTrue(c.Store.Exists(ProgramNames.DraftName));
+            StringAssert.Contains("text_print", c.Store.Load(ProgramNames.DraftName));
+            Assert.AreEqual(1, c.Store.List().Count);
+        }
+
+        [Test]
+        public void EachEditRestartsTheWaitSoABurstIsWrittenOnce()
+        {
+            var c = Open();
+            c.ShowByName("arithmetic");
+            EditSomething(c);
+            c.TickAutosave(1.5f);
+            EditSomething(c);
+            c.TickAutosave(1.5f);
+            Assert.IsFalse(c.Store.Exists(ProgramNames.DraftName), "the second edit restarted the two-second wait");
+            c.TickAutosave(1f);
+            Assert.IsTrue(c.Store.Exists(ProgramNames.DraftName));
+        }
+
+        [Test]
+        public void NothingIsBackedUpWithoutChanges()
+        {
+            var c = Open();
+            c.ShowByName("arithmetic");
+            Assert.IsFalse(c.WriteDraft());
+            c.TickAutosave(10f);
+            Assert.IsFalse(c.Store.Exists(ProgramNames.DraftName));
+        }
+
+        [Test]
+        public void ADraftComesBackInTheNextSessionAsUnsavedWork()
+        {
+            var store = new MemoryProgramStore();
+            var c = Open(store);
+            c.ShowByName("arithmetic");
+            c.SaveTo("mine");
+            EditSomething(c);
+            int blocks = c.View.Workspace.AllBlocks().Count();
+            Assert.IsTrue(c.WriteDraft());
+
+            var again = Open(store);                                     // a new session: the scene is loaded afresh
+            again.BeginSession();                                        // what Start does: show the first program, then bring the draft back
+            Assert.AreEqual("mine", again.SavedName);
+            Assert.IsTrue(again.IsDirty);
+            StringAssert.EndsWith("*", again.Title);
+            Assert.AreEqual(blocks, again.View.Workspace.AllBlocks().Count());
+            Assert.IsTrue(store.Exists(ProgramNames.DraftName), "still backed up until saved or discarded");
+        }
+
+        [Test]
+        public void ASessionWithoutADraftJustShowsTheFirstProgram()
+        {
+            var c = Open();
+            c.BeginSession();
+            Assert.AreEqual(0, c.Index);
+            Assert.IsFalse(c.IsDirty);
+            Assert.IsNull(c.SavedName);
+        }
+
+        [Test]
+        public void ABrokenDraftIsDroppedAndTheFirstProgramIsShown()
+        {
+            var store = new MemoryProgramStore();
+            store.Save(ProgramNames.DraftName, "\nthis is not a program");
+            var c = Open(store);
+            c.BeginSession();
+            Assert.AreEqual(0, c.Index);
+            Assert.IsFalse(c.IsDirty);
+            Assert.IsFalse(store.Exists(ProgramNames.DraftName));
+        }
+
+        [Test]
+        public void SavingOrDiscardingRemovesTheDraft()
+        {
+            var c = Open();
+            c.ShowByName("arithmetic");
+            EditSomething(c);
+            c.WriteDraft();
+            Assert.IsTrue(c.SaveTo("kept"));
+            Assert.IsFalse(c.Store.Exists(ProgramNames.DraftName));
+
+            EditSomething(c);
+            c.WriteDraft();
+            Assert.IsTrue(c.Store.Exists(ProgramNames.DraftName));
+            c.Show(2);                                                    // what Next/Open do once the changes were discarded
+            Assert.IsFalse(c.Store.Exists(ProgramNames.DraftName));
+        }
+
+        [Test]
+        public void TheDraftIsNotListedAndItsNameCannotBeUsed()
+        {
+            var c = Open();
+            c.ShowByName("arithmetic");
+            EditSomething(c);
+            c.WriteDraft();
+            Assert.AreEqual(1, c.Store.List().Count, "it is in the store");
+            c.OnFileCommand("open", new Vector2(100, 100));
+            Assert.IsNotNull(c.ActiveMenu);
+            CollectionAssert.AreEqual(new[] { "(no saved programs)" }, c.ActiveMenu.Items.Select(i => i.Label).ToArray());
+
+            Assert.IsNotNull(ProgramNames.Validate(ProgramNames.DraftName));
+            Assert.IsNotNull(ProgramNames.Validate("  Autosave   Draft "));
+            Assert.IsFalse(c.SaveTo(ProgramNames.DraftName));
+        }
+
         [Test]
         public void NewStartsAnEmptyProgram()
         {

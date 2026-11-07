@@ -101,5 +101,15 @@ namespace Blockly.Tests
         {
             Assert.AreEqual(0, new FileProgramStore(Path.Combine(dir, "does", "not", "exist")).List().Count);
         }
+
+        [Test]
+        public void TheBackupNameIsReservedWhateverItsSpacingAndCase()
+        {
+            Assert.IsNotNull(ProgramNames.Validate(ProgramNames.DraftName));
+            Assert.IsNotNull(ProgramNames.Validate("  AUTOSAVE   draft "));
+            Assert.IsTrue(ProgramNames.IsReserved("autosave/draft".Replace('/', ' ')));
+            Assert.IsNull(ProgramNames.Validate("autosave"));
+            Assert.IsNull(ProgramNames.Validate("my draft"));
+        }
     }
 }

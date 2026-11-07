@@ -39,6 +39,10 @@ namespace Blockly.UI
         DropdownMenu fileMenu;
         DialogView dialog;
 
+        // autosave: unsaved work is written to the store a moment after the last edit and when the app is left, and offered again at the next start
+        [SerializeField] float autosaveDelay = 2f;
+        float autosaveTimer = -1f;
+
         /// <summary>The name the current program was saved or opened under, or null if it has never been saved.</summary>
         public string SavedName => savedName;
         /// <summary>The program changed since it was shown, opened or saved.</summary>
@@ -61,14 +65,20 @@ namespace Blockly.UI
         public bool Slow => slow;
         public string Title => title != null ? title.text : "";
 
-        void Start()
+        void Start() => BeginSession();
+
+        /// <summary>Shows the first program, or the unsaved work of the last session if there is some (what Start does).</summary>
+        public void BeginSession()
         {
+            string draft = ReadDraft();                                // before Show: showing a program discards the stored draft
             if (Count > 0) Show(0);
+            if (draft != null) RestoreFrom(draft);
         }
 
         void Update()
         {
             Tick(Time.deltaTime);
+            TickAutosave(Time.unscaledDeltaTime);
 #if ENABLE_LEGACY_INPUT_MANAGER
             bool ctrl = UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl) || UnityEngine.Input.GetKey(KeyCode.LeftCommand) || UnityEngine.Input.GetKey(KeyCode.RightCommand);
             if (ctrl && UnityEngine.Input.GetKeyDown(KeyCode.S) && ActiveDialog == null) Save();
@@ -140,6 +150,8 @@ namespace Blockly.UI
 
             label = titleText; savedName = saved; dirty = dirtyNow;
             RefreshTitle();
+            ClearDraft();                                              // whatever was kept for the program that was on screen is no longer wanted
+            autosaveTimer = dirtyNow ? autosaveDelay : -1f;
 
             runner = new ProgramRunner(ws) { Slow = slow, SlowInterval = slowInterval };
             runner.Output += line => console?.Append(line);
@@ -150,7 +162,72 @@ namespace Blockly.UI
             toolbox?.CloseFlyout();
         }
 
-        void OnEdited() { if (!dirty) { dirty = true; RefreshTitle(); } }
+        void OnEdited()
+        {
+            if (!dirty) { dirty = true; RefreshTitle(); }
+            autosaveTimer = autosaveDelay;                             // every edit restarts the wait, so a burst of edits is written once
+        }
+
+        // ---------------------------------------------------------------- autosave
+        /// <summary>Counts down to the next automatic backup of unsaved work (Update calls this; tests call it directly).</summary>
+        public void TickAutosave(float deltaSeconds)
+        {
+            if (autosaveTimer < 0f) return;
+            autosaveTimer -= deltaSeconds;
+            if (autosaveTimer <= 0f) WriteDraft();
+        }
+
+        /// <summary>Writes the unsaved program to the store now. Does nothing if there are no unsaved changes.</summary>
+        public bool WriteDraft()
+        {
+            autosaveTimer = -1f;
+            if (!dirty || view == null || view.Workspace == null) return false;
+            try
+            {
+                // the first line is the name the program was saved under (empty if none), the rest is the program
+                Store.Save(ProgramNames.DraftName, (savedName ?? "") + "\n" + WorkspaceJson.Save(view.Workspace));
+                PlatformFiles.Flush();
+                return true;
+            }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { return false; }   // a backup must never get in the way
+        }
+
+        void ClearDraft()
+        {
+            try
+            {
+                if (Store.Delete(ProgramNames.DraftName)) PlatformFiles.Flush();
+            }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { }
+        }
+
+        string ReadDraft()
+        {
+            try { string text = Store.Load(ProgramNames.DraftName); return string.IsNullOrEmpty(text) ? null : text; }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { return null; }
+        }
+
+        /// <summary>Brings back the unsaved work kept by the last session, if there is any. Returns whether something was restored.</summary>
+        public bool RestoreDraft()
+        {
+            string draft = ReadDraft();
+            return draft != null && RestoreFrom(draft);
+        }
+
+        bool RestoreFrom(string text)
+        {
+            int eol = text.IndexOf('\n');
+            string name = eol > 0 ? text.Substring(0, eol) : null;
+            string body = eol >= 0 ? text.Substring(eol + 1) : text;
+            if (!LoadText(body, name ?? "restored program", name, dirtyNow: true)) { ClearDraft(); return false; }
+            WriteDraft();                                              // showing it cleared the copy in the store; keep one until the user saves or discards
+            Status("Restored your unsaved changes", false);
+            return true;
+        }
+
+        void OnApplicationPause(bool paused) { if (paused) WriteDraft(); }
+        void OnApplicationFocus(bool focused) { if (!focused) WriteDraft(); }
+        void OnApplicationQuit() => WriteDraft();
 
         void RefreshTitle()
         {
@@ -208,11 +285,13 @@ namespace Blockly.UI
         public bool SaveTo(string name)
         {
             if (view == null || view.Workspace == null) return false;
+            if (ProgramNames.IsReserved(name)) { Status(ProgramNames.Validate(name), true); return false; }
             try
             {
                 string used = Store.Save(name, WorkspaceJson.Save(view.Workspace));
                 PlatformFiles.Flush();
-                savedName = used; label = used; dirty = false;
+                savedName = used; label = used; dirty = false; autosaveTimer = -1f;
+                ClearDraft();
                 RefreshTitle();
                 Status("Saved \"" + used + "\"", false);
                 return true;
@@ -346,7 +425,7 @@ namespace Blockly.UI
             try { names = Store.List(); }
             catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot read the saved programs: " + e.Message, true); return; }
             var items = new List<DropdownItem>();
-            foreach (var n in names) items.Add(new DropdownItem { Label = n, Value = prefix + n, Selected = n == savedName });
+            foreach (var n in names) if (!ProgramNames.IsReserved(n)) items.Add(new DropdownItem { Label = n, Value = prefix + n, Selected = n == savedName });
             if (items.Count == 0) items.Add(new DropdownItem { Label = "(no saved programs)", Value = "" });
             fileMenu = DropdownMenu.Open(canvas, point, width, items, item => { if (item.Value.Length > 0) OnFileCommand(item.Value, point, width); });
         }
