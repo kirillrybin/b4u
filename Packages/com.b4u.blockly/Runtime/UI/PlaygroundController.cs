@@ -57,6 +57,14 @@ namespace Blockly.UI
             set => store = value;
         }
 
+        FileExchange exchange;
+        /// <summary>The folder used to export and import program files where there is no file dialog. Defaults to "exports" in <see cref="Application.persistentDataPath"/>.</summary>
+        public FileExchange Exchange
+        {
+            get => exchange ?? (exchange = new FileExchange(System.IO.Path.Combine(Application.persistentDataPath, "exports")));
+            set => exchange = value;
+        }
+
         public int Index => index;
         public int Count => programs == null ? 0 : programs.Length;
         public ProgramRunner Runner => runner;
@@ -365,7 +373,61 @@ namespace Blockly.UI
             Guard(() => LoadText(text, "pasted program", null, dirtyNow: true));
         });
 
+        // ---- program files
+        /// <summary>Gives the program as a <c>.json</c> file: a download in a browser, otherwise a file in <see cref="Exchange"/>.</summary>
+        public void ExportProgram()
+        {
+            if (view == null || view.Workspace == null) return;
+            string name = savedName ?? "program";
+            string json = WorkspaceJson.Save(view.Workspace);
+            if (PlatformFileTransfer.UsesBrowser)
+            {
+                PlatformFileTransfer.Download(ProgramNames.Sanitize(name) + ".json", json);
+                Status("Downloaded " + ProgramNames.Sanitize(name) + ".json", false);
+                return;
+            }
+            try { Status("Exported to " + Exchange.Export(name, json), false); }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot export: " + e.Message, true); }
+        }
+
+        /// <summary>Loads a program from a file: the one the user picks in a browser, otherwise one chosen from the files in <see cref="Exchange"/>.</summary>
+        public void ImportProgram(Vector2 menuPoint, float width = 220f)
+        {
+            if (PlatformFileTransfer.UsesBrowser)
+            {
+                Status("Choose a file in the panel on the page", false);
+                PlatformFileTransfer.Pick(
+                    (fileName, text) =>
+                    {
+                        Status("Read " + fileName + " (" + text.Length + " characters)", false);
+                        Guard(() => LoadText(text, System.IO.Path.GetFileNameWithoutExtension(fileName), null, dirtyNow: true));
+                    },
+                    reason => Status("Cannot read the file: " + reason, true));
+                return;
+            }
+            var canvas = CanvasForUi;
+            if (canvas == null) return;
+            IReadOnlyList<string> files;
+            try { files = Exchange.List(); }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot read " + Exchange.Folder + ": " + e.Message, true); return; }
+            if (files.Count == 0) { Status("Put .json or .xml program files into " + Exchange.Folder + " to import them", true); return; }
+            var items = new List<DropdownItem>();
+            foreach (var f in files) items.Add(new DropdownItem { Label = f, Value = ImportPrefix + f });
+            fileMenu = DropdownMenu.Open(canvas, menuPoint, width, items, item => OnFileCommand(item.Value, menuPoint, width));
+        }
+
+        /// <summary>Loads a file of the <see cref="Exchange"/> folder as an unsaved program.</summary>
+        public bool ImportFile(string fileName)
+        {
+            string text;
+            try { text = Exchange.Read(fileName); }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException || e is ArgumentException) { Status("Cannot import: " + e.Message, true); return false; }
+            if (text == null) { Status("The file " + fileName + " is gone", true); return false; }
+            return LoadText(text, System.IO.Path.GetFileNameWithoutExtension(fileName), null, dirtyNow: true);
+        }
+
         // ---- the File menu
+        const string CmdExport = "export", CmdImport = "import", ImportPrefix = "import:";
         const string CmdNew = "new", CmdOpen = "open", CmdSave = "save", CmdSaveAs = "saveas", CmdDelete = "delete", CmdCopy = "copy", CmdPaste = "paste";
         const string OpenPrefix = "open:", DeletePrefix = "delete:";
 
@@ -394,6 +456,8 @@ namespace Blockly.UI
                 new DropdownItem { Label = "Delete…", Value = CmdDelete },
                 new DropdownItem { Label = "Copy as JSON", Value = CmdCopy },
                 new DropdownItem { Label = "Paste JSON or XML", Value = CmdPaste },
+                new DropdownItem { Label = PlatformFileTransfer.UsesBrowser ? "Download as file" : "Export to file", Value = CmdExport },
+                new DropdownItem { Label = PlatformFileTransfer.UsesBrowser ? "Upload a file…" : "Import from file…", Value = CmdImport },
             };
             fileMenu = DropdownMenu.Open(canvas, screenPoint, width, items, item => OnFileCommand(item.Value, screenPoint, width));
         }
@@ -408,10 +472,13 @@ namespace Blockly.UI
                 case CmdSaveAs: SaveAs(); break;
                 case CmdCopy: CopyJson(); break;
                 case CmdPaste: PasteProgram(); break;
+                case CmdExport: ExportProgram(); break;
+                case CmdImport: ImportProgram(menuPoint, width); break;
                 case CmdOpen: ShowSavedList(menuPoint, width, OpenPrefix); break;
                 case CmdDelete: ShowSavedList(menuPoint, width, DeletePrefix); break;
                 default:
-                    if (command.StartsWith(OpenPrefix)) { string n = command.Substring(OpenPrefix.Length); Guard(() => OpenSaved(n)); }
+                    if (command.StartsWith(ImportPrefix)) { string f = command.Substring(ImportPrefix.Length); Guard(() => ImportFile(f)); }
+                    else if (command.StartsWith(OpenPrefix)) { string n = command.Substring(OpenPrefix.Length); Guard(() => OpenSaved(n)); }
                     else if (command.StartsWith(DeletePrefix)) DeleteSaved(command.Substring(DeletePrefix.Length));
                     break;
             }

@@ -69,7 +69,9 @@ The **Custom blocks** sample (Package Manager > Blockly for Unity > Samples) is 
 
 ## Saving programs
 
-`PlaygroundController` saves to `Application.persistentDataPath/programs` through `IProgramStore` (`FileProgramStore`; `MemoryProgramStore` for tests). On WebGL the files are flushed to the browser's IndexedDB so they survive a page reload.
+`PlaygroundController` saves to `Application.persistentDataPath/programs` through `IProgramStore` (`FileProgramStore`; `MemoryProgramStore` for tests). On WebGL the files are flushed to the browser's IndexedDB so they survive a page reload. Unsaved work is backed up a moment after each edit and offered again at the next start.
+
+File > Export and Import move a program as a plain `.json` (or legacy `.xml`) file. In a browser that is a real download and a file picker. Elsewhere there is no file dialog without a plugin, so export writes `Application.persistentDataPath/exports/<name>.json` and import lists the program files in that folder (put files there to import them); `PlaygroundController.Exchange` changes the folder.
 
 ## Platforms
 

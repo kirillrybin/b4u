@@ -350,6 +350,90 @@ namespace Blockly.UI.Tests
             Assert.IsFalse(c.SaveTo(ProgramNames.DraftName));
         }
 
+        // ---- export and import of program files (outside a browser: the exchange folder)
+
+        string exchangeDir;
+
+        FileExchange TempExchange()
+        {
+            exchangeDir = Path.Combine(Path.GetTempPath(), "blockly-ui-exchange-" + System.Guid.NewGuid().ToString("N"));
+            return new FileExchange(exchangeDir);
+        }
+
+        [TearDown]
+        public void RemoveExchangeFolder() { if (exchangeDir != null && Directory.Exists(exchangeDir)) Directory.Delete(exchangeDir, true); exchangeDir = null; }
+
+        [Test]
+        public void TheFileMenuOffersExportAndImport()
+        {
+            var c = Open();
+            c.ShowFileMenuAt(new Vector2(100, 100));
+            var labels = c.ActiveMenu.Items.Select(i => i.Label).ToArray();
+            CollectionAssert.Contains(labels, "Export to file");
+            CollectionAssert.Contains(labels, "Import from file…");
+        }
+
+        [Test]
+        public void ExportWritesTheProgramAsAFileThatImportsAsAnUnsavedProgram()
+        {
+            var c = Open();
+            c.Exchange = TempExchange();
+            c.ShowByName("arithmetic");
+            RunToEnd(c);
+            var expected = Output(c);
+            c.ExportProgram();
+            Assert.IsTrue(File.Exists(Path.Combine(exchangeDir, "program.json")));
+            StringAssert.Contains("Exported to", c.Console.StatusText);
+            StringAssert.StartsWith("{", File.ReadAllText(Path.Combine(exchangeDir, "program.json")));
+
+            c.Show(3);
+            c.OnFileCommand("import", new Vector2(100, 100));
+            Assert.IsNotNull(c.ActiveMenu);
+            CollectionAssert.AreEqual(new[] { "program.json" }, c.ActiveMenu.Items.Select(i => i.Label).ToArray());
+            Assert.IsTrue(c.ImportFile("program.json"));
+            Assert.IsTrue(c.IsDirty);
+            Assert.IsNull(c.SavedName);
+            StringAssert.StartsWith("program", c.Title);
+            RunToEnd(c);
+            CollectionAssert.AreEqual(expected, Output(c));
+        }
+
+        [Test]
+        public void ExportUsesTheSavedNameAndImportReadsXmlToo()
+        {
+            var c = Open();
+            c.Exchange = TempExchange();
+            c.ShowByName("arithmetic");
+            c.SaveTo("my arithmetic");
+            c.ExportProgram();
+            Assert.IsTrue(File.Exists(Path.Combine(exchangeDir, "my arithmetic.json")));
+
+            File.WriteAllText(Path.Combine(exchangeDir, "legacy.xml"),
+                "<xml xmlns=\"https://developers.google.com/blockly/xml\"><block type=\"text_print\" x=\"10\" y=\"10\"><value name=\"TEXT\"><block type=\"text\"><field name=\"TEXT\">from file</field></block></value></block></xml>");
+            Assert.IsTrue(c.ImportFile("legacy.xml"));
+            RunToEnd(c);
+            CollectionAssert.AreEqual(new[] { "from file" }, Output(c));
+        }
+
+        [Test]
+        public void ImportWithNoFilesTellsWhereToPutThemAndBadFilesChangeNothing()
+        {
+            var c = Open();
+            c.Exchange = TempExchange();
+            c.ShowByName("arithmetic");
+            c.OnFileCommand("import", new Vector2(100, 100));
+            Assert.IsNull(c.ActiveMenu);
+            StringAssert.Contains(exchangeDir, c.Console.StatusText);
+
+            Directory.CreateDirectory(exchangeDir);
+            File.WriteAllText(Path.Combine(exchangeDir, "broken.json"), "this is not a program");
+            var before = c.View.Workspace;
+            Assert.IsFalse(c.ImportFile("broken.json"));
+            Assert.AreSame(before, c.View.Workspace);
+            Assert.IsFalse(c.ImportFile("../escape.json"), "only plain file names of the folder");
+            Assert.IsFalse(c.ImportFile("gone.json"));
+        }
+
         [Test]
         public void NewStartsAnEmptyProgram()
         {
