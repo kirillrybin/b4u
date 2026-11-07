@@ -17,13 +17,17 @@ public sealed class IconBlocks : IBlockPackage
        ""previousStatement"":null,""nextStatement"":null,""colour"":215},
       {""type"":""icon_back"",""message0"":""Move backward %1"",
        ""args0"":[{""type"":""field_image"",""src"":""sample/arrow-left"",""width"":28,""height"":20}],
-       ""previousStatement"":null,""nextStatement"":null,""colour"":215}
+       ""previousStatement"":null,""nextStatement"":null,""colour"":215},
+      {""type"":""event_when_clicked"",""message0"":""When %1 clicked"",
+       ""args0"":[{""type"":""field_image"",""src"":""sample/flag"",""width"":22,""height"":22}],
+       ""nextStatement"":null,""colour"":60}
     ]";
 
     public void RegisterHandlers(HandlerRegistry r)
     {
         r.Simple("icon_forward", (it, b) => it.Print("forward"));
         r.Simple("icon_back", (it, b) => it.Print("backward"));
+        r.Simple("event_when_clicked", (it, b) => it.Print("clicked"));
     }
 
     public IEnumerable<ToolboxCategory> ToolboxCategories => new[]
@@ -37,6 +41,15 @@ public sealed class IconBlocks : IBlockPackage
                 new Dictionary<string, object> { { "kind", "block" }, { "type", "icon_back" } },
             },
         },
+        new ToolboxCategory
+        {
+            Name = "Events", ColourHex = Colour.FromHue(60), Icon = "sample/flag",
+            Blocks = new List<Dictionary<string, object>>
+            {
+                // no previous connection: it starts a stack, so a theme rule with Hat can put a cap on it (see ApplyBlockTheme)
+                new Dictionary<string, object> { { "kind", "block" }, { "type", "event_when_clicked" } },
+            },
+        },
     };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -44,7 +57,26 @@ public sealed class IconBlocks : IBlockPackage
     {
         BlockImages.Register("sample/arrow-right", Arrow(false));
         BlockImages.Register("sample/arrow-left", Arrow(true));
+        BlockImages.Register("sample/flag", Flag());
         StandardBlockSet.AddPackage(new IconBlocks());
+    }
+
+    static Sprite Flag()
+    {
+        const int S = 44;
+        var tex = new Texture2D(S, S, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
+        var px = new Color32[S * S];
+        for (int y = 0; y < S; y++)
+            for (int x = 0; x < S; x++)
+            {
+                bool pole = x >= 7 && x <= 11 && y >= 3 && y <= 41;
+                float t = (y - 6f) / 20f;                                  // the cloth is a triangle pointing right
+                bool cloth = y >= 6 && y <= 26 && x >= 11 && x <= 11 + 28f * (1f - Mathf.Abs(2f * t - 1f));
+                px[y * S + x] = pole ? new Color32(235, 240, 255, 255) : cloth ? new Color32(70, 210, 120, 255) : new Color32(0, 0, 0, 0);
+            }
+        tex.SetPixels32(px);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 100f);
     }
 
     static Sprite Arrow(bool flip)

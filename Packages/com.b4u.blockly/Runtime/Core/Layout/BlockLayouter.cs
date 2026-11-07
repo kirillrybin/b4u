@@ -106,9 +106,10 @@ namespace Blockly.Layout
             foreach (var kv in order)
             {
                 var probe = LayoutStack(kv.Value, 0, 0);
+                float lift = Math.Max(0f, -probe.Top);      // a cap above the block needs room too, or the viewport clips it
                 kv.Value.X = G.TabWidth;      // leave room for an output tab
-                kv.Value.Y = y;
-                y += probe.Bottom + G.NotchDepth + gap;
+                kv.Value.Y = y + lift;
+                y += lift + probe.Bottom + G.NotchDepth + gap;
             }
         }
 
@@ -314,7 +315,7 @@ namespace Blockly.Layout
             res.Boxes.Add(box);
             res.ByBlock[m.Block] = box;
             res.Left = Math.Min(res.Left, x - (m.Block.Output != null ? G.TabWidth : 0));
-            res.Top = Math.Min(res.Top, y);
+            res.Top = Math.Min(res.Top, y - G.HatFor(m.Block));
             res.Right = Math.Max(res.Right, x + m.W);
             res.Bottom = Math.Max(res.Bottom, y + m.H);
 
@@ -392,6 +393,7 @@ namespace Blockly.Layout
             Block b = m.Block;
 
             p.Add(new Vec2(x, y));
+            if (g.HatFor(b) > 0f) g.AddHat(p, x, y, w);
             if (b.Previous != null)
             {
                 g.AddNotch(p, x + G.NotchX, y, true);

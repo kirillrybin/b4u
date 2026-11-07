@@ -144,6 +144,112 @@ namespace Blockly.Tests
         }
 
         [Test]
+        public void AHatRisesAboveTheBlockOnlyForStackStartersThatAreAccepted()
+        {
+            var classic = Layout("text");
+            BlockGeometry.Current = new BlockGeometry { HatHeight = 16, IsHat = b => true };
+            var hat = Layout("text");
+            foreach (var box in hat.Boxes)
+            {
+                float top = box.Outline.Min(v => v.Y);
+                if (box.Block.Previous == null && box.Block.Output == null)
+                    Assert.AreEqual(box.Y - 16f, top, 0.2f, box.Block.Type + " has a cap of the given height");
+                else
+                    Assert.AreEqual(box.Y, top, 0.01f, box.Block.Type + " has none");
+            }
+            float expectedTop = hat.Boxes.Min(b => b.Y - (b.Block.Previous == null && b.Block.Output == null ? 16f : 0f));
+            Assert.AreEqual(expectedTop, hat.Top, 0.01f, "the layout reserves the cap above the topmost block");
+            Assert.Less(hat.Top, classic.Top + 0.01f);
+            BlockGeometry.Current = new BlockGeometry { HatHeight = 16, IsHat = b => false };
+            Assert.AreEqual(classic.Top, Layout("text").Top, 1e-4f, "nothing accepted, nothing drawn");
+        }
+
+        [Test]
+        public void TheCapStartsAndEndsLevelWithTheEdgeInsteadOfAFastClimb()
+        {
+            BlockGeometry.Current = new BlockGeometry { HatHeight = 20, HatWidth = 80, IsHat = b => true };
+            var box = Layout("procedures").Boxes.First(b => b.Block.Previous == null && b.Block.Output == null);
+            var outline = box.Outline.ToList();
+            int start = outline.FindIndex(v => Math.Abs(v.X - box.X) < 1e-3f && Math.Abs(v.Y - box.Y) < 1e-3f);
+            var a = outline[(start + 1) % outline.Count]; var peak = outline.OrderBy(v => v.Y).First();
+            float slopeAtStart = (box.Y - a.Y) / (a.X - box.X);
+            Assert.Less(slopeAtStart, 0.35f, "the first step off the flat edge is gentle (a cubic with a steep tangent was about 1.2)");
+            Assert.AreEqual(box.Y - 20f, peak.Y, 0.2f);
+            Assert.AreEqual(box.X + 40f, peak.X, 5f, "the peak is mid-cap");
+        }
+
+        [Test]
+        public void ADomeRisesAtTheLeftEdgePeaksAndComesBackToTheTopEdgeWithAFillet()
+        {
+            BlockGeometry.Current = new BlockGeometry { HatHeight = 30, HatStyle = HatShape.Dome, IsHat = b => true };
+            var box = Layout("procedures").Boxes.First(b => b.Block.Previous == null && b.Block.Output == null);
+            var o = box.Outline;
+            Assert.AreEqual(box.Y - 30f, o.Min(v => v.Y), 0.01f, "as tall as asked");
+            Assert.GreaterOrEqual(o.Min(v => v.X), box.X - 0.01f, "the dome does not poke out to the left");
+            Assert.IsTrue(o.Any(v => v.X < box.X + 1f && v.Y < box.Y - 3f), "the left edge leaves the block's top-left corner going straight up");
+            float width = box.W * 0.62f;
+            var peak = o.OrderBy(v => v.Y).First();
+            Assert.AreEqual(box.X + width * 0.45f, peak.X, width * 0.05f, "the peak is at HatPeak of the cap");
+            float domeEnd = o.Where(v => v.Y < box.Y - 0.01f).Max(v => v.X);
+            Assert.AreEqual(box.X + width, domeEnd, 3f, "the cap ends at 62% of the block (the last fillet point sits on the edge itself)");
+            // the fillet: the outline reaches the top edge going horizontally, so the last steps are nearly level
+            var onEdge = o.ToList();
+            int i = onEdge.FindIndex(v => Math.Abs(v.X - domeEnd) < 1e-3f && v.Y < box.Y - 0.01f);
+            var prev = onEdge[i - 1];
+            Assert.Greater(Math.Abs(onEdge[i].X - prev.X), 0f);
+            Assert.Less(onEdge[i].Y, box.Y, "the fillet's last step is just above the edge");
+        }
+
+        [Test]
+        public void CleaningUpLeavesRoomAboveEveryHatSoNothingIsClipped()
+        {
+            BlockGeometry.Current = new BlockGeometry { HatHeight = 30, HatStyle = HatShape.Dome, IsHat = b => true };
+            var ws = TestSupport.NewWorkspace();
+            WorkspaceJson.Load(ws, File.ReadAllText(Path.Combine(TestSupport.PackageRoot(), "Tests", "EditMode", "Fixtures", "programs", "procedures.json")));
+            var layouter = new BlockLayouter(ws, new FixedWidth());
+            layouter.CleanUp(18f);
+            var layout = layouter.LayoutWorkspace();
+            Assert.GreaterOrEqual(layout.Top, -0.001f, "the topmost cap starts inside the workspace");
+            foreach (var box in layout.Boxes) Assert.GreaterOrEqual(box.Outline.Min(v => v.Y), -0.01f, box.Block.Type);
+            // and stacks do not run into each other's caps
+            var tops = ws.TopBlocks.OrderBy(b => b.Y).ToList();
+            for (int i = 1; i < tops.Count; i++)
+            {
+                var above = layout.ByBlock[tops[i - 1]].Outline.Max(v => v.Y);
+                var capOfThis = layout.ByBlock[tops[i]].Outline.Min(v => v.Y);
+                Assert.Less(above, capOfThis + 0.01f, "stack " + i + " starts below the previous one");
+            }
+        }
+
+        [TestCaseSource(nameof(Programs))]
+        public void DomesAndRoundedCornersStillTriangulate(string name)
+        {
+            foreach (var radius in new[] { 0f, 8f })
+            {
+                BlockGeometry.Current = new BlockGeometry { HatHeight = 26, HatStyle = HatShape.Dome, IsHat = b => true, CornerRadius = radius, RoundNotches = radius > 0 };
+                foreach (var box in Layout(name).Boxes)
+                {
+                    var tris = Geometry.Triangulate(box.Outline);
+                    Assert.AreEqual(Math.Abs(Geometry.SignedArea(box.Outline)), Geometry.TrianglesArea(box.Outline, tris), 0.5f, name + " " + box.Block.Type);
+                }
+            }
+        }
+
+        [TestCaseSource(nameof(Programs))]
+        public void HatsAndRoundedCornersStillTriangulate(string name)
+        {
+            foreach (var radius in new[] { 0f, 8f })
+            {
+                BlockGeometry.Current = new BlockGeometry { HatHeight = 18, HatWidth = 70, IsHat = b => true, CornerRadius = radius, RoundNotches = radius > 0 };
+                foreach (var box in Layout(name).Boxes)
+                {
+                    var tris = Geometry.Triangulate(box.Outline);
+                    Assert.AreEqual(Math.Abs(Geometry.SignedArea(box.Outline)), Geometry.TrianglesArea(box.Outline, tris), 0.5f, name + " " + box.Block.Type);
+                }
+            }
+        }
+
+        [Test]
         public void ARoundedRectangleLosesTheCornersButKeepsTheEdges()
         {
             var rect = new[] { new Vec2(0, 0), new Vec2(100, 0), new Vec2(100, 40), new Vec2(0, 40) };

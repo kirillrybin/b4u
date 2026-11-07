@@ -215,7 +215,7 @@ namespace Blockly.UI
                 t.alignment = TextAlignmentOptions.Center;
             }
             paramsButton.gameObject.SetActive(true);
-            paramsButton.anchoredPosition = new Vector2(box.X + box.W - 58, -(box.Y - 22));   // just above the block's top-right corner
+            paramsButton.anchoredPosition = new Vector2(box.X + box.W - 58, -(box.Y - 22 - BlockGeometry.Current.HatFor(box.Block)));   // above the cap, if the block has one   // just above the block's top-right corner
             paramsButton.SetAsLastSibling();
         }
 

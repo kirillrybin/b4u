@@ -11,7 +11,9 @@ namespace Blockly.UI.Tests
 
         const string Blocks = @"[{""type"":""a_one"",""message0"":""one"",""previousStatement"":null,""nextStatement"":null,""colour"":120},
             {""type"":""a_two"",""message0"":""two"",""previousStatement"":null,""nextStatement"":null,""colour"":120},
-            {""type"":""b_three"",""message0"":""three"",""previousStatement"":null,""nextStatement"":null,""colour"":120}]";
+            {""type"":""b_three"",""message0"":""three"",""previousStatement"":null,""nextStatement"":null,""colour"":120},
+            {""type"":""a_start"",""message0"":""start"",""nextStatement"":null,""colour"":120},
+            {""type"":""b_start"",""message0"":""start"",""nextStatement"":null,""colour"":120}]";
 
         static Block NewBlock(string type, bool disabled = false)
         {
@@ -80,6 +82,21 @@ namespace Blockly.UI.Tests
             view.SetWorkspace(StandardBlockSet.Load("{\"blocks\":{\"languageVersion\":0,\"blocks\":[{\"type\":\"text_print\",\"x\":10,\"y\":10}]}}"));
             var body = go.GetComponentsInChildren<PolygonGraphic>().First();
             Assert.AreEqual(new Color(1, 0, 1), body.color);
+        }
+
+        [Test]
+        public void AHatRuleDrawsACapOnMatchingStackStartersOnly()
+        {
+            var t = BlockTheme.CreateDefault();
+            t.HatHeight = 20;
+            t.Rules.Add(new BlockStyleRule { Match = "a_*", Hat = true });
+            BlockStyle.Theme = t;
+            var g = Blockly.Layout.BlockGeometry.Current;
+            Assert.AreEqual(20f, g.HatFor(NewBlock("a_start")), "matches the rule and starts a stack");
+            Assert.AreEqual(0f, g.HatFor(NewBlock("a_one")), "has a previous connection: it continues a stack");
+            Assert.AreEqual(0f, g.HatFor(NewBlock("b_start")), "no rule for it");
+            BlockStyle.Theme = null;
+            Assert.AreEqual(0f, Blockly.Layout.BlockGeometry.Current.HatFor(NewBlock("a_start")), "the classic theme has no hats");
         }
 
         [Test]

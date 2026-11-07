@@ -28,6 +28,7 @@ namespace Blockly.UI
                     TabWidth = Mathf.Max(1f, t.TabWidth), TabHeight = Mathf.Clamp(t.TabHeight, 4f, 24f),
                     TabTop = Mathf.Clamp(t.TabTop, 0f, 24f - Mathf.Clamp(t.TabHeight, 4f, 24f)),
                     NotchWidth = Mathf.Clamp(t.NotchWidth, 4f, 30f), NotchDepth = Mathf.Max(1f, t.NotchDepth),
+                    HatHeight = Mathf.Max(0f, t.HatHeight), HatWidth = Mathf.Max(0f, t.HatWidth), HatStyle = t.HatStyle, HatPeak = t.HatPeak, HatFillet = Mathf.Max(0f, t.HatFillet), IsHat = b => HasHat(t, b.Type),
                     NotchX = Mathf.Clamp(t.NotchX, 0f, 30f - Mathf.Clamp(t.NotchWidth, 4f, 30f)),
                 };
                 ThemeChanged?.Invoke();
@@ -61,6 +62,13 @@ namespace Blockly.UI
         public static ThemeFont MenuFont => Theme.MenuFont ?? (Theme.MenuFont = new ThemeFont());
         public static ThemeFont DialogFont => Theme.DialogFont ?? (Theme.DialogFont = new ThemeFont());
         public static Color SelectionColour => Theme.SelectionColour;
+        static bool HasHat(BlockTheme t, string type)
+        {
+            if (t.Rules != null)
+                foreach (var r in t.Rules) if (r != null && r.Hat && r.Matches(type)) return true;
+            return false;
+        }
+
         public static float SelectionWidth => Theme.SelectionWidth;
         public static Color HighlightColour => Theme.HighlightColour;
         public static float HighlightWidth => Theme.HighlightWidth;
