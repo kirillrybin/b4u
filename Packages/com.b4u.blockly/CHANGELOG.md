@@ -17,3 +17,4 @@ First version.
 - `field_image` in blocks and an `icon` for toolbox categories, resolved through `BlockImages`.
 - Rounded block shapes in `BlockTheme` (corner radius, round notches and tabs, round field plates) through `BlockGeometry`.
 - Block spacing (row height, padding, gaps, field and label heights) in `BlockTheme`.
+- Interface colours in `BlockTheme`, applied to the Playground by `PlaygroundSkin`, the toolbox, menus and dialogs.

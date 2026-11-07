@@ -107,7 +107,7 @@ namespace Blockly.UI
             var panel = Child(rt, "Panel", typeof(Image));
             panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
             panel.sizeDelta = new Vector2(440, height);
-            panel.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.24f, 1f);
+            panel.GetComponent<Image>().color = BlockStyle.DialogPanel;
 
             dialog.Title = Label(panel, "Title", title, 18, TextAlignmentOptions.TopLeft, Color.white, new Vector2(20, -14), new Vector2(-40, 28));
             if (prompt)

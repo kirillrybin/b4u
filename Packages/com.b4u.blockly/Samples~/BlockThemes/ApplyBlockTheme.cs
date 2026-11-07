@@ -20,6 +20,8 @@ public class ApplyBlockTheme : MonoBehaviour
         BlockStyle.Theme = null;      // back to the classic look
     }
 
+    static Color Hex(string html) { ColorUtility.TryParseHtmlString(html, out var c); return c; }
+
     static BlockTheme Candy()
     {
         var t = BlockTheme.CreateDefault();
@@ -41,6 +43,21 @@ public class ApplyBlockTheme : MonoBehaviour
         t.FieldHeight = 24f;
         t.FieldPaddingX = 8f;
         t.LabelHeight = 20f;
+
+        // a dark navy interface
+        t.AppBackground = Hex("#1f2342");
+        t.ToolbarBackground = Hex("#1f2342");
+        t.ToolboxBackground = Hex("#262b50");
+        t.FlyoutBackground = Hex("#232649");
+        t.WorkspaceBackground = Hex("#2b3060");
+        t.ConsoleBackground = Hex("#181b33");
+        t.ConsoleText = Hex("#dfe3ff");
+        t.ButtonColour = Hex("#3d4377");
+        t.CategoryShade = 0.6f;
+        t.MenuBackground = Hex("#262b50");
+        t.MenuHover = Hex("#3d4377");
+        t.MenuSelected = Hex("#4a63c8");
+        t.DialogPanel = Hex("#262b50");
         return t;
     }
 }

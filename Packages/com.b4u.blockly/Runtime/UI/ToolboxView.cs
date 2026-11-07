@@ -32,7 +32,7 @@ namespace Blockly.UI
         public WorkspaceView Main => main;
         public WorkspaceView FlyoutView => flyoutView;
 
-        static readonly Color ButtonText = Color.white;
+        static Color ButtonText => BlockStyle.CategoryText;
 
         public void Configure(WorkspaceView mainView, RectTransform list, RectTransform panel, WorkspaceView flyout)
         {
@@ -41,9 +41,28 @@ namespace Blockly.UI
 
         void Awake() => Initialise();
 
+        // subscribed in Initialise as well, because EditMode never calls OnEnable
+        void OnEnable() { BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged; }
+        void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; }
+        void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; }
+
+        /// <summary>Re-colours the strip, the category buttons and the flyout background after a theme change.</summary>
+        void OnThemeChanged()
+        {
+            if (this == null) { BlockStyle.ThemeChanged -= OnThemeChanged; return; }
+            var bg = GetComponent<Image>();
+            if (bg != null) bg.color = DefaultBackground;
+            if (flyoutPanel != null) { var fp = flyoutPanel.GetComponent<Image>(); if (fp != null) fp.color = BlockStyle.FlyoutBackground; }
+            if (categoryList != null)
+                foreach (var t in categoryList.GetComponentsInChildren<TMP_Text>(true)) t.color = ButtonText;
+            if (createVariableButton != null && createVariableButton.targetGraphic != null) createVariableButton.targetGraphic.color = BlockStyle.VariableButton;
+            if (definition != null) HighlightSelected();
+        }
+
         void Initialise()
         {
             if (definition != null) return;
+            BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged;
             definition = StandardBlockSet.LoadToolbox();
             if (flyoutView != null) flyoutView.Spawner = this;
             if (main != null)
@@ -51,13 +70,13 @@ namespace Blockly.UI
                 main.DeleteArea = (RectTransform)transform;
                 main.BlockDragStarted += _ => CloseFlyout();
                 main.WorkspaceEdited += RefreshOpenFlyout;
-                main.DeleteHoverChanged += over => { var bg = GetComponent<Image>(); if (bg != null) bg.color = over ? new Color(0.6f, 0.15f, 0.15f) : DefaultBackground; };
+                main.DeleteHoverChanged += over => { var bg = GetComponent<Image>(); if (bg != null) bg.color = over ? BlockStyle.ToolboxDeleteHover : DefaultBackground; };
             }
             BuildButtons();
             CloseFlyout();
         }
 
-        static readonly Color DefaultBackground = new Color(0.22f, 0.22f, 0.26f);
+        static Color DefaultBackground => BlockStyle.ToolboxBackground;
 
         /// <summary>Use another toolbox (tests, custom block sets).</summary>
         public void SetDefinition(ToolboxDefinition def)
@@ -92,7 +111,7 @@ namespace Blockly.UI
                 y += 42;
 
                 var img = go.GetComponent<Image>();
-                img.color = Shade(BlockStyle.Parse(cat.ColourHex), 0.75f);
+                img.color = Shade(BlockStyle.Parse(cat.ColourHex), BlockStyle.CategoryShade);
                 go.GetComponent<Button>().targetGraphic = img;
                 go.GetComponent<Button>().onClick.AddListener(() => ToggleCategory(index));
                 buttons.Add(img);
@@ -127,7 +146,7 @@ namespace Blockly.UI
             for (int i = 0; i < buttons.Count; i++)
             {
                 var baseColour = BlockStyle.Parse(definition.Categories[i].ColourHex);
-                buttons[i].color = i == selected ? baseColour : Shade(baseColour, 0.75f);
+                buttons[i].color = i == selected ? baseColour : Shade(baseColour, BlockStyle.CategoryShade);
             }
         }
 
@@ -180,7 +199,7 @@ namespace Blockly.UI
             rt.anchorMin = rt.anchorMax = new Vector2(0, 1); rt.pivot = new Vector2(0, 1);
             rt.anchoredPosition = new Vector2(8, -6); rt.sizeDelta = new Vector2(190, 32);
             var img = go.GetComponent<Image>();
-            img.color = new Color(0.55f, 0.3f, 0.5f);
+            img.color = BlockStyle.VariableButton;
             createVariableButton = go.GetComponent<Button>();
             createVariableButton.targetGraphic = img;
             createVariableButton.onClick.AddListener(() => main.RequestCreateVariable());

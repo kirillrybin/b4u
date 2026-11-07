@@ -52,6 +52,27 @@ namespace Blockly.UI
         public Color DropdownArrow = new Color(1f, 1f, 1f, 0.9f);
         public float FieldStrokeWidth = 1f;
 
+        [Header("Interface (Playground, toolbox, menus, dialogs)")]
+        public Color AppBackground = new Color(0.17f, 0.17f, 0.2f);
+        public Color WorkspaceBackground = new Color(0.97f, 0.97f, 0.97f);
+        public Color ToolbarBackground = new Color(0.17f, 0.17f, 0.2f);
+        public Color ToolboxBackground = new Color(0.22f, 0.22f, 0.26f);
+        [Tooltip("Toolbox colour while a block is dragged over it (the trash).")]
+        public Color ToolboxDeleteHover = new Color(0.6f, 0.15f, 0.15f);
+        public Color FlyoutBackground = new Color(0.9f, 0.9f, 0.93f);
+        public Color ConsoleBackground = new Color(0.1f, 0.1f, 0.12f);
+        public Color ConsoleText = new Color(0.9f, 0.9f, 0.9f);
+        public Color ButtonColour = new Color(0.33f, 0.36f, 0.48f);
+        public Color ButtonText = Color.white;
+        public Color CategoryText = Color.white;
+        [Tooltip("Category buttons are their colour times this until selected.")]
+        public float CategoryShade = 0.75f;
+        public Color VariableButton = new Color(0.55f, 0.3f, 0.5f);
+        public Color MenuBackground = new Color(0.17f, 0.17f, 0.2f, 0.98f);
+        public Color MenuHover = new Color(0.32f, 0.36f, 0.5f, 1f);
+        public Color MenuSelected = new Color(0.25f, 0.45f, 0.75f, 1f);
+        public Color DialogPanel = new Color(0.2f, 0.2f, 0.24f, 1f);
+
         [Header("Text")]
         public float FontSize = 12f;
         [Tooltip("Leave empty for the TextMeshPro default font.")]

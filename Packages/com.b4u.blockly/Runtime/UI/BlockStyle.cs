@@ -30,6 +30,23 @@ namespace Blockly.UI
         }
 
         public static float FontSize => Theme.FontSize;
+        public static Color AppBackground => Theme.AppBackground;
+        public static Color WorkspaceBackground => Theme.WorkspaceBackground;
+        public static Color ToolbarBackground => Theme.ToolbarBackground;
+        public static Color ToolboxBackground => Theme.ToolboxBackground;
+        public static Color ToolboxDeleteHover => Theme.ToolboxDeleteHover;
+        public static Color FlyoutBackground => Theme.FlyoutBackground;
+        public static Color ConsoleBackground => Theme.ConsoleBackground;
+        public static Color ConsoleText => Theme.ConsoleText;
+        public static Color ButtonColour => Theme.ButtonColour;
+        public static Color ButtonText => Theme.ButtonText;
+        public static Color CategoryText => Theme.CategoryText;
+        public static float CategoryShade => Theme.CategoryShade;
+        public static Color VariableButton => Theme.VariableButton;
+        public static Color MenuBackground => Theme.MenuBackground;
+        public static Color MenuHover => Theme.MenuHover;
+        public static Color MenuSelected => Theme.MenuSelected;
+        public static Color DialogPanel => Theme.DialogPanel;
         public static float FieldCornerRadius => Theme.FieldCornerRadius;
         public static float StrokeWidth => Theme.StrokeWidth;
         public static float FieldStrokeWidth => Theme.FieldStrokeWidth;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Blockly.UI;
@@ -47,7 +48,8 @@ namespace Blockly.EditorTools
             var canvas = (RectTransform)canvasGo.transform;
 
             // the whole UI sits inside the safe area (notch, rounded corners); the edge around it is the same dark colour as the toolbar
-            Stretch("Background", canvas, 0, 0, 0, 0).gameObject.AddComponent<Image>().color = Dark;
+            var appBackground = Stretch("Background", canvas, 0, 0, 0, 0).gameObject.AddComponent<Image>();
+            appBackground.color = Dark;
             var ui = Stretch("SafeArea", canvas, 0, 0, 0, 0);
 
             // --- workspace (pan with drag / wheel) ---
@@ -140,6 +142,13 @@ namespace Blockly.EditorTools
             Wire(stop, controller.Stop); Wire(slow, controller.ToggleSlow);
             Wire(undo, controller.Undo); Wire(redo, controller.Redo);
             Wire(file, controller.ShowFileMenu);
+
+            var skin = canvasGo.AddComponent<PlaygroundSkin>();
+            var buttons = new[] { prev, next, run, step, stop, slow, undo, redo, file };
+            var toolbarTexts = new List<TMP_Text> { title };
+            foreach (var b in buttons) toolbarTexts.Add(b.GetComponentInChildren<TMP_Text>());
+            skin.Configure(appBackground, scroll.GetComponent<Image>(), bar.GetComponent<Image>(), panel.GetComponent<Image>(), flyoutPanel.GetComponent<Image>(),
+                buttons.Select(b => b.GetComponent<Image>()), toolbarTexts, outText);
 
             var layout = canvasGo.AddComponent<PlaygroundLayout>();
             layout.Configure(scaler, ui, bar,

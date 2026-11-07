@@ -14,9 +14,9 @@ namespace Blockly.UI
     public sealed class DropdownMenu : MonoBehaviour
     {
         const float ItemHeight = 30f, Padding = 4f, MaxHeight = 320f, FontSize = 15f;
-        static readonly Color Back = new Color(0.17f, 0.17f, 0.2f, 0.98f);
-        static readonly Color Hover = new Color(0.32f, 0.36f, 0.5f, 1f);
-        static readonly Color SelectedBack = new Color(0.25f, 0.45f, 0.75f, 1f);
+        static Color Back => BlockStyle.MenuBackground;
+        static Color Hover => BlockStyle.MenuHover;
+        static Color SelectedBack => BlockStyle.MenuSelected;
 
         readonly List<Button> buttons = new List<Button>();
         readonly List<DropdownItem> items = new List<DropdownItem>();
