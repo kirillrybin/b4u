@@ -33,6 +33,7 @@ namespace Blockly.UI
 
         Vector2Int lastScreen;
         Rect lastSafe;
+        Vector2 lastSize = new Vector2(-1, -1);       // the safe area size, in canvas units, that the layout was last made for
 
         public int ToolbarRows { get; private set; } = 1;
         public float ToolbarHeight { get; private set; } = RowHeight;
@@ -64,11 +65,22 @@ namespace Blockly.UI
         {
             var screen = new Vector2Int(Screen.width, Screen.height);
             var safe = Screen.safeArea;
-            if (!force && screen == lastScreen && safe == lastSafe) return;
-            lastScreen = screen; lastSafe = safe;
-            ApplyScale();
-            ApplySafeArea(safe, screen);
-            if (safeArea != null) { Canvas.ForceUpdateCanvases(); Apply(safeArea.rect.width, safeArea.rect.height); }
+            if (force || screen != lastScreen || safe != lastSafe)
+            {
+                lastScreen = screen; lastSafe = safe;
+                ApplyScale();
+                ApplySafeArea(safe, screen);
+            }
+            if (safeArea == null) return;
+            // The canvas scaler adopts a new scale a frame later, so the size in canvas units is looked at every frame and the layout is
+            // redone whenever it differs from the one it was made for.
+            Canvas.ForceUpdateCanvases();
+            var size = safeArea.rect.size;
+            if (size == lastSize) return;
+            lastSize = size;
+            Apply(size.x, size.y);
+            Debug.Log("[Blockly] layout: screen " + screen.x + "x" + screen.y + ", dpi " + Screen.dpi + ", " + size.x.ToString("0") + "x" + size.y.ToString("0") + " units, "
+                      + ToolbarRows + " toolbar row(s), mobile=" + Application.isMobilePlatform);
         }
 
         /// <summary>Phones: one unit is about one density-independent pixel. Elsewhere the window is scaled to a 1280 x 720 design.</summary>
