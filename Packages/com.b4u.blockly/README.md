@@ -69,7 +69,9 @@ The **Custom blocks** sample (Package Manager > Blockly for Unity > Samples) is 
 
 ## Block appearance
 
-A `BlockTheme` asset (Assets > Create > Blockly > Block Theme) sets the outline colour and width, slot and field colours, font and font size. Assign it with `BlockStyle.Theme = theme;`; open views redraw themselves. Block fill colours come from the block definitions. The **Block themes** sample applies a ready-made look with one component.
+A `BlockTheme` asset (Assets > Create > Blockly > Block Theme) sets the outline colour and width, slot and field colours, font and font size. Assign it with `BlockStyle.Theme = theme;`; open views redraw themselves. Block fill colours come from the block definitions. The **Block themes** sample applies a ready-made look with one component, and `IconBlocks.cs` shows blocks and a toolbox category with pictures.
+
+Pictures: `field_image` (`src`, `width`, `height`) in a block's JSON draws a sprite; a toolbox category takes `"icon"`. A name is resolved by `BlockImages`: a sprite registered with `BlockImages.Register(name, sprite)`, then `BlockImages.Resolver`, then a Sprite in a Resources folder (path without extension). Nothing is downloaded. A missing picture leaves its space empty.
 
 ## Saving programs
 

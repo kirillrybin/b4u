@@ -11,6 +11,8 @@ namespace Blockly.Editing
     {
         public string Name;
         public string ColourHex = "#a5a5a5";
+        /// <summary>Optional picture for the category button (a name the UI resolves through BlockImages).</summary>
+        public string Icon;
         public CategoryKind Kind;
         /// <summary>Block specs in Blockly's JSON block format (type, fields, inputs with shadows, extraState).</summary>
         public List<Dictionary<string, object>> Blocks = new List<Dictionary<string, object>>();
@@ -37,6 +39,7 @@ namespace Blockly.Editing
                 {
                     Name = Json.Json.GetString(co, "name") ?? "",
                     ColourHex = Colour.Parse(co.TryGetValue("colour", out var col) ? col : null),
+                    Icon = Json.Json.GetString(co, "icon"),
                 };
                 string custom = Json.Json.GetString(co, "custom");
                 cat.Kind = custom == "VARIABLE" ? CategoryKind.Variables : custom == "PROCEDURE" ? CategoryKind.Procedures : CategoryKind.Static;

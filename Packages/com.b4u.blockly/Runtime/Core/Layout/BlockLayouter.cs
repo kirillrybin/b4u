@@ -11,6 +11,7 @@ namespace Blockly.Layout
         public float X, Y, W, H;
         public bool Editable;      // draws a field background; labels are plain text
         public bool IsDropdown;
+        public string ImageSrc;    // field_image: a picture instead of text
     }
 
     /// <summary>Hole for an inline value input; the child block is drawn on top of it.</summary>
@@ -58,7 +59,7 @@ namespace Blockly.Layout
         // ------------------------------------------------------------------ measured tree
         sealed class Item
         {
-            public Field Field; public string Text; public bool Editable, Dropdown;
+            public Field Field; public string Text; public bool Editable, Dropdown; public string ImageSrc;
             public Input Slot; public Measured SlotChild;
             public float W, H;
         }
@@ -243,6 +244,12 @@ namespace Blockly.Layout
                 it.Text = DisplayText(f);
                 it.Editable = !label;
                 it.Dropdown = f.Spec.FieldType == "field_dropdown" || f.Spec.FieldType == "field_variable";
+                if (f.Spec.FieldType == "field_image")
+                {
+                    it.ImageSrc = f.Spec.Src; it.W = f.Spec.ImageWidth; it.H = f.Spec.ImageHeight;
+                    row.Items.Add(it);
+                    continue;
+                }
                 if (f.Spec.FieldType == "field_checkbox")
                 {
                     it.W = Metrics.CheckboxWidth; it.H = Metrics.FieldHeight;
@@ -340,7 +347,7 @@ namespace Blockly.Layout
                         box.Fields.Add(new FieldBox
                         {
                             Field = it.Field, Text = it.Text, X = cx, Y = fy, W = it.W, H = it.H,
-                            Editable = it.Editable, IsDropdown = it.Dropdown,
+                            Editable = it.Editable, IsDropdown = it.Dropdown, ImageSrc = it.ImageSrc,
                         });
                     }
                     cx += it.W + Metrics.ItemGap;

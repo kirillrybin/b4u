@@ -15,7 +15,7 @@
     },
     {
       "displayName": "Block themes",
-      "description": "A component that applies a block theme (a built-in Candy look, or your own BlockTheme asset) to the Playground.",
+      "description": "A component that applies a block theme (a built-in Candy look, or your own BlockTheme asset), and example blocks and a toolbox category with pictures.",
       "path": "Samples~/BlockThemes"
     }
   ]

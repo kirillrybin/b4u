@@ -101,7 +101,18 @@ namespace Blockly.UI
                 var lrt = (RectTransform)label.transform;
                 lrt.SetParent(rt, false);
                 lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
-                lrt.offsetMin = new Vector2(10, 0); lrt.offsetMax = new Vector2(-4, 0);
+                var icon = BlockImages.Get(cat.Icon);
+                if (icon != null)
+                {
+                    var ig = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+                    var irt = (RectTransform)ig.transform;
+                    irt.SetParent(rt, false);
+                    irt.anchorMin = irt.anchorMax = new Vector2(0, 0.5f); irt.pivot = new Vector2(0, 0.5f);
+                    irt.sizeDelta = new Vector2(24, 24); irt.anchoredPosition = new Vector2(8, 0);
+                    var iimg = ig.GetComponent<Image>();
+                    iimg.sprite = icon; iimg.preserveAspect = true; iimg.raycastTarget = false;
+                }
+                lrt.offsetMin = new Vector2(icon != null ? 38 : 10, 0); lrt.offsetMax = new Vector2(-4, 0);
                 var t = label.GetComponent<TextMeshProUGUI>();
                 t.text = cat.Name; t.fontSize = 16; t.color = ButtonText;
                 t.alignment = TextAlignmentOptions.MidlineLeft; t.raycastTarget = false;

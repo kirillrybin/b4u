@@ -948,6 +948,15 @@ namespace Blockly.UI
             float lx = f.X - box.X, ly = f.Y - box.Y;
             var rt = NewRect(f.Field.Name ?? "label", parent, lx, ly, f.W, f.H);
 
+            if (f.ImageSrc != null)
+            {
+                var sprite = BlockImages.Get(f.ImageSrc);
+                if (sprite == null) return;                        // the space stays reserved; nothing to draw
+                var pic = rt.gameObject.AddComponent<Image>();
+                pic.sprite = sprite; pic.preserveAspect = true; pic.raycastTarget = false;
+                return;
+            }
+
             if (f.Editable)
             {
                 bool dropdown = f.IsDropdown;

@@ -26,6 +26,8 @@ namespace Blockly
         public double? Min, Max, Precision;
         public bool Checked;
         public string VariableType;
+        public string Src;                 // field_image: where the picture comes from (resolved by the UI)
+        public float ImageWidth, ImageHeight;
     }
 
     /// <summary>
@@ -137,6 +139,13 @@ namespace Blockly
                 case "input_value": spec.Kind = ArgKind.InputValue; break;
                 case "input_statement": spec.Kind = ArgKind.InputStatement; break;
                 case "input_dummy": case "input_end_row": spec.Kind = ArgKind.InputDummy; break;
+                case "field_image":
+                    spec.Kind = ArgKind.Label;     // never serialized, no value
+                    spec.Src = Json.Json.GetString(a, "src", "");
+                    spec.Text = "";
+                    spec.ImageWidth = (float)Json.Json.GetNumber(a, "width", 16);
+                    spec.ImageHeight = (float)Json.Json.GetNumber(a, "height", 16);
+                    break;
                 case "field_label": case "field_label_serializable":
                     spec.Kind = type == "field_label" ? ArgKind.Label : ArgKind.Field;
                     spec.Text = Json.Json.GetString(a, "text", "");
