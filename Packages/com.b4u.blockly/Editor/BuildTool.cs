@@ -9,7 +9,7 @@ namespace Blockly.EditorTools
 {
     /// <summary>
     /// Player builds from the command line: <c>-executeMethod Blockly.EditorTools.BuildTool.BuildFromCommandLine
-    /// -buildTarget WebGL -buildOut &lt;dir&gt;</c>. Builds the scenes listed in the Build Settings.
+    /// -buildTarget WebGL -buildOut &lt;dir&gt;</c> (add <c>-iosSimulator</c> to <c>-buildTarget iOS</c> to build for Xcode's simulator). Builds the scenes listed in the Build Settings.
     /// Only targets whose module is installed in the editor can be built.
     /// </summary>
     public static class BuildTool
@@ -19,6 +19,8 @@ namespace Blockly.EditorTools
             var args = Environment.GetCommandLineArgs();
             string target = Arg(args, "-buildTarget") ?? "WebGL";
             string output = Arg(args, "-buildOut") ?? throw new ArgumentException("-buildOut <dir> is required");
+            // Unity itself only accepts its own platform names after -buildTarget, so the simulator is asked for with a flag.
+            if (Array.IndexOf(args, "-iosSimulator") >= 0 && string.Equals(target, "ios", StringComparison.OrdinalIgnoreCase)) target = "iOSSimulator";
             EditorApplication.Exit(Build(target, output) ? 0 : 1);
         }
 
@@ -37,6 +39,16 @@ namespace Blockly.EditorTools
             if (target == BuildTarget.Android || target == BuildTarget.iOS || target == BuildTarget.WebGL)
                 PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(group), ScriptingImplementation.IL2CPP);
             // Both ABIs: some current phones (e.g. the Galaxy A13) still run a 32-bit-only Android userland and cannot install an ARM64-only APK.
+            // "iOSSimulator" builds the project against the simulator SDK (it runs in Xcode's simulator, not on a device).
+            if (target == BuildTarget.iOS)
+            {
+                bool simulator = string.Equals(targetName, "iossimulator", StringComparison.OrdinalIgnoreCase);
+                PlayerSettings.iOS.sdkVersion = simulator ? iOSSdkVersion.SimulatorSDK : iOSSdkVersion.DeviceSDK;
+                // the simulator runs the code of the Mac's own architecture
+                if (simulator)
+                    PlayerSettings.iOS.simulatorSdkArchitecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64
+                        ? AppleMobileArchitectureSimulator.ARM64 : AppleMobileArchitectureSimulator.X86_64;
+            }
             if (target == BuildTarget.Android) PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARMv7 | AndroidArchitecture.ARM64;
             if (target == BuildTarget.WebGL)
             {
@@ -63,12 +75,13 @@ namespace Blockly.EditorTools
             {
                 case "webgl": return (BuildTarget.WebGL, BuildTargetGroup.WebGL, output);
                 case "android": return (BuildTarget.Android, BuildTargetGroup.Android, Path.Combine(output, "BlocklyPlayground.apk"));
-                case "ios": return (BuildTarget.iOS, BuildTargetGroup.iOS, output);
+                case "ios":
+                case "iossimulator": return (BuildTarget.iOS, BuildTargetGroup.iOS, output);
                 case "windows":
                 case "standalonewindows64": return (BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, Path.Combine(output, "BlocklyPlayground.exe"));
                 case "macos":
                 case "standaloneosx": return (BuildTarget.StandaloneOSX, BuildTargetGroup.Standalone, Path.Combine(output, "BlocklyPlayground.app"));
-                default: throw new ArgumentException("Unknown -buildTarget '" + name + "' (WebGL, Android, iOS, Windows, macOS)");
+                default: throw new ArgumentException("Unknown -buildTarget '" + name + "' (WebGL, Android, iOS, iOSSimulator, Windows, macOS)");
             }
         }
 
