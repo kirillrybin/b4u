@@ -106,9 +106,9 @@ namespace Blockly.Layout
             foreach (var kv in order)
             {
                 var probe = LayoutStack(kv.Value, 0, 0);
-                kv.Value.X = Metrics.TabWidth;      // leave room for an output tab
+                kv.Value.X = G.TabWidth;      // leave room for an output tab
                 kv.Value.Y = y;
-                y += probe.Bottom + Metrics.NotchDepth + gap;
+                y += probe.Bottom + G.NotchDepth + gap;
             }
         }
 
@@ -174,7 +174,7 @@ namespace Blockly.Layout
                     var cm = child != null ? Measure(child, childShadow) : null;
                     if (inline)
                     {
-                        float w = Metrics.TabWidth + Math.Max(cm?.TotalW ?? 0, G.SlotMinWidth);
+                        float w = G.TabWidth + Math.Max(cm?.TotalW ?? 0, G.SlotMinWidth);
                         float h = Math.Max(cm?.H ?? 0, G.SlotMinHeight);
                         cur.Items.Add(new Item { Slot = input, SlotChild = cm, W = w, H = h });
                     }
@@ -214,7 +214,7 @@ namespace Blockly.Layout
                 {
                     float extH = r.ExternalChild != null ? r.ExternalChild.H : 0;
                     r.H = Math.Max(G.RowMinHeight, Math.Max(itemsH, extH));
-                    r.W = G.PadLeft + ItemsWidth(r) + G.PadRight + (r.External != null ? Metrics.TabWidth : 0);
+                    r.W = G.PadLeft + ItemsWidth(r) + G.PadRight + (r.External != null ? G.TabWidth : 0);
                 }
                 width = Math.Max(width, r.W);
             }
@@ -313,13 +313,13 @@ namespace Blockly.Layout
             var box = new BlockBox { Block = m.Block, IsShadow = m.Shadow, X = x, Y = y, W = m.W, H = m.H };
             res.Boxes.Add(box);
             res.ByBlock[m.Block] = box;
-            res.Left = Math.Min(res.Left, x - (m.Block.Output != null ? Metrics.TabWidth : 0));
+            res.Left = Math.Min(res.Left, x - (m.Block.Output != null ? G.TabWidth : 0));
             res.Top = Math.Min(res.Top, y);
             res.Right = Math.Max(res.Right, x + m.W);
             res.Bottom = Math.Max(res.Bottom, y + m.H);
 
             var b = m.Block;
-            if (b.Output != null) box.Connections[b.Output] = new Vec2(x, y + Metrics.TabTop);
+            if (b.Output != null) box.Connections[b.Output] = new Vec2(x, y + G.TabTop);
             if (b.Previous != null) box.Connections[b.Previous] = new Vec2(x, y);
             if (b.Next != null) box.Connections[b.Next] = new Vec2(x, y + m.H);
 
@@ -328,18 +328,18 @@ namespace Blockly.Layout
             {
                 float rowY = y + r.Y;
                 float cx = x + G.PadLeft;
-                if (r.External?.Connection != null) box.Connections[r.External.Connection] = new Vec2(x + m.W, rowY + Metrics.TabTop);
+                if (r.External?.Connection != null) box.Connections[r.External.Connection] = new Vec2(x + m.W, rowY + G.TabTop);
                 if (r.Statement?.Connection != null) box.Connections[r.Statement.Connection] = new Vec2(x + m.StmtX, rowY);
                 foreach (var it in r.Items)
                 {
                     if (it.Slot != null)
                     {
                         float sy = rowY + (r.H - it.H) / 2f;
-                        if (it.Slot.Connection != null) box.Connections[it.Slot.Connection] = new Vec2(cx + Metrics.TabWidth, sy + Metrics.TabTop);
+                        if (it.Slot.Connection != null) box.Connections[it.Slot.Connection] = new Vec2(cx + G.TabWidth, sy + G.TabTop);
                         box.Slots.Add(new SlotBox { Input = it.Slot, Polygon = SlotPolygon(cx, sy, it.W, it.H) });
                         if (it.SlotChild != null)
                         {
-                            var child = it.SlotChild; float childX = cx + Metrics.TabWidth, childY = sy;
+                            var child = it.SlotChild; float childX = cx + G.TabWidth, childY = sy;
                             children.Add(() => Place(child, childX, childY, res));
                         }
                     }
@@ -376,9 +376,9 @@ namespace Blockly.Layout
         {
             var Tab = BlockGeometry.Current.Tab();
             // Hole (including the tab-shaped bump on its left) that an inline child block plugs into.
-            float l = x + Metrics.TabWidth, r = x + w, t = y, b = y + h, ty = y + Metrics.TabTop;
-            var p = new List<Vec2> { new Vec2(l, t), new Vec2(r, t), new Vec2(r, b), new Vec2(l, b), new Vec2(l, ty + Metrics.TabHeight) };
-            for (int i = Tab.GetLength(0) - 2; i >= 0; i--) p.Add(new Vec2(x + Metrics.TabWidth + Tab[i, 0], ty + Tab[i, 1]));
+            float l = x + G.TabWidth, r = x + w, t = y, b = y + h, ty = y + G.TabTop;
+            var p = new List<Vec2> { new Vec2(l, t), new Vec2(r, t), new Vec2(r, b), new Vec2(l, b), new Vec2(l, ty + G.TabHeight) };
+            for (int i = Tab.GetLength(0) - 2; i >= 0; i--) p.Add(new Vec2(x + G.TabWidth + Tab[i, 0], ty + Tab[i, 1]));
             var rounded = BlockGeometry.Current.CornerRadius > 0 ? Geometry.RoundCorners(p, Math.Min(BlockGeometry.Current.CornerRadius, 6f)) : p;
             return rounded.ToArray();
         }
@@ -394,7 +394,7 @@ namespace Blockly.Layout
             p.Add(new Vec2(x, y));
             if (b.Previous != null)
             {
-                g.AddNotch(p, x + Metrics.NotchX, y, true);
+                g.AddNotch(p, x + G.NotchX, y, true);
             }
             p.Add(new Vec2(x + w, y));
 
@@ -403,14 +403,14 @@ namespace Blockly.Layout
                 float rt = y + r.Y;
                 if (r.External != null)
                 {
-                    p.Add(new Vec2(x + w, rt + Metrics.TabTop));
-                    for (int i = 0; i < Tab.GetLength(0); i++) p.Add(new Vec2(x + w + Tab[i, 0], rt + Metrics.TabTop + Tab[i, 1]));
+                    p.Add(new Vec2(x + w, rt + G.TabTop));
+                    for (int i = 0; i < Tab.GetLength(0); i++) p.Add(new Vec2(x + w + Tab[i, 0], rt + G.TabTop + Tab[i, 1]));
                 }
                 else if (r.Statement != null)
                 {
                     float sx = x + m.StmtX;
                     p.Add(new Vec2(x + w, rt));
-                    g.AddNotch(p, sx + Metrics.NotchX, rt, false);
+                    g.AddNotch(p, sx + G.NotchX, rt, false);
                     p.Add(new Vec2(sx, rt));
                     p.Add(new Vec2(sx, rt + r.InnerH));
                     p.Add(new Vec2(x + w, rt + r.InnerH));
@@ -420,14 +420,14 @@ namespace Blockly.Layout
             p.Add(new Vec2(x + w, y + h));
             if (b.Next != null)
             {
-                g.AddNotch(p, x + Metrics.NotchX, y + h, false);
+                g.AddNotch(p, x + G.NotchX, y + h, false);
             }
             p.Add(new Vec2(x, y + h));
 
             if (b.Output != null)
             {
-                p.Add(new Vec2(x, y + Metrics.TabTop + Metrics.TabHeight));
-                for (int i = Tab.GetLength(0) - 1; i >= 0; i--) p.Add(new Vec2(x + Tab[i, 0], y + Metrics.TabTop + Tab[i, 1]));
+                p.Add(new Vec2(x, y + G.TabTop + G.TabHeight));
+                for (int i = Tab.GetLength(0) - 1; i >= 0; i--) p.Add(new Vec2(x + Tab[i, 0], y + G.TabTop + Tab[i, 1]));
             }
             var outline = Geometry.Simplify(p);
             return (g.CornerRadius > 0 ? Geometry.RoundCorners(outline, g.CornerRadius) : outline).ToArray();

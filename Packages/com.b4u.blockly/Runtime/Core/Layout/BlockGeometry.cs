@@ -24,6 +24,11 @@ namespace Blockly.Layout
         public float StatementMinHeight = Metrics.StatementMinHeight, StatementMinWidth = Metrics.StatementMinWidth;
         public float TopBarHeight = Metrics.TopBarHeight, BottomBarHeight = Metrics.BottomBarHeight, StatementGap = Metrics.StatementGap;
 
+        // Connection shapes: the output tab (and the hole it plugs into) and the notch of stacked blocks.
+        // Keep TabTop + TabHeight within the smallest row (24) and NotchX + NotchWidth within the statement width (30).
+        public float TabWidth = Metrics.TabWidth, TabHeight = Metrics.TabHeight, TabTop = Metrics.TabTop;
+        public float NotchX = Metrics.NotchX, NotchWidth = Metrics.NotchWidth, NotchDepth = Metrics.NotchDepth;
+
         public static readonly BlockGeometry Classic = new BlockGeometry();
 
         static BlockGeometry current = Classic;
@@ -37,13 +42,22 @@ namespace Blockly.Layout
         /// <summary>The tab as (dx, dy) pairs going down from the tab's top; negative dx points left.</summary>
         internal float[,] Tab()
         {
-            if (!RoundTabs) return Puzzle;
+            if (!RoundTabs)
+            {
+                var puzzle = new float[Puzzle.GetLength(0), 2];
+                for (int i = 0; i < puzzle.GetLength(0); i++)
+                {
+                    puzzle[i, 0] = Puzzle[i, 0] * TabWidth / Metrics.TabWidth;
+                    puzzle[i, 1] = Puzzle[i, 1] * TabHeight / Metrics.TabHeight;
+                }
+                return puzzle;
+            }
             var t = new float[Steps + 1, 2];
-            float ry = Metrics.TabHeight / 2f;
+            float ry = TabHeight / 2f;
             for (int i = 0; i <= Steps; i++)
             {
                 double a = Math.PI * i / Steps;                       // 0..pi down the tab
-                t[i, 0] = -(float)Math.Sin(a) * Metrics.TabWidth;
+                t[i, 0] = -(float)Math.Sin(a) * TabWidth;
                 t[i, 1] = ry - (float)Math.Cos(a) * ry;
             }
             t[0, 0] = 0; t[Steps, 0] = 0;
@@ -57,19 +71,20 @@ namespace Blockly.Layout
             if (!RoundNotches)
             {
                 pts.Add(new Vec2(left, y));
-                pts.Add(new Vec2(left + 6, y + Metrics.NotchDepth));
-                pts.Add(new Vec2(left + 9, y + Metrics.NotchDepth));
-                pts.Add(new Vec2(left + Metrics.NotchWidth, y));
+                float k = NotchWidth / Metrics.NotchWidth;                    // the trapezoid scales with the notch
+                pts.Add(new Vec2(left + 6 * k, y + NotchDepth));
+                pts.Add(new Vec2(left + 9 * k, y + NotchDepth));
+                pts.Add(new Vec2(left + NotchWidth, y));
             }
             else
             {
-                float rx = Metrics.NotchWidth / 2f;
+                float rx = NotchWidth / 2f;
                 for (int i = 0; i <= Steps; i++)
                 {
                     double a = Math.PI * i / Steps;
-                    pts.Add(new Vec2(left + rx - (float)Math.Cos(a) * rx, y + (float)Math.Sin(a) * Metrics.NotchDepth));
+                    pts.Add(new Vec2(left + rx - (float)Math.Cos(a) * rx, y + (float)Math.Sin(a) * NotchDepth));
                 }
-                pts[0] = new Vec2(left, y); pts[Steps] = new Vec2(left + Metrics.NotchWidth, y);
+                pts[0] = new Vec2(left, y); pts[Steps] = new Vec2(left + NotchWidth, y);
             }
             if (!leftToRight) pts.Reverse();
             p.AddRange(pts);

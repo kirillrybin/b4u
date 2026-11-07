@@ -25,6 +25,32 @@ namespace Blockly.UI
     }
 
     /// <summary>
+    /// Overrides for some blocks. <see cref="Match"/> is a block type ("text_print"), a prefix ending in * ("text_*") or * for all;
+    /// every rule that matches applies, in list order, so later rules win. Only the ticked parts change.
+    /// </summary>
+    [Serializable]
+    public class BlockStyleRule
+    {
+        [Tooltip("A block type, a prefix ending in * (math_*), or * for every block.")]
+        public string Match = "*";
+        public bool OverrideFill; public Color Fill = Color.gray;
+        public bool OverrideStroke; public Color Stroke = Color.white;
+        [Tooltip("Outline width of these blocks (0 = the theme's).")]
+        public float StrokeWidth;
+        public bool OverrideLabelText; public Color LabelText = Color.white;
+        public bool OverrideInputFill; public Color InputFill = Color.white;
+        public bool OverrideInputText; public Color InputText = Color.black;
+
+        public bool Matches(string blockType)
+        {
+            if (string.IsNullOrEmpty(Match) || blockType == null) return false;
+            if (Match == "*") return true;
+            if (Match[Match.Length - 1] == '*') return blockType.StartsWith(Match.Substring(0, Match.Length - 1), StringComparison.Ordinal);
+            return blockType == Match;
+        }
+    }
+
+    /// <summary>
     /// The look of blocks: how the outline, slots and fields are coloured and which font is used.
     /// Block fill colours still come from the block definitions. Assign an instance to <see cref="BlockStyle.Theme"/>.
     /// The defaults reproduce Blockly's classic look.
@@ -53,6 +79,14 @@ namespace Blockly.UI
         [Tooltip("Radius of the corners of field plates (0 = square).")]
         public float FieldCornerRadius = 0f;
 
+        [Header("Connection shapes (keep TabTop + TabHeight within 24 and NotchX + NotchWidth within 30)")]
+        public float TabWidth = 8f;
+        public float TabHeight = 15f;
+        public float TabTop = 5f;
+        public float NotchX = 15f;
+        public float NotchWidth = 15f;
+        public float NotchDepth = 4f;
+
         [Header("Spacing (workspace units; the defaults are Blockly's)")]
         public float RowMinHeight = 24f;
         [Tooltip("Space between a block's edge and its first / last item.")]
@@ -69,6 +103,21 @@ namespace Blockly.UI
         [Header("Quality")]
         [Tooltip("Soft edges on block shapes, in screen pixels (0 = hard edges). About 1 removes the stair-steps without MSAA.")]
         public float EdgeSmoothing = 1f;
+
+        [Header("Block states")]
+        [Tooltip("How far disabled blocks are pulled towards grey (0 = look like any block).")]
+        [Range(0f, 1f)] public float DisabledBlend = 0.55f;
+        public Color SelectionColour = new Color(0.15f, 0.45f, 0.95f, 1f);
+        public float SelectionWidth = 3f;
+        [Tooltip("The running block.")]
+        public Color HighlightColour = new Color(1f, 0.85f, 0.1f, 1f);
+        public float HighlightWidth = 3.5f;
+        [Tooltip("The connection a dragged block would snap to.")]
+        public Color SnapColour = new Color(1f, 0.85f, 0.1f, 0.95f);
+        public Color SnapOutline = new Color(0.45f, 0.35f, 0f, 1f);
+
+        [Header("Per block")]
+        public System.Collections.Generic.List<BlockStyleRule> Rules = new System.Collections.Generic.List<BlockStyleRule>();
 
         [Header("Fields")]
         public Color InputFill = Color.white;
