@@ -31,6 +31,10 @@ public class ApplyBlockTheme : MonoBehaviour
         t.InputFill = new Color(1f, 1f, 1f, 0.35f);
         t.InputText = Color.white;
         t.DropdownScale = 1.2f;
+        t.CornerRadius = 8f;           // rounded blocks with smooth notches and tabs
+        t.RoundNotches = true;
+        t.RoundTabs = true;
+        t.FieldCornerRadius = 4f;
         return t;
     }
 }

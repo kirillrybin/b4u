@@ -961,6 +961,7 @@ namespace Blockly.UI
             {
                 bool dropdown = f.IsDropdown;
                 var rect = new[] { new Vec2(0, 0), new Vec2(f.W, 0), new Vec2(f.W, f.H), new Vec2(0, f.H) };
+                if (BlockStyle.FieldCornerRadius > 0) rect = Geometry.RoundCorners(rect, BlockStyle.FieldCornerRadius).ToArray();
                 var bg = rt.gameObject.AddComponent<PolygonGraphic>();
                 bg.SetShape(rect, dropdown ? BlockStyle.DropdownFill(baseColour, box.IsShadow) : BlockStyle.InputFill,
                             BlockStyle.Stroke(baseColour, box.IsShadow), BlockStyle.FieldStrokeWidth);

@@ -22,6 +22,16 @@ namespace Blockly.UI
         [Tooltip("How far shadow blocks are pulled towards grey (0..1).")]
         [Range(0f, 1f)] public float ShadowBlend = 0.55f;
 
+        [Header("Shape")]
+        [Tooltip("Radius of the right-angle corners of blocks (0 = sharp, as in Blockly).")]
+        public float CornerRadius = 0f;
+        [Tooltip("Smooth bump for the previous/next notches instead of a trapezoid.")]
+        public bool RoundNotches = false;
+        [Tooltip("Smooth bump for the output tabs and value holes instead of a puzzle knob.")]
+        public bool RoundTabs = false;
+        [Tooltip("Radius of the corners of field plates (0 = square).")]
+        public float FieldCornerRadius = 0f;
+
         [Header("Fields")]
         public Color InputFill = Color.white;
         public Color InputText = new Color(0.08f, 0.08f, 0.08f, 1f);

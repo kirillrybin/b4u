@@ -369,19 +369,22 @@ namespace Blockly.Layout
 
         // ------------------------------------------------------------------ shapes
         // Puzzle tab as (dx, dy) pairs going down; negative dx points to the left.
-        static readonly float[,] Tab = { { 0, 0 }, { -5, 1.5f }, { -8, 4.5f }, { -8, 10.5f }, { -5, 13.5f }, { 0, 15 } };
 
         static Vec2[] SlotPolygon(float x, float y, float w, float h)
         {
+            var Tab = BlockGeometry.Current.Tab();
             // Hole (including the tab-shaped bump on its left) that an inline child block plugs into.
             float l = x + Metrics.TabWidth, r = x + w, t = y, b = y + h, ty = y + Metrics.TabTop;
             var p = new List<Vec2> { new Vec2(l, t), new Vec2(r, t), new Vec2(r, b), new Vec2(l, b), new Vec2(l, ty + Metrics.TabHeight) };
-            for (int i = 4; i >= 0; i--) p.Add(new Vec2(x + Metrics.TabWidth + Tab[i, 0], ty + Tab[i, 1]));
-            return p.ToArray();
+            for (int i = Tab.GetLength(0) - 2; i >= 0; i--) p.Add(new Vec2(x + Metrics.TabWidth + Tab[i, 0], ty + Tab[i, 1]));
+            var rounded = BlockGeometry.Current.CornerRadius > 0 ? Geometry.RoundCorners(p, Math.Min(BlockGeometry.Current.CornerRadius, 6f)) : p;
+            return rounded.ToArray();
         }
 
         Vec2[] Outline(Measured m, float x, float y)
         {
+            var g = BlockGeometry.Current;
+            var Tab = g.Tab();
             var p = new List<Vec2>();
             float w = m.W, h = m.H;
             Block b = m.Block;
@@ -389,10 +392,7 @@ namespace Blockly.Layout
             p.Add(new Vec2(x, y));
             if (b.Previous != null)
             {
-                p.Add(new Vec2(x + Metrics.NotchX, y));
-                p.Add(new Vec2(x + Metrics.NotchX + 6, y + Metrics.NotchDepth));
-                p.Add(new Vec2(x + Metrics.NotchX + 9, y + Metrics.NotchDepth));
-                p.Add(new Vec2(x + Metrics.NotchX + Metrics.NotchWidth, y));
+                g.AddNotch(p, x + Metrics.NotchX, y, true);
             }
             p.Add(new Vec2(x + w, y));
 
@@ -408,10 +408,7 @@ namespace Blockly.Layout
                 {
                     float sx = x + m.StmtX;
                     p.Add(new Vec2(x + w, rt));
-                    p.Add(new Vec2(sx + Metrics.NotchX + Metrics.NotchWidth, rt));
-                    p.Add(new Vec2(sx + Metrics.NotchX + 9, rt + Metrics.NotchDepth));
-                    p.Add(new Vec2(sx + Metrics.NotchX + 6, rt + Metrics.NotchDepth));
-                    p.Add(new Vec2(sx + Metrics.NotchX, rt));
+                    g.AddNotch(p, sx + Metrics.NotchX, rt, false);
                     p.Add(new Vec2(sx, rt));
                     p.Add(new Vec2(sx, rt + r.InnerH));
                     p.Add(new Vec2(x + w, rt + r.InnerH));
@@ -421,10 +418,7 @@ namespace Blockly.Layout
             p.Add(new Vec2(x + w, y + h));
             if (b.Next != null)
             {
-                p.Add(new Vec2(x + Metrics.NotchX + Metrics.NotchWidth, y + h));
-                p.Add(new Vec2(x + Metrics.NotchX + 9, y + h + Metrics.NotchDepth));
-                p.Add(new Vec2(x + Metrics.NotchX + 6, y + h + Metrics.NotchDepth));
-                p.Add(new Vec2(x + Metrics.NotchX, y + h));
+                g.AddNotch(p, x + Metrics.NotchX, y + h, false);
             }
             p.Add(new Vec2(x, y + h));
 
@@ -433,7 +427,8 @@ namespace Blockly.Layout
                 p.Add(new Vec2(x, y + Metrics.TabTop + Metrics.TabHeight));
                 for (int i = Tab.GetLength(0) - 1; i >= 0; i--) p.Add(new Vec2(x + Tab[i, 0], y + Metrics.TabTop + Tab[i, 1]));
             }
-            return Geometry.Simplify(p).ToArray();
+            var outline = Geometry.Simplify(p);
+            return (g.CornerRadius > 0 ? Geometry.RoundCorners(outline, g.CornerRadius) : outline).ToArray();
         }
     }
 }

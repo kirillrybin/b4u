@@ -47,6 +47,38 @@ namespace Blockly.Layout
             return r;
         }
 
+        /// <summary>
+        /// Replaces every right-angle corner (both neighbours at 90 degrees) by a circular arc of at most
+        /// <paramref name="radius"/>, never more than half of the shorter adjacent edge. Other vertices stay as they are.
+        /// </summary>
+        public static List<Vec2> RoundCorners(IList<Vec2> p, float radius, int steps = 4)
+        {
+            var r = new List<Vec2>(p.Count * 2);
+            int n = p.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var a = p[(i + n - 1) % n]; var b = p[i]; var c = p[(i + 1) % n];
+                float e1x = b.X - a.X, e1y = b.Y - a.Y, e2x = c.X - b.X, e2y = c.Y - b.Y;
+                float l1 = (float)Math.Sqrt(e1x * e1x + e1y * e1y), l2 = (float)Math.Sqrt(e2x * e2x + e2y * e2y);
+                bool square = l1 > 1e-4f && l2 > 1e-4f && Math.Abs(e1x * e2x + e1y * e2y) < 1e-3f * l1 * l2;
+                float k = Math.Min(radius, Math.Min(l1, l2) / 2f);
+                if (!square || k < 0.5f) { r.Add(b); continue; }
+                float sx = b.X - e1x / l1 * k, sy = b.Y - e1y / l1 * k;      // arc start on the incoming edge
+                float ex = b.X + e2x / l2 * k, ey = b.Y + e2y / l2 * k;      // arc end on the outgoing edge
+                float cx = sx + (ex - b.X), cy = sy + (ey - b.Y);            // arc centre
+                double a0 = Math.Atan2(sy - cy, sx - cx), a1 = Math.Atan2(ey - cy, ex - cx);
+                double d = a1 - a0;
+                while (d > Math.PI) d -= 2 * Math.PI;
+                while (d < -Math.PI) d += 2 * Math.PI;
+                for (int s = 0; s <= steps; s++)
+                {
+                    double t = a0 + d * s / steps;
+                    r.Add(new Vec2(cx + (float)Math.Cos(t) * k, cy + (float)Math.Sin(t) * k));
+                }
+            }
+            return r;
+        }
+
         /// <summary>Ear-clipping triangulation of a simple polygon. Returns indices into <paramref name="poly"/> (as given).</summary>
         public static int[] Triangulate(IList<Vec2> poly)
         {

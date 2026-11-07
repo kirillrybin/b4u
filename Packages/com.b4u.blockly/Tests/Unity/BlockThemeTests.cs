@@ -33,6 +33,19 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void ShapeSettingsReachTheLayoutAndTheClassicShapeComesBack()
+        {
+            var t = BlockTheme.CreateDefault();
+            t.CornerRadius = 8; t.RoundNotches = true; t.RoundTabs = true;
+            BlockStyle.Theme = t;
+            Assert.AreEqual(8f, Blockly.Layout.BlockGeometry.Current.CornerRadius);
+            Assert.IsTrue(Blockly.Layout.BlockGeometry.Current.RoundNotches);
+            BlockStyle.Theme = null;
+            Assert.AreEqual(0f, Blockly.Layout.BlockGeometry.Current.CornerRadius);
+            Assert.IsFalse(Blockly.Layout.BlockGeometry.Current.RoundTabs);
+        }
+
+        [Test]
         public void ChangingTheThemeRebuildsTheViewWithTheNewFont()
         {
             root = new GameObject("Canvas", typeof(Canvas));

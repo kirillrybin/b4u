@@ -14,10 +14,20 @@ namespace Blockly.UI
         public static BlockTheme Theme
         {
             get { if (theme == null) theme = BlockTheme.CreateDefault(); return theme; }
-            set { theme = value; ThemeChanged?.Invoke(); }
+            set
+            {
+                theme = value;
+                var t = Theme;
+                Blockly.Layout.BlockGeometry.Current = new Blockly.Layout.BlockGeometry
+                {
+                    CornerRadius = t.CornerRadius, RoundNotches = t.RoundNotches, RoundTabs = t.RoundTabs,
+                };
+                ThemeChanged?.Invoke();
+            }
         }
 
         public static float FontSize => Theme.FontSize;
+        public static float FieldCornerRadius => Theme.FieldCornerRadius;
         public static float StrokeWidth => Theme.StrokeWidth;
         public static float FieldStrokeWidth => Theme.FieldStrokeWidth;
         public static Color DropdownArrow => Theme.DropdownArrow;
