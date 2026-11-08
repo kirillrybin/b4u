@@ -21,6 +21,7 @@ namespace Blockly.UI
     {
         Workspace workspace;
         TmpTextMeasurer measurer;
+        int measuredVersion = -1;
         TMP_Text measureTemplate;
         readonly Dictionary<Block, RectTransform> blockObjects = new Dictionary<Block, RectTransform>();
 
@@ -321,7 +322,7 @@ namespace Blockly.UI
         void OnThemeChanged()
         {
             if (this == null) { BlockStyle.ThemeChanged -= OnThemeChanged; return; }   // destroyed without OnDestroy (EditMode)
-            if (measureTemplate != null) { Configure(measureTemplate); measurer.Clear(); }
+            if (measureTemplate != null) { Configure(measureTemplate); measurer.Clear(); measuredVersion = BlockStyle.Version; }
             Rebuild();
         }
 
@@ -928,7 +929,12 @@ namespace Blockly.UI
 
         void EnsureMeasurer()
         {
-            if (measurer != null && measureTemplate != null) return;
+            if (measurer != null && measureTemplate != null)
+            {
+                if (measuredVersion != BlockStyle.Version) { Configure(measureTemplate); measurer.Clear(); measuredVersion = BlockStyle.Version; }   // the theme changed while this view was inactive
+                return;
+            }
+            measuredVersion = BlockStyle.Version;
             var go = new GameObject("TextMeasure", typeof(RectTransform));
             go.transform.SetParent(transform, false);
             var t = go.AddComponent<TextMeshProUGUI>();
@@ -942,7 +948,7 @@ namespace Blockly.UI
         static void Configure(TMP_Text t)
         {
             t.fontSize = BlockStyle.FontSize;
-            if (BlockStyle.Theme.Font != null) t.font = BlockStyle.Theme.Font;
+            t.font = BlockStyle.Theme.Font != null ? BlockStyle.Theme.Font : TMP_Settings.defaultFontAsset;     // a theme without a font gives back the default one
             t.fontStyle = BlockStyle.FontStyle;
             t.textWrappingMode = TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
