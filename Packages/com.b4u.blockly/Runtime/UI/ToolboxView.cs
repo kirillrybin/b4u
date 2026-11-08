@@ -430,6 +430,37 @@ namespace Blockly.UI
             trt.offsetMin = new Vector2(BlockStyle.FlyoutPadding + 8f, -height); trt.offsetMax = new Vector2(-8f, 0f);
             flyoutTitle.text = text; flyoutTitle.color = BlockStyle.FlyoutTitleColour;
             BlockStyle.ToolboxFont.Apply(flyoutTitle, BlockStyle.FlyoutTitleSize);
+            titleAligned = false; titleFrames = 0;
+        }
+
+        bool titleAligned;
+        int titleFrames;
+
+        // The scroll view puts the list in place during its first frames, so the title is aligned once that is done; after that the
+        // title stays where it is, however the list is scrolled.
+        void LateUpdate() { if (!titleAligned && ++titleFrames > 2) AlignTitle(); }
+
+        /// <summary>Starts the flyout title at the leftmost drawn edge of the blocks as they are now (an output tab counts), minus the side bearing of the font.</summary>
+        public void AlignTitle()
+        {
+            if (flyoutTitle == null || !flyoutTitle.gameObject.activeSelf || flyoutView == null || !IsFlyoutOpen) return;
+            var trt = flyoutTitle.rectTransform;
+            var parent = (RectTransform)trt.parent;
+            var corners = new Vector3[4];
+            float left = float.MaxValue;
+            foreach (var g in flyoutView.GetComponentsInChildren<PolygonGraphic>())
+            {
+                if (g.Polygon == null || g.Polygon.Length == 0) continue;
+                g.rectTransform.GetWorldCorners(corners);
+                float minX = float.MaxValue;
+                foreach (var v in g.Polygon) minX = Mathf.Min(minX, (float)v.X);
+                left = Mathf.Min(left, parent.InverseTransformPoint(corners[0]).x + minX * g.transform.lossyScale.x / parent.lossyScale.x);
+            }
+            if (left == float.MaxValue) return;
+            flyoutTitle.ForceMeshUpdate();
+            float bearing = flyoutTitle.textInfo.characterCount > 0 ? flyoutTitle.textInfo.characterInfo[0].bottomLeft.x - trt.rect.xMin : 0f;
+            trt.offsetMin = new Vector2(left - parent.rect.xMin - bearing, trt.offsetMin.y);
+            titleAligned = true;
         }
 
         public void CloseFlyout()
