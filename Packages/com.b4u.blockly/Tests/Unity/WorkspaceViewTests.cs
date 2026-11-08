@@ -44,6 +44,22 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void AViewThatWasInactiveWhenTheThemeChangedMeasuresWithTheNewFont()
+        {
+            var view = NewView();
+            view.SetWorkspace(StandardBlockSet.Load(Fixture("loops")));
+            float before = view.Measurer.Width("Move forward");
+            // like the flyout while it is closed: it hears no ThemeChanged (EditMode never calls OnDisable, so it is called here)
+            typeof(WorkspaceView).GetMethod("OnDisable", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(view, null);
+            var t = BlockTheme.CreateDefault(); t.FontSize = 30f;
+            BlockStyle.Theme = t;
+            view.Rebuild();
+            float after = view.Measurer.Width("Move forward");
+            BlockStyle.Theme = null; Object.DestroyImmediate(t);
+            Assert.Greater(after, before * 1.5f, "the old font size was still used to lay the blocks out");
+        }
+
+        [Test]
         public void RebuildReplacesTheOldObjectsInsteadOfAccumulating()
         {
             var view = NewView();

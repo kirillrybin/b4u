@@ -12,6 +12,9 @@ namespace Blockly.UI
         /// <summary>True while no theme is set (the classic look).</summary>
         public static bool IsClassic => classic;
 
+        /// <summary>Counts theme changes, so a view that was inactive (and heard no <see cref="ThemeChanged"/>) can tell its measurements are stale.</summary>
+        public static int Version { get; private set; }
+
         /// <summary>Raised after <see cref="Theme"/> is replaced; views rebuild themselves.</summary>
         public static event System.Action ThemeChanged;
 
@@ -22,6 +25,7 @@ namespace Blockly.UI
             set
             {
                 theme = value;
+                Version++;
                 classic = value == null;
                 var t = Theme;
                 Blockly.Layout.BlockGeometry.Current = new Blockly.Layout.BlockGeometry

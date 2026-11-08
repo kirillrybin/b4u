@@ -79,6 +79,11 @@ namespace Blockly.UI
 
         void Start() => BeginSession();
 
+        // the scene keeps the label and the button as serialized fields, so SetThemeButton is not called in Play: follow the theme from here too
+        void OnEnable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; BlockStyle.ThemeChanged += UpdateThemeLabel; UpdateThemeLabel(); }
+        void OnDisable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; }
+        void OnDestroy() { BlockStyle.ThemeChanged -= UpdateThemeLabel; }
+
         /// <summary>Shows the first program, or the unsaved work of the last session if there is some (what Start does).</summary>
         public void BeginSession()
         {
