@@ -213,12 +213,14 @@ namespace Blockly.UI
             if (!show) return;
             float size = BlockStyle.ToggleSize;
             var trt = (RectTransform)toggleImage.transform;
-            trt.sizeDelta = new Vector2(size, size);
-            trt.anchoredPosition = new Vector2(size * 0.5f, -(BlockStyle.ToggleTop + size * 0.5f));     // half of it sticks out of the strip
+            float height = size * 1.2f;                                    // a tab that grows out of the strip's edge: flat on the strip, round outside
+            trt.sizeDelta = new Vector2(size, height);
+            trt.anchoredPosition = new Vector2(size * 0.5f, -(BlockStyle.ToggleTop + height * 0.5f));
             toggleImage.color = BlockStyle.ToggleColour;
-            UiShape.Round(toggleImage, size * 0.5f);
+            UiShape.Round(toggleImage, height * 0.5f, UiCorners.Right);
             var irect = (RectTransform)toggleIcon.transform;
-            irect.sizeDelta = new Vector2(size * 0.55f, size * 0.55f);
+            irect.sizeDelta = new Vector2(size * 0.9f, size * 0.9f);
+            irect.anchoredPosition = new Vector2(-size * 0.08f, 0f);
             toggleIcon.sprite = BlockImages.Get(Collapsed ? "toolbox/expand" : "toolbox/collapse") ?? UiShape.Chevron(Collapsed);
             toggleIcon.color = BlockStyle.ToggleIconColour;
         }

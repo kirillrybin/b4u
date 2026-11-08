@@ -58,7 +58,7 @@ namespace Blockly.UI
         {
             int k = right ? 1 : 0;
             if (chevrons[k] != null) return chevrons[k];
-            const int S = 64; const float half = 3.2f;
+            const int S = 64; const float half = 3f;
             var tex = new Texture2D(S, S, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
             var tip = new Vector2(right ? 42f : 22f, 32f);
             var a = new Vector2(right ? 24f : 40f, 14f); var b = new Vector2(right ? 24f : 40f, 50f);

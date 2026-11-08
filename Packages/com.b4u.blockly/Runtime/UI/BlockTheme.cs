@@ -184,7 +184,7 @@ namespace Blockly.UI
         public bool ToolboxCollapsible = false;
         [Tooltip("Width of the collapsed strip (category buttons become square icon buttons).")]
         public float ToolboxCollapsedWidth = 84f;
-        [Tooltip("Diameter of the round tab that collapses and expands the strip, and its distance from the top.")]
+        [Tooltip("Width of the tab on the strip's edge that collapses and expands it (it is 1.2 times as tall), and its distance from the top.")]
         public float ToggleSize = 44f;
         public float ToggleTop = 24f;
         [Tooltip("Colour of the tab. Transparent uses ToolboxBackground.")]
