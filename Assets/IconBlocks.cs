@@ -6,20 +6,26 @@ using UnityEngine;
 
 /// <summary>
 /// Blocks with pictures: a "field_image" inside a block and an icon on the toolbox category.
-/// The pictures are drawn in code here so the sample needs no assets; in your app, register your own sprites with
-/// BlockImages.Register("name", sprite), set BlockImages.Resolver, or put Sprites in a Resources folder and use their path.
+/// The pictures are sprites in Resources/Icons, found by their path; you can also register sprites with
+/// BlockImages.Register("name", sprite) or set BlockImages.Resolver.
 /// </summary>
 public sealed class IconBlocks : IBlockPackage
 {
     public string BlocksJson => @"[
       {""type"":""icon_forward"",""message0"":""Move forward %1"",
-       ""args0"":[{""type"":""field_image"",""src"":""sample/arrow-right"",""width"":28,""height"":20}],
+       ""args0"":[{""type"":""field_image"",""src"":""Icons/move-forward"",""width"":28,""height"":14}],
        ""previousStatement"":null,""nextStatement"":null,""colour"":215},
       {""type"":""icon_back"",""message0"":""Move backward %1"",
-       ""args0"":[{""type"":""field_image"",""src"":""sample/arrow-left"",""width"":28,""height"":20}],
+       ""args0"":[{""type"":""field_image"",""src"":""Icons/move-back"",""width"":28,""height"":14}],
+       ""previousStatement"":null,""nextStatement"":null,""colour"":215},
+      {""type"":""icon_turn_right"",""message0"":""Turn right %1"",
+       ""args0"":[{""type"":""field_image"",""src"":""Icons/turn-right"",""width"":22,""height"":22}],
+       ""previousStatement"":null,""nextStatement"":null,""colour"":215},
+      {""type"":""icon_turn_left"",""message0"":""Turn left %1"",
+       ""args0"":[{""type"":""field_image"",""src"":""Icons/turn-left"",""width"":22,""height"":22}],
        ""previousStatement"":null,""nextStatement"":null,""colour"":215},
       {""type"":""event_when_clicked"",""message0"":""When %1 clicked"",
-       ""args0"":[{""type"":""field_image"",""src"":""sample/flag"",""width"":22,""height"":22}],
+       ""args0"":[{""type"":""field_image"",""src"":""Icons/flag"",""width"":22,""height"":22}],
        ""nextStatement"":null,""colour"":60}
     ]";
 
@@ -27,6 +33,8 @@ public sealed class IconBlocks : IBlockPackage
     {
         r.Simple("icon_forward", (it, b) => it.Print("forward"));
         r.Simple("icon_back", (it, b) => it.Print("backward"));
+        r.Simple("icon_turn_right", (it, b) => it.Print("turn right"));
+        r.Simple("icon_turn_left", (it, b) => it.Print("turn left"));
         r.Simple("event_when_clicked", (it, b) => it.Print("clicked"));
     }
 
@@ -34,16 +42,18 @@ public sealed class IconBlocks : IBlockPackage
     {
         new ToolboxCategory
         {
-            Name = "Moves", ColourHex = Colour.FromHue(215), Icon = "sample/arrow-right",
+            Name = "Moves", ColourHex = Colour.FromHue(215), Icon = "Icons/move-forward",
             Blocks = new List<Dictionary<string, object>>
             {
                 new Dictionary<string, object> { { "kind", "block" }, { "type", "icon_forward" } },
                 new Dictionary<string, object> { { "kind", "block" }, { "type", "icon_back" } },
+                new Dictionary<string, object> { { "kind", "block" }, { "type", "icon_turn_right" } },
+                new Dictionary<string, object> { { "kind", "block" }, { "type", "icon_turn_left" } },
             },
         },
         new ToolboxCategory
         {
-            Name = "Events", ColourHex = Colour.FromHue(60), Icon = "sample/flag",
+            Name = "Events", ColourHex = Colour.FromHue(60), Icon = "Icons/flag",
             Blocks = new List<Dictionary<string, object>>
             {
                 // no previous connection: it starts a stack, so a theme rule with Hat can put a cap on it (see ApplyBlockTheme)
@@ -55,47 +65,7 @@ public sealed class IconBlocks : IBlockPackage
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Install()
     {
-        BlockImages.Register("sample/arrow-right", Arrow(false));
-        BlockImages.Register("sample/arrow-left", Arrow(true));
-        // the flag of the design is a picture in Resources/Icons; the drawn flag stays as a fallback
-        BlockImages.Register("sample/flag", Resources.Load<Sprite>("Icons/flag") ?? Flag());
+        // the pictures are the icons of the design, in Resources/Icons (found by their path, no registration needed)
         StandardBlockSet.AddPackage(new IconBlocks());
-    }
-
-    static Sprite Flag()
-    {
-        const int S = 44;
-        var tex = new Texture2D(S, S, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
-        var px = new Color32[S * S];
-        for (int y = 0; y < S; y++)
-            for (int x = 0; x < S; x++)
-            {
-                bool pole = x >= 7 && x <= 11 && y >= 3 && y <= 41;
-                float t = (y - 6f) / 20f;                                  // the cloth is a triangle pointing right
-                bool cloth = y >= 6 && y <= 26 && x >= 11 && x <= 11 + 28f * (1f - Mathf.Abs(2f * t - 1f));
-                px[y * S + x] = pole ? new Color32(235, 240, 255, 255) : cloth ? new Color32(70, 210, 120, 255) : new Color32(0, 0, 0, 0);
-            }
-        tex.SetPixels32(px);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 100f);
-    }
-
-    static Sprite Arrow(bool flip)
-    {
-        const int W = 56, H = 40;
-        var tex = new Texture2D(W, H, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
-        var px = new Color32[W * H];
-        for (int y = 0; y < H; y++)
-            for (int x0 = 0; x0 < W; x0++)
-            {
-                int x = flip ? W - 1 - x0 : x0;
-                bool shaft = x >= 4 && x <= 40 && Mathf.Abs(y - H / 2) <= 2;
-
-                bool tip = x >= 34 && x <= 52 && Mathf.Abs(y - H / 2) <= (52 - x) * 0.7f && Mathf.Abs(y - H / 2) >= (52 - x) * 0.7f - 3.5f;
-                px[y * W + x0] = shaft || tip ? new Color32(255, 255, 255, 255) : new Color32(255, 255, 255, 0);
-            }
-        tex.SetPixels32(px);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 100f);
     }
 }
