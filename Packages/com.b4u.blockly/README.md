@@ -21,6 +21,12 @@ Copy the `com.b4u.blockly` folder into your project's `Packages/` folder (an emb
 "com.b4u.blockly": "file:../path/to/com.b4u.blockly"
 ```
 
+or install it from git (Window > Package Manager > + > Add package from git URL):
+
+```
+https://github.com/kirillrybin/b4u.git?path=/Packages/com.b4u.blockly
+```
+
 ## Try it
 
 **Blockly > Create Playground Scene** builds `Assets/Playground/Playground.unity` with a toolbar, a toolbox, a workspace, an output console and a set of example programs. Press Play, pick a program, press Run. The **Theme** button lists the themes of `BlockThemeCatalog` (Classic, the built-in Dark and High Contrast, plus whatever is registered with `BlockThemeCatalog.Register("name", theme)`, or `Register("name", () => makeTheme())` to build it only when it is chosen) and applies the one you pick. The **Console** button hides the output console to give the workspace its room (an error shows it again).
@@ -103,3 +109,7 @@ Command-line builds: `Unity -batchmode -executeMethod Blockly.EditorTools.BuildT
 ## Tests
 
 Open **Window > General > Test Runner** and run the EditMode tests. The platform-independent tests also run with `dotnet test dev/Core.Tests` in the repository.
+
+## License
+
+MIT (see `LICENSE.md`): free to use, change and sell, including in commercial products, as long as the copyright line and licence text stay with copies. The standard block definitions (`StandardBlocks.json`, the toolbox, test fixtures) come from [Blockly](https://github.com/google/blockly) by Google and stay under Apache 2.0 (see `NOTICE.md`).
