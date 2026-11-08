@@ -24,3 +24,4 @@ First version.
 - Theme: size of the notch and the output tab, per-block style rules (`BlockStyleRule`), disabled-block look, and selection, highlight and snap colours.
 - Hats: a cap above stack-starting blocks chosen by a style rule (`Hat`, `HatHeight`, `HatWidth`).
 - A dome-shaped hat (`HatStyle`, `HatPeak`, `HatFillet`) next to the bump.
+- Theme: minimum sizes of statement openings and value holes, so notches and tabs can be bigger.

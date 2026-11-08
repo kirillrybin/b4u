@@ -82,7 +82,7 @@ namespace Blockly.UI
         [Tooltip("Radius of the corners of field plates (0 = square).")]
         public float FieldCornerRadius = 0f;
 
-        [Header("Connection shapes (keep TabTop + TabHeight within 24 and NotchX + NotchWidth within 30)")]
+        [Header("Connection shapes (TabTop + TabHeight must fit in SlotMinHeight, NotchX + NotchWidth in StatementMinWidth; larger values are clamped)")]
         public float TabWidth = 8f;
         public float TabHeight = 15f;
         public float TabTop = 5f;
@@ -102,6 +102,12 @@ namespace Blockly.UI
         public float SlotPaddingY = 4f;
         public float BottomBarHeight = 12f;
         public float StatementGap = 8f;
+        [Tooltip("Smallest width of a statement (C-shaped) input's opening; the notch has to fit in it.")]
+        public float StatementMinWidth = 30f;
+        public float StatementMinHeight = 24f;
+        [Tooltip("Smallest size of an inline value hole; the output tab has to fit in its height.")]
+        public float SlotMinWidth = 24f;
+        public float SlotMinHeight = 24f;
 
         [Header("Quality")]
         [Tooltip("Soft edges on block shapes, in screen pixels (0 = hard edges). About 1 removes the stair-steps without MSAA.")]

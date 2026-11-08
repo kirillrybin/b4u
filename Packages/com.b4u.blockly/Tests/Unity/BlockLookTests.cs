@@ -111,6 +111,19 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void RoomierMinimumSizesAllowBiggerNotchesAndTabs()
+        {
+            var t = BlockTheme.CreateDefault();
+            t.StatementMinWidth = 60; t.SlotMinHeight = 40; t.SlotMinWidth = 30; t.StatementMinHeight = 32;
+            t.NotchX = 24; t.NotchWidth = 30; t.TabTop = 10; t.TabHeight = 28;
+            BlockStyle.Theme = t;
+            var g = Blockly.Layout.BlockGeometry.Current;
+            Assert.AreEqual(60f, g.StatementMinWidth); Assert.AreEqual(40f, g.SlotMinHeight);
+            Assert.AreEqual(24f, g.NotchX); Assert.AreEqual(30f, g.NotchWidth, "fits: 24 + 30 <= 60");
+            Assert.AreEqual(10f, g.TabTop); Assert.AreEqual(28f, g.TabHeight, "fits: 10 + 28 <= 40");
+        }
+
+        [Test]
         public void ConnectionShapeSettingsReachTheGeometryAndAreClamped()
         {
             var t = BlockTheme.CreateDefault();

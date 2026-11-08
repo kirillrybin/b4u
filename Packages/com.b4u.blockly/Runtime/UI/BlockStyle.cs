@@ -25,11 +25,13 @@ namespace Blockly.UI
                     RowMinHeight = t.RowMinHeight, PadLeft = t.PaddingX, PadRight = t.PaddingX, ItemGap = t.ItemGap,
                     FieldHeight = t.FieldHeight, FieldPadX = t.FieldPaddingX, LabelHeight = t.LabelHeight,
                     SlotPadY = t.SlotPaddingY, BottomBarHeight = t.BottomBarHeight, StatementGap = t.StatementGap,
-                    TabWidth = Mathf.Max(1f, t.TabWidth), TabHeight = Mathf.Clamp(t.TabHeight, 4f, 24f),
-                    TabTop = Mathf.Clamp(t.TabTop, 0f, 24f - Mathf.Clamp(t.TabHeight, 4f, 24f)),
-                    NotchWidth = Mathf.Clamp(t.NotchWidth, 4f, 30f), NotchDepth = Mathf.Max(1f, t.NotchDepth),
+                    StatementMinWidth = Mathf.Max(8f, t.StatementMinWidth), StatementMinHeight = Mathf.Max(8f, t.StatementMinHeight),
+                    SlotMinWidth = Mathf.Max(8f, t.SlotMinWidth), SlotMinHeight = Mathf.Max(8f, t.SlotMinHeight),
+                    TabWidth = Mathf.Max(1f, t.TabWidth), TabHeight = Mathf.Clamp(t.TabHeight, 4f, Mathf.Max(8f, t.SlotMinHeight)),
+                    TabTop = Mathf.Clamp(t.TabTop, 0f, Mathf.Max(8f, t.SlotMinHeight) - Mathf.Clamp(t.TabHeight, 4f, Mathf.Max(8f, t.SlotMinHeight))),
+                    NotchWidth = Mathf.Clamp(t.NotchWidth, 4f, Mathf.Max(8f, t.StatementMinWidth)), NotchDepth = Mathf.Max(1f, t.NotchDepth),
                     HatHeight = Mathf.Max(0f, t.HatHeight), HatWidth = Mathf.Max(0f, t.HatWidth), HatStyle = t.HatStyle, HatPeak = t.HatPeak, HatFillet = Mathf.Max(0f, t.HatFillet), IsHat = b => HasHat(t, b.Type),
-                    NotchX = Mathf.Clamp(t.NotchX, 0f, 30f - Mathf.Clamp(t.NotchWidth, 4f, 30f)),
+                    NotchX = Mathf.Clamp(t.NotchX, 0f, Mathf.Max(8f, t.StatementMinWidth) - Mathf.Clamp(t.NotchWidth, 4f, Mathf.Max(8f, t.StatementMinWidth))),
                 };
                 ThemeChanged?.Invoke();
             }
