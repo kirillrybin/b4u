@@ -79,6 +79,10 @@ namespace Blockly
         static string Convert(object v)
             => v is bool b ? (b ? "true" : "false") : v is double d ? JsValue.Shortest(d) : v?.ToString() ?? "";
 
+        /// <summary>A label with a name the user typed (a procedure or a parameter): shown as it is, in every language.</summary>
+        internal static Field Literal(string text)
+            => new Field { Spec = new ArgSpec { Kind = ArgKind.Label, Text = text, NoTranslate = true }, Value = text };
+
         internal static Field Label(string text)
             => new Field { Spec = new ArgSpec { Kind = ArgKind.Label, Text = text }, Value = text };
 
@@ -375,7 +379,12 @@ namespace Blockly
             var ps = ProcedureInfo.Params(b);
             if (ps.Count == 0) return;
             var top = b.GetInput("TOPROW");
-            top?.Fields.Add(Mutators.Label("with: " + string.Join(", ", ps.ConvertAll(p => p.Name))));
+            if (top != null)
+            {
+                var label = Mutators.Label("with: " + string.Join(", ", ps.ConvertAll(p => p.Name)));
+                label.Spec.TranslatedPrefix = "with:";
+                top.Fields.Add(label);
+            }
         }
 
         public void FieldsChanged(Block b) { }
@@ -402,12 +411,12 @@ namespace Blockly
         {
             string name = ProcedureInfo.Name(b);
             var top = b.GetInput("TOPROW");
-            if (top != null && !string.IsNullOrEmpty(name)) top.Fields.Add(Mutators.Label(name));
+            if (top != null && !string.IsNullOrEmpty(name)) top.Fields.Add(Mutators.Literal(name));
             var ps = ProcedureInfo.Params(b);
             for (int i = 0; i < ps.Count; i++)
             {
                 var input = Mutators.ValueInput(b, "ARG" + i);
-                input.Fields.Add(Mutators.Label(ps[i].Name));
+                input.Fields.Add(Mutators.Literal(ps[i].Name));
                 b.Inputs.Add(input);
             }
         }

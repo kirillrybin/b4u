@@ -290,10 +290,16 @@ namespace Blockly.Layout
                 case "field_checkbox": return f.Value == "TRUE" ? "✓" : "";
                 case "field_dropdown":
                     if (f.Spec.Options != null)
-                        foreach (var o in f.Spec.Options) if (o.Value == f.Value) return o.Label;
+                        foreach (var o in f.Spec.Options) if (o.Value == f.Value) return Loc.T(o.Label);
                     return f.Value ?? "";
-                default: return f.Value ?? "";
+                default: return f.IsLabel && !f.Spec.NoTranslate ? TranslatedLabel(f) : f.Value ?? "";
             }
+        }
+
+        static string TranslatedLabel(Field f)
+        {
+            string v = f.Value ?? "", prefix = f.Spec.TranslatedPrefix;
+            return prefix != null && v.StartsWith(prefix) ? Loc.T(prefix) + v.Substring(prefix.Length) : Loc.T(v);
         }
 
         static float ItemsWidth(Row r)

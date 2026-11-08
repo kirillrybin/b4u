@@ -225,12 +225,12 @@ namespace Blockly.UI
             Select(block);
             var items = new System.Collections.Generic.List<DropdownItem>
             {
-                new DropdownItem { Label = "Duplicate", Value = MenuDuplicate },
-                new DropdownItem { Label = "Copy", Value = MenuCopy },
-                new DropdownItem { Label = "Cut", Value = MenuCut },
+                new DropdownItem { Label = Loc.T("Duplicate"), Value = MenuDuplicate },
+                new DropdownItem { Label = Loc.T("Copy"), Value = MenuCopy },
+                new DropdownItem { Label = Loc.T("Cut"), Value = MenuCut },
             };
-            if (CanDisable(block)) items.Add(new DropdownItem { Label = block.Disabled ? "Enable block" : "Disable block", Value = MenuDisable });
-            items.Add(new DropdownItem { Label = "Delete", Value = MenuDelete });
+            if (CanDisable(block)) items.Add(new DropdownItem { Label = Loc.T(block.Disabled ? "Enable block" : "Disable block"), Value = MenuDisable });
+            items.Add(new DropdownItem { Label = Loc.T("Delete"), Value = MenuDelete });
             Canvas.ForceUpdateCanvases();
             menu = DropdownMenu.Open(RootCanvas, screenPoint, 170f, items, item => ChooseBlockMenuItem(block, item.Value));
             return true;
@@ -308,7 +308,7 @@ namespace Blockly.UI
                 var label = NewRect("text", paramsButton, 0, 0, 58, 22);
                 var t = label.gameObject.AddComponent<TextMeshProUGUI>();
                 Configure(t);
-                t.text = "params";
+                t.text = Loc.T("params");
                 t.fontSize = 12;
                 t.color = Color.white;
                 t.alignment = TextAlignmentOptions.Center;
@@ -324,7 +324,7 @@ namespace Blockly.UI
             if (workspace == null || Spawner != null || definition == null || !ProcedureInfo.IsDefinition(definition) || RootCanvas == null) return;
             if (IsDragging || IsEditingField || ActiveDialog != null) return;
             CloseMenu();
-            dialog = DialogView.ShowPrompt(RootCanvas, "Parameters of \"" + ProcedureInfo.Name(definition) + "\" (separated by commas):",
+            dialog = DialogView.ShowPrompt(RootCanvas, Loc.T("Parameters of \"{0}\" (separated by commas):", ProcedureInfo.Name(definition)),
                 string.Join(", ", ProcedureEditing.CurrentNames(definition)),
                 ProcedureEditing.Validate,
                 typed => ApplyParams(definition, ProcedureEditing.ParseNames(typed)));
@@ -370,7 +370,7 @@ namespace Blockly.UI
         void RecordForUndo(string before) { if (before != null) History?.Commit(before); }
 
         // subscribed in SetWorkspace as well, because EditMode never calls OnEnable
-        void SubscribeToTheme() { BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged; }
+        void SubscribeToTheme() { BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged; Loc.Changed -= OnLanguageChanged; Loc.Changed += OnLanguageChanged; }
         // soft edges: about one screen pixel in local units, so it depends on the canvas scale and the zoom
         float edgeWidth;
         float lastEdgeScale = -1f, edgeRefreshAt = -1f;
@@ -413,8 +413,15 @@ namespace Blockly.UI
         float pendingEdgeScale;
 
         void OnEnable() { SubscribeToTheme(); }
-        void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; }
-        void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; }
+        void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; }
+        void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; }
+
+        /// <summary>The labels of the blocks are in another language: lay them out and draw them again.</summary>
+        void OnLanguageChanged()
+        {
+            if (this == null) { Loc.Changed -= OnLanguageChanged; return; }
+            if (workspace != null && Spawner == null) Rebuild();      // the flyout is drawn again by the toolbox, which also puts its button back
+        }
 
         void OnThemeChanged()
         {
@@ -589,7 +596,7 @@ namespace Blockly.UI
         {
             if (workspace == null || RootCanvas == null) return;
             CloseMenu();
-            dialog = DialogView.ShowPrompt(RootCanvas, "New variable name:", "",
+            dialog = DialogView.ShowPrompt(RootCanvas, Loc.T("New variable name:"), "",
                 typed => VariableEditing.Validate(workspace, typed, null, out _),
                 typed =>
                 {
@@ -606,7 +613,7 @@ namespace Blockly.UI
         {
             var v = workspace?.GetVariableById(id);
             if (v == null || RootCanvas == null) return;
-            dialog = DialogView.ShowPrompt(RootCanvas, "Rename all \"" + v.Name + "\" variables to:", v.Name,
+            dialog = DialogView.ShowPrompt(RootCanvas, Loc.T("Rename all \"{0}\" variables to:", v.Name), v.Name,
                 typed => VariableEditing.Validate(workspace, typed, id, out _),
                 typed =>
                 {
@@ -623,8 +630,8 @@ namespace Blockly.UI
             if (v == null) return;
             int uses = VariableEditing.CountUses(workspace, id);
             if (uses <= 1 || RootCanvas == null) { DeleteVariableNow(id); return; }
-            dialog = DialogView.ShowConfirm(RootCanvas, "Delete variable",
-                "Delete " + uses + " uses of the \"" + v.Name + "\" variable?", () => DeleteVariableNow(id));
+            dialog = DialogView.ShowConfirm(RootCanvas, Loc.T("Delete variable"),
+                Loc.T("Delete {0} uses of the \"{1}\" variable?", uses, v.Name), () => DeleteVariableNow(id));
         }
 
         void DeleteVariableNow(string id)

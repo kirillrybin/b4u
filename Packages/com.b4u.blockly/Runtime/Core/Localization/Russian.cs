@@ -1,0 +1,106 @@
+using System.Collections.Generic;
+
+namespace Blockly
+{
+    /// <summary>The Russian texts: the English text of the package to its Russian translation.</summary>
+    static class Russian
+    {
+        internal static void Register() => Loc.Register("ru", "Русский", Table);
+
+        static readonly Dictionary<string, string> Table = new Dictionary<string, string>
+        {
+            // ---- toolbar, menus, dialogs, status
+            { "Run", "Запуск" }, { "Step", "Шаг" }, { "Stop", "Стоп" }, { "File", "Файл" },
+            { "Slow: on", "Медленно: вкл" }, { "Slow: off", "Медленно: выкл" },
+            { "Console: on", "Консоль: вкл" }, { "Console: off", "Консоль: выкл" },
+            { "Theme: {0}", "Тема: {0}" }, { "Language", "Язык" }, { "Language…", "Язык…" },
+            { "Ready", "Готово" }, { "Running…", "Выполняется…" }, { "Paused", "Пауза" }, { "Stopped", "Остановлено" }, { "Finished", "Завершено" },
+            { "Error: {0}", "Ошибка: {0}" },
+            { "New", "Создать" }, { "Open…", "Открыть…" }, { "Save", "Сохранить" }, { "Save as…", "Сохранить как…" }, { "Delete…", "Удалить…" },
+            { "Copy as JSON", "Копировать как JSON" }, { "Paste JSON or XML", "Вставить JSON или XML" },
+            { "Download as file", "Скачать файл" }, { "Export to file", "Экспорт в файл" }, { "Upload a file…", "Загрузить файл…" }, { "Import from file…", "Импорт из файла…" },
+            { "(no saved programs)", "(нет сохранённых программ)" },
+            { "Delete", "Удалить" }, { "Discard", "Отбросить" }, { "Cancel", "Отмена" }, { "OK", "ОК" }, { "Replace", "Заменить" },
+            { "Unsaved changes", "Несохранённые изменения" },
+            { "The program was changed since it was saved. Discard the changes?", "Программа изменена после сохранения. Отбросить изменения?" },
+            { "Save program as:", "Сохранить программу как:" },
+            { "Replace \"{0}\"?", "Заменить «{0}»?" },
+            { "A saved program with this name exists. Replace it?", "Программа с таким именем уже есть. Заменить её?" },
+            { "Delete \"{0}\"?", "Удалить «{0}»?" },
+            { "This saved program will be removed for good.", "Сохранённая программа будет удалена навсегда." },
+            { "Saved \"{0}\"", "Сохранено «{0}»" }, { "Deleted \"{0}\"", "Удалено «{0}»" },
+            { "No saved program \"{0}\"", "Нет сохранённой программы «{0}»" },
+            { "Restored your unsaved changes", "Восстановлены несохранённые изменения" },
+            { "Copied the program as JSON", "Программа скопирована как JSON" },
+            { "The clipboard is empty or cannot be read", "Буфер обмена пуст или недоступен" },
+            { "Exported to {0}", "Экспортировано в {0}" },
+            { "Choose a file in the panel on the page", "Выберите файл на панели страницы" },
+            { "Read {0} ({1} characters)", "Прочитан {0} (символов: {1})" },
+            { "The file {0} is gone", "Файл {0} исчез" },
+            { "Cannot save: {0}", "Не удалось сохранить: {0}" }, { "Cannot open: {0}", "Не удалось открыть: {0}" },
+            { "Cannot load: {0}", "Не удалось загрузить: {0}" }, { "Cannot delete: {0}", "Не удалось удалить: {0}" },
+            { "Cannot export: {0}", "Не удалось экспортировать: {0}" }, { "Cannot import: {0}", "Не удалось импортировать: {0}" },
+            { "Cannot read the file: {0}", "Не удалось прочитать файл: {0}" }, { "Cannot read {0}: {1}", "Не удалось прочитать {0}: {1}" },
+            { "Cannot read the saved programs: {0}", "Не удалось прочитать сохранённые программы: {0}" },
+            { "the text is empty", "текст пуст" },
+            { "new program", "новая программа" }, { "restored program", "восстановленная программа" }, { "pasted program", "вставленная программа" },
+            { "my program", "моя программа" }, { "program", "программа" },
+            { "Enter a name.", "Введите имя." },
+            { "That name is used for the automatic backup. Pick another.", "Это имя занято автоматической копией. Выберите другое." },
+            // ---- block menu, variables, procedures
+            { "Duplicate", "Дублировать" }, { "Copy", "Копировать" }, { "Cut", "Вырезать" },
+            { "Disable block", "Отключить блок" }, { "Enable block", "Включить блок" },
+            { "params", "параметры" },
+            { "Parameters of \"{0}\" (separated by commas):", "Параметры «{0}» (через запятую):" },
+            { "New variable name:", "Имя новой переменной:" },
+            { "Rename all \"{0}\" variables to:", "Переименовать все переменные «{0}» в:" },
+            { "Rename variable...", "Переименовать переменную..." },
+            { "Delete the \"{0}\" variable", "Удалить переменную «{0}»" },
+            { "Delete variable", "Удалить переменную" },
+            { "Delete {0} uses of the \"{1}\" variable?", "Удалить {0} исп. переменной «{1}»?" },
+            { "Create variable...", "Создать переменную..." },
+            // ---- interpreter
+            { "{0} is not defined", "{0} не определено" },
+            { "Maximum call stack size exceeded", "Превышена максимальная глубина вызовов" },
+            { "Procedure call inside an expression ran too long; call it as a statement instead", "Вызов процедуры в выражении выполнялся слишком долго; вызовите её как команду" },
+            { "No statement handler for block type '{0}'", "Нет обработчика команды для блока '{0}'" },
+            { "No expression handler for block type '{0}'", "Нет обработчика выражения для блока '{0}'" },
+            // ---- categories
+            { "Logic", "Логика" }, { "Loops", "Циклы" }, { "Math", "Математика" }, { "Text", "Текст" }, { "Lists", "Списки" },
+            { "Variables", "Переменные" }, { "Functions", "Функции" }, { "Events", "События" }, { "Moves", "Движения" },
+            // ---- block labels
+            { "Y:", "Y:" }, { "append text", "добавить текст" }, { "as", "как" }, { "atan2 of X:", "atan2 от X:" }, { "by", "на" },
+            { "change", "изменить" }, { "constrain", "ограничить" }, { "count", "посчитать" }, { "count with", "считать с переменной" },
+            { "create empty list", "создать пустой список" }, { "create list with item", "создать список из элемента" },
+            { "delimiter", "разделитель" }, { "do", "выполнить" }, { "find", "найти" }, { "for each item", "для каждого элемента" },
+            { "from", "от" }, { "get", "получить" }, { "get sub-list from", "получить подсписок от" },
+            { "get substring from", "получить подстроку от" }, { "high", "верхняя граница" }, { "if", "если" },
+            { "if false", "если ложь" }, { "if true", "если истина" }, { "in", "в" }, { "in list", "в списке" }, { "in text", "в тексте" },
+            { "is", "это" }, { "is empty", "пусто" }, { "length of", "длина" }, { "low", "нижняя граница" }, { "make", "сделать" },
+            { "not", "не" }, { "null", "ничего" }, { "occurrence of item", "вхождение элемента" }, { "occurrence of text", "вхождение текста" },
+            { "of", "из" }, { "of list", "списка" }, { "of loop", "цикла" }, { "print", "напечатать" },
+            { "random fraction", "случайная дробь" }, { "random integer from", "случайное целое от" },
+            { "remainder of", "остаток от" }, { "repeat", "повторить" }, { "repeated", "повторённый" }, { "replace", "заменить" },
+            { "return", "вернуть" }, { "reverse", "перевернуть" }, { "set", "присвоить" }, { "sort", "сортировать" },
+            { "test", "проверка" }, { "times", "раз" }, { "to", "до" }, { "trim spaces from", "убрать пробелы с" }, { "with", "с" },
+            { "with:", "с:" }, { "else if", "иначе если" }, { "else", "иначе" }, { "then", "то" },
+            { "when", "когда" }, { "clicked", "нажат" },
+            // ---- block dropdown options
+            { "# from end", "№ с конца" }, { "10^", "10^" }, { "Title Case", "Каждое Слово С Заглавной" }, { "UPPER CASE", "ВСЕ ЗАГЛАВНЫЕ" },
+            { "absolute", "модуль" }, { "alphabetic", "по алфавиту" }, { "alphabetic, ignore case", "по алфавиту, без учёта регистра" },
+            { "and", "и" }, { "ascending", "по возрастанию" }, { "average", "среднее" }, { "both sides", "с обеих сторон" },
+            { "break out", "выйти из цикла" }, { "continue with next iteration", "перейти к следующей итерации" },
+            { "descending", "по убыванию" }, { "divisible by", "делится на" }, { "even", "чётное" }, { "first", "первый" },
+            { "first letter", "первая буква" }, { "get and remove", "получить и удалить" }, { "insert at", "вставить в позицию" },
+            { "last", "последний" }, { "last letter", "последняя буква" }, { "left side", "слева" }, { "letter #", "буква №" },
+            { "letter # from end", "буква № с конца" }, { "list from text", "список из текста" }, { "lower case", "все строчные" },
+            { "max", "максимум" }, { "median", "медиана" }, { "min", "минимум" }, { "modes", "моды" }, { "negative", "отрицательное" },
+            { "numeric", "по числу" }, { "odd", "нечётное" }, { "or", "или" }, { "positive", "положительное" }, { "prime", "простое" },
+            { "random", "случайный" }, { "random item", "случайный элемент" }, { "random letter", "случайная буква" },
+            { "remove", "удалить" }, { "right side", "справа" }, { "round", "округлить" }, { "round down", "округлить вниз" },
+            { "round up", "округлить вверх" }, { "square root", "квадратный корень" }, { "standard deviation", "стандартное отклонение" },
+            { "sum", "сумма" }, { "text from list", "текст из списка" }, { "true", "истина" }, { "false", "ложь" },
+            { "until", "до" }, { "while", "пока" }, { "whole", "целое" },
+        };
+    }
+}

@@ -31,7 +31,7 @@ namespace Blockly.UI
         /// <param name="validate">Returns an error message to keep the dialog open, or null to accept.</param>
         public static DialogView ShowPrompt(Canvas anyCanvasInHierarchy, string title, string initial, Func<string, string> validate, Action<string> onOk, Action onCancel = null)
         {
-            var d = Create(anyCanvasInHierarchy, title, null, true, "OK");
+            var d = Create(anyCanvasInHierarchy, title, null, true, Loc.T("OK"));
             d.validate = validate; d.onSubmit = onOk; d.onCancel = onCancel;
             d.Input.SetTextWithoutNotify(initial ?? "");
             d.Input.Select();
@@ -39,9 +39,9 @@ namespace Blockly.UI
             return d;
         }
 
-        public static DialogView ShowConfirm(Canvas anyCanvasInHierarchy, string title, string message, Action onYes, Action onCancel = null, string confirmLabel = "Delete")
+        public static DialogView ShowConfirm(Canvas anyCanvasInHierarchy, string title, string message, Action onYes, Action onCancel = null, string confirmLabel = null)
         {
-            var d = Create(anyCanvasInHierarchy, title, message, false, confirmLabel);
+            var d = Create(anyCanvasInHierarchy, title, message, false, confirmLabel ?? Loc.T("Delete"));
             d.onSubmit = _ => onYes?.Invoke(); d.onCancel = onCancel;
             return d;
         }
@@ -124,7 +124,7 @@ namespace Blockly.UI
             }
 
             dialog.OkButton = MakeButton(panel, okLabel, new Vector2(-130, 16), new Vector2(110, 36), new Color(0.3f, 0.5f, 0.85f));
-            dialog.CancelButton = MakeButton(panel, "Cancel", new Vector2(-12, 16), new Vector2(110, 36), new Color(0.38f, 0.38f, 0.45f));
+            dialog.CancelButton = MakeButton(panel, Loc.T("Cancel"), new Vector2(-12, 16), new Vector2(110, 36), new Color(0.38f, 0.38f, 0.45f));
             dialog.OkButton.onClick.AddListener(dialog.Confirm);
             dialog.CancelButton.onClick.AddListener(dialog.Cancel);
 
