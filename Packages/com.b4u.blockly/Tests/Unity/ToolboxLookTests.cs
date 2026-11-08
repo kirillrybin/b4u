@@ -278,5 +278,33 @@ namespace Blockly.UI.Tests
             toolbox.Collapsed = false;
             Assert.AreEqual(130f, layout.ToolboxWidth);
         }
+
+        [Test]
+        public void ADraggedBlockTurnsTheStripIntoTheDeletePanelWhenTheThemeAsksForIt()
+        {
+            var view = Object.FindFirstObjectByType<PlaygroundController>().View;
+            var block = view.Workspace.TopBlocks.First();
+
+            BlockStyle.Theme = theme;                                    // off by default
+            Assert.IsTrue(view.BeginDrag(block, Vector2.zero));
+            Assert.IsNull(toolbox.transform.Find("DeletePanel"), "nothing changes with the default theme");
+            view.CancelDrag();
+
+            theme.ToolboxDeletePanel = true; theme.DeleteLabel = "Remove"; theme.DeleteIconSize = 50f;
+            BlockStyle.Theme = theme;
+            Assert.IsTrue(view.BeginDrag(block, Vector2.zero));
+            var panel = toolbox.transform.Find("DeletePanel");
+            Assert.NotNull(panel);
+            Assert.IsTrue(panel.gameObject.activeSelf);
+            Assert.AreEqual("Remove", panel.Find("Label").GetComponent<TMP_Text>().text);
+            Assert.AreEqual(new Vector2(50f, 50f), ((RectTransform)panel.Find("Icon")).sizeDelta);
+            Assert.NotNull(panel.Find("Icon").GetComponent<Image>().sprite, "a trash can is drawn when no picture is registered");
+            Assert.NotNull(panel.Find("Border").GetComponent<DashedBorder>());
+
+            view.SetOverDeleteArea(true);
+            Assert.AreEqual(theme.ToolboxDeleteHover, panel.GetComponent<Image>().color, "the hover colour fills the panel");
+            view.CancelDrag();
+            Assert.IsFalse(panel.gameObject.activeSelf, "the strip is back to its buttons");
+        }
     }
 }

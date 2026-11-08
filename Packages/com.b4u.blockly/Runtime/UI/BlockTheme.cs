@@ -153,6 +153,15 @@ namespace Blockly.UI
         public Color ToolboxBackground = new Color(0.22f, 0.22f, 0.26f);
         [Tooltip("Toolbox colour while a block is dragged over it (the trash).")]
         public Color ToolboxDeleteHover = new Color(0.6f, 0.15f, 0.15f);
+        [Tooltip("While a block is dragged, the strip turns into a delete panel: a dashed border, a trash icon and a label.")]
+        public bool ToolboxDeletePanel = false;
+        public Color DeleteBorderColour = new Color(0.9f, 0.3f, 0.3f, 1f);
+        public float DeleteBorderWidth = 2f, DeleteDashLength = 8f, DeleteDashGap = 6f;
+        public Color DeleteIconColour = new Color(0.88f, 0.35f, 0.3f, 1f);
+        public float DeleteIconSize = 40f;
+        public string DeleteLabel = "Delete";
+        public Color DeleteLabelColour = Color.white;
+        public float DeleteLabelSize = 18f;
         public Color FlyoutBackground = new Color(0.9f, 0.9f, 0.93f);
         public Color ConsoleBackground = new Color(0.1f, 0.1f, 0.12f);
         public Color ConsoleText = new Color(0.9f, 0.9f, 0.9f);

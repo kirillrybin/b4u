@@ -51,6 +51,8 @@ namespace Blockly.UI
 
         /// <summary>A drag started (the program should stop running; the model is about to change).</summary>
         public event Action<Block> BlockDragStarted;
+        /// <summary>A drag finished: the blocks were dropped, deleted or the drag was cancelled.</summary>
+        public event Action BlockDragEnded;
         /// <summary>The user changed the workspace (a block was dropped, moved, reconnected, created or deleted).</summary>
         public event Action WorkspaceEdited;
         /// <summary>The user opened a field for editing (the running program should stop; the model is about to change).</summary>
@@ -736,6 +738,7 @@ namespace Blockly.UI
             bool wasOver = OverDeleteArea;
             OverDeleteArea = false;
             if (wasOver) DeleteHoverChanged?.Invoke(false);
+            BlockDragEnded?.Invoke();
             Rebuild();
             RecordForUndo(dragBefore);                                    // nothing recorded if the drag changed nothing (cancelled)
             dragBefore = null;
