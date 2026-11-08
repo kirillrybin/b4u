@@ -14,9 +14,15 @@ public class FigmaSkin : MonoBehaviour
     [Tooltip("Optional TextMeshPro font asset for every text of the built-in Candy theme (blocks, toolbar, toolbox, console, menus, dialogs).")]
     public TMP_FontAsset font;
 
+    // "Figma" is in the list of the Playground's Theme button from the start (built when it is first chosen)
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void RegisterFigma() => BlockThemeCatalog.Register("Figma", () => Candy(Resources.Load<TMP_FontAsset>("FigmaSkin/Poppins-Regular SDF")));
+
     void OnEnable()
     {
-        BlockStyle.Theme = theme != null ? theme : Candy(font != null ? font : Resources.Load<TMP_FontAsset>("FigmaSkin/Poppins-Regular SDF"));
+        var t = theme != null ? theme : Candy(font != null ? font : Resources.Load<TMP_FontAsset>("FigmaSkin/Poppins-Regular SDF"));
+        BlockThemeCatalog.Register(theme != null ? theme.name : "Figma", t);
+        BlockStyle.Theme = t;
     }
 
     void OnDisable()
@@ -34,7 +40,7 @@ public class FigmaSkin : MonoBehaviour
             t.Font = font;
             t.ToolbarFont.Font = t.ToolboxFont.Font = t.ConsoleFont.Font = t.MenuFont.Font = t.DialogFont.Font = font;
         }
-        t.name = "Candy";
+        t.name = "Figma";
         t.StrokeScale = 1.35f;         // outline lighter than the fill
         t.StrokeWidth = 2.8f;
         t.FieldStrokeWidth = 0f;

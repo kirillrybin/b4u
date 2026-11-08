@@ -16,7 +16,9 @@ public class ApplyBlockTheme : MonoBehaviour
 
     void OnEnable()
     {
-        BlockStyle.Theme = theme != null ? theme : Candy(font);
+        var t = theme != null ? theme : Candy(font);
+        BlockThemeCatalog.Register(theme != null ? theme.name : "Figma", t);
+        BlockStyle.Theme = t;
     }
 
     void OnDisable()
@@ -34,7 +36,7 @@ public class ApplyBlockTheme : MonoBehaviour
             t.Font = font;
             t.ToolbarFont.Font = t.ToolboxFont.Font = t.ConsoleFont.Font = t.MenuFont.Font = t.DialogFont.Font = font;
         }
-        t.name = "Candy";
+        t.name = "Figma";
         t.StrokeScale = 1.35f;         // outline lighter than the fill
         t.StrokeWidth = 2.8f;
         t.FieldStrokeWidth = 0f;

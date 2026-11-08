@@ -91,7 +91,7 @@ namespace Blockly.UI.Tests
             layout.Apply(1280, 720);
             Assert.AreEqual(1, layout.ToolbarRows);
             Assert.AreEqual(150f, Child("SafeArea/Toolbar/Run").anchoredPosition.x);
-            Assert.AreEqual(974f, Child("SafeArea/Toolbar/Title").anchoredPosition.x);
+            Assert.AreEqual(1150f, Child("SafeArea/Toolbar/Title").anchoredPosition.x);
         }
 
         [Test]
