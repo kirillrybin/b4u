@@ -88,9 +88,18 @@ namespace Blockly.UI
             if (createVariableButton != null)
                 foreach (var t in createVariableButton.GetComponentsInChildren<TMP_Text>(true)) BlockStyle.ToolboxFont.Apply(t, 15);
             if (createVariableButton != null && createVariableButton.targetGraphic != null) createVariableButton.targetGraphic.color = BlockStyle.VariableButton;
+            if (definition != null && IconsChanged()) BuildButtons();      // a theme that brings (or drops) the category pictures
             ApplyCollapsed();
             PaintDeletePanel();
             if (definition != null) HighlightSelected();
+        }
+
+        /// <summary>Whether some category has, or has lost, its picture since the buttons were built.</summary>
+        bool IconsChanged()
+        {
+            for (int i = 0; i < definition.Categories.Count && i < icons.Count; i++)
+                if ((BlockImages.Get(IconKey(definition.Categories[i])) != null) != (icons[i] != null)) return true;
+            return false;
         }
 
         void Initialise()
@@ -133,6 +142,7 @@ namespace Blockly.UI
             for (int i = categoryList.childCount - 1; i >= 0; i--)
             {
                 var c = categoryList.GetChild(i).gameObject;
+                c.transform.SetParent(null, false);       // Destroy is deferred: the old buttons must not count as children of the list meanwhile
                 if (Application.isPlaying) Destroy(c); else DestroyImmediate(c);
             }
             buttons.Clear(); icons.Clear(); labels.Clear();

@@ -85,6 +85,24 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void CategoryIconsAppearAndGoWithTheImagesThatAThemeBrings()
+        {
+            var def = new Blockly.Editing.ToolboxDefinition();
+            def.Categories.Add(new Blockly.Editing.ToolboxCategory { Name = "Events", ColourHex = "#a0a040", Icon = "icons/events" });
+            var plain = Sprite.Create(new Texture2D(4, 4), new Rect(0, 0, 4, 4), Vector2.zero);
+            bool figma = false;
+            BlockImages.Resolver = key => figma && key == "icons/events" ? plain : null;     // what a skin does: pictures only for its own theme
+            toolbox.SetDefinition(def);
+            Assert.IsNull(Plates()[0].transform.Find("Icon"));
+            figma = true; BlockStyle.Theme = theme;                                          // theme change: the icon is added
+            Assert.NotNull(Plates()[0].transform.Find("Icon"));
+            figma = false; BlockStyle.Theme = null;                                          // and dropped again
+            Assert.IsNull(Plates()[0].transform.Find("Icon"));
+            BlockImages.Resolver = null;
+            Object.DestroyImmediate(plain.texture); Object.DestroyImmediate(plain);
+        }
+
+        [Test]
         public void TheFlyoutShowsTheCategoryNameWhenTheThemeAsks()
         {
             theme.FlyoutTitle = true; theme.FlyoutTitleHeight = 60f; theme.FlyoutTitleSize = 30f; theme.FlyoutTitleColour = Color.cyan;
