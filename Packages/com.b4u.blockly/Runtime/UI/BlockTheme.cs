@@ -171,6 +171,31 @@ namespace Blockly.UI
         public float PanelCornerRadius = 0f;
         public Color DialogPanel = new Color(0.2f, 0.2f, 0.24f, 1f);
 
+        [Header("Toolbox and flyout")]
+        [Tooltip("Which corners of the category strip are rounded (PanelCornerRadius). Square the right ones when the flyout joins it.")]
+        public UiCorners ToolboxCorners = UiCorners.All;
+        [Tooltip("Which corners of the flyout are rounded. Square the left ones when it joins the strip.")]
+        public UiCorners FlyoutCorners = UiCorners.All;
+        [Tooltip("Width of the category strip in canvas units.")]
+        public float ToolboxWidth = 130f;
+        public float CategoryButtonHeight = 40f;
+        [Tooltip("Space between category buttons.")]
+        public float CategoryGap = 2f;
+        public float CategoryIconSize = 24f;
+        [Tooltip("Colour of a category button. Transparent (alpha 0) tints it with the colour of its category.")]
+        public Color CategoryPlate = new Color(0f, 0f, 0f, 0f);
+        [Tooltip("Colour of the selected category button. Transparent uses the colour of its category.")]
+        public Color CategoryPlateSelected = new Color(0f, 0f, 0f, 0f);
+        [Tooltip("Text colour of the selected category button.")]
+        public Color CategoryTextSelected = Color.white;
+        [Tooltip("Show the name of the open category above its blocks in the flyout.")]
+        public bool FlyoutTitle = false;
+        public Color FlyoutTitleColour = Color.white;
+        public float FlyoutTitleSize = 22f;
+        public float FlyoutTitleHeight = 56f;
+        [Tooltip("Space between the edge of the flyout and its blocks.")]
+        public float FlyoutPadding = 12f;
+
         [Header("Text")]
         public float FontSize = 12f;
         [Tooltip("Leave empty for the TextMeshPro default font.")]

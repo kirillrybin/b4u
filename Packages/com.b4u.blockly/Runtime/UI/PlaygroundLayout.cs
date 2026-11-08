@@ -24,7 +24,9 @@ namespace Blockly.UI
         [SerializeField] RectTransform console;
 
         public const float RowHeight = 48f, RowPadding = 6f, ItemGap = 8f, ItemHeight = 36f, SideMargin = 8f;
-        public const float ToolboxWidth = 130f, FlyoutWidth = 360f, FlyoutMargin = 24f, ConsoleHeight = 190f, MinWorkspaceHeight = 220f;
+        public const float FlyoutWidth = 360f, FlyoutMargin = 24f, ConsoleHeight = 190f, MinWorkspaceHeight = 220f;
+        /// <summary>Width of the category strip: the theme's <see cref="BlockTheme.ToolboxWidth"/>.</summary>
+        public static float ToolboxWidth => BlockStyle.ToolboxWidth;
         const float DpPerInch = 160f;
         const float MinTitleWidth = 140f;
         /// <summary>Space kept on each side of a button's label when the button grows to fit a larger font.</summary>
