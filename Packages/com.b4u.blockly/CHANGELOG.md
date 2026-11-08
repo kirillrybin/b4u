@@ -9,6 +9,7 @@ First version.
 - Interpreter for the standard blocks, with Run, Step, Stop and slow mode.
 - Editing: toolbox and flyouts, drag and snap, field editing, dropdowns, variables, procedure parameters, selection and Delete, copy / cut / paste, undo / redo, zoom.
 - Playground scene and controller with a File menu to save, open, delete, copy and paste programs; saved programs persist on WebGL.
+- Block menu: right click on a block, or hold a press on a touch screen, for Duplicate, Copy, Cut, Disable / Enable block and Delete. A disabled block (and what is inside it) is grey and skipped when the program runs.
 - Licensed under MIT (`LICENSE.md`, `NOTICE.md`).
 - Backup of unsaved work, offered again at the next start; File > Export / Import of program files; File > Paste and Copy use the browser clipboard on WebGL.
 - `IBlockPackage` and `StandardBlockSet.AddPackage` for custom blocks, with a sample.
