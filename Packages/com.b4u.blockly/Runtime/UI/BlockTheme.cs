@@ -180,6 +180,16 @@ namespace Blockly.UI
         public UiCorners FlyoutCorners = UiCorners.All;
         [Tooltip("Width of the category strip in canvas units.")]
         public float ToolboxWidth = 130f;
+        [Tooltip("Let the category strip collapse to icons only, with a round tab to toggle it.")]
+        public bool ToolboxCollapsible = false;
+        [Tooltip("Width of the collapsed strip (category buttons become square icon buttons).")]
+        public float ToolboxCollapsedWidth = 84f;
+        [Tooltip("Diameter of the round tab that collapses and expands the strip, and its distance from the top.")]
+        public float ToggleSize = 44f;
+        public float ToggleTop = 24f;
+        [Tooltip("Colour of the tab. Transparent uses ToolboxBackground.")]
+        public Color ToggleColour = new Color(0f, 0f, 0f, 0f);
+        public Color ToggleIconColour = new Color(0.7f, 0.7f, 0.85f, 1f);
         public float CategoryButtonHeight = 40f;
         [Tooltip("Space between category buttons.")]
         public float CategoryGap = 2f;

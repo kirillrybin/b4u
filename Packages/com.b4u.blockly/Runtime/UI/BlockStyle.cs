@@ -60,6 +60,12 @@ namespace Blockly.UI
         public static UiCorners ToolboxCornersWithFlyout => Theme.ToolboxCornersWithFlyout;
         public static UiCorners FlyoutCorners => Theme.FlyoutCorners;
         public static float ToolboxWidth => Mathf.Clamp(Theme.ToolboxWidth, 48f, 600f);
+        public static bool ToolboxCollapsible => Theme.ToolboxCollapsible;
+        public static float ToolboxCollapsedWidth => Mathf.Clamp(Theme.ToolboxCollapsedWidth, 40f, 600f);
+        public static float ToggleSize => Mathf.Clamp(Theme.ToggleSize, 16f, 120f);
+        public static float ToggleTop => Mathf.Max(0f, Theme.ToggleTop);
+        public static Color ToggleColour => Theme.ToggleColour.a > 0f ? Theme.ToggleColour : Theme.ToolboxBackground;
+        public static Color ToggleIconColour => Theme.ToggleIconColour;
         public static float CategoryButtonHeight => Mathf.Clamp(Theme.CategoryButtonHeight, 16f, 200f);
         public static float CategoryGap => Mathf.Clamp(Theme.CategoryGap, 0f, 100f);
         public static float CategoryIconSize => Mathf.Clamp(Theme.CategoryIconSize, 8f, 128f);

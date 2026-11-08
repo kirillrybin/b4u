@@ -25,8 +25,29 @@ namespace Blockly.UI
         readonly List<Image> icons = new List<Image>();            // null where a category has no icon
         readonly List<TMP_Text> labels = new List<TMP_Text>();
         TMP_Text flyoutTitle;
+        bool collapsed;
+        Image toggleImage, toggleIcon;
         Flyout current;
         int selected = -1;
+
+        /// <summary>Raised when the strip collapses or expands (its width changes: the layout follows).</summary>
+        public event System.Action CollapsedChanged;
+
+        /// <summary>True while the strip shows only icons. Needs <see cref="BlockTheme.ToolboxCollapsible"/>; otherwise the strip is never collapsed.</summary>
+        public bool Collapsed
+        {
+            get => collapsed && BlockStyle.ToolboxCollapsible;
+            set
+            {
+                if (collapsed == value) return;
+                collapsed = value;
+                if (collapsed) CloseFlyout();
+                ApplyCollapsed();
+            }
+        }
+
+        /// <summary>The width the strip has now: the theme's width, or the collapsed one.</summary>
+        public float CurrentWidth => Collapsed ? BlockStyle.ToolboxCollapsedWidth : BlockStyle.ToolboxWidth;
 
         public int SelectedIndex => selected;
         public bool IsFlyoutOpen => flyoutPanel != null && flyoutPanel.gameObject.activeSelf;
@@ -67,7 +88,7 @@ namespace Blockly.UI
             if (createVariableButton != null)
                 foreach (var t in createVariableButton.GetComponentsInChildren<TMP_Text>(true)) BlockStyle.ToolboxFont.Apply(t, 15);
             if (createVariableButton != null && createVariableButton.targetGraphic != null) createVariableButton.targetGraphic.color = BlockStyle.VariableButton;
-            LayoutButtons();
+            ApplyCollapsed();
             if (definition != null) HighlightSelected();
         }
 
@@ -157,33 +178,96 @@ namespace Blockly.UI
         {
             var bg = GetComponent<Image>();
             if (bg != null) UiShape.Round(bg, BlockStyle.PanelCornerRadius, IsFlyoutOpen ? BlockStyle.ToolboxCornersWithFlyout : BlockStyle.ToolboxCorners);
+            UpdateToggle();
+        }
+
+        /// <summary>Lays the buttons out for the current width and tells the layout that the width may have changed.</summary>
+        void ApplyCollapsed()
+        {
+            LayoutButtons();
+            UpdateToggle();
+            CollapsedChanged?.Invoke();
+        }
+
+        /// <summary>The round tab on the right edge of the strip: shown when the theme allows collapsing and no flyout covers it.</summary>
+        void UpdateToggle()
+        {
+            bool show = BlockStyle.ToolboxCollapsible && !IsFlyoutOpen;
+            if (toggleImage == null)
+            {
+                if (!show) return;
+                var go = new GameObject("Toggle", typeof(RectTransform), typeof(Image), typeof(Button));
+                var rt = (RectTransform)go.transform;
+                rt.SetParent(transform, false);
+                rt.anchorMin = rt.anchorMax = new Vector2(1, 1); rt.pivot = new Vector2(0.5f, 0.5f);
+                toggleImage = go.GetComponent<Image>();
+                go.GetComponent<Button>().targetGraphic = toggleImage;
+                go.GetComponent<Button>().onClick.AddListener(() => Collapsed = !Collapsed);
+                var ig = new GameObject("Chevron", typeof(RectTransform), typeof(Image));
+                var irt = (RectTransform)ig.transform;
+                irt.SetParent(rt, false);
+                irt.anchorMin = irt.anchorMax = new Vector2(0.5f, 0.5f); irt.pivot = new Vector2(0.5f, 0.5f);
+                toggleIcon = ig.GetComponent<Image>(); toggleIcon.raycastTarget = false;
+            }
+            toggleImage.gameObject.SetActive(show);
+            if (!show) return;
+            float size = BlockStyle.ToggleSize;
+            var trt = (RectTransform)toggleImage.transform;
+            trt.sizeDelta = new Vector2(size, size);
+            trt.anchoredPosition = new Vector2(size * 0.5f, -(BlockStyle.ToggleTop + size * 0.5f));     // half of it sticks out of the strip
+            toggleImage.color = BlockStyle.ToggleColour;
+            UiShape.Round(toggleImage, size * 0.5f);
+            var irect = (RectTransform)toggleIcon.transform;
+            irect.sizeDelta = new Vector2(size * 0.55f, size * 0.55f);
+            toggleIcon.sprite = BlockImages.Get(Collapsed ? "toolbox/expand" : "toolbox/collapse") ?? UiShape.Chevron(Collapsed);
+            toggleIcon.color = BlockStyle.ToggleIconColour;
         }
 
         /// <summary>The picture name of a category: its Icon, or <c>category/&lt;name&gt;</c> when it has none.</summary>
         static string IconKey(ToolboxCategory cat) => string.IsNullOrEmpty(cat.Icon) ? "category/" + cat.Name : cat.Icon;
 
-        static void PlaceButton(RectTransform rt, ref float y)
+        /// <summary>Width of the area the buttons live in: the strip minus the padding of the button list.</summary>
+        float ListWidth()
+        {
+            float pad = categoryList != null ? categoryList.offsetMin.x - categoryList.offsetMax.x : 12f;
+            return Mathf.Max(0f, CurrentWidth - pad);
+        }
+
+        void PlaceButton(RectTransform rt, ref float y)
         {
             float h = BlockStyle.CategoryButtonHeight;
-            rt.sizeDelta = new Vector2(0, h);
+            // collapsed: a square plate in the middle of the strip
+            float inset = Collapsed ? Mathf.Max(0f, (ListWidth() - h) / 2f) : 0f;
+            rt.sizeDelta = new Vector2(-2f * inset, h);
             rt.anchoredPosition = new Vector2(0, -y);
             y += h + BlockStyle.CategoryGap;
         }
 
-        static void PlaceIcon(RectTransform irt)
+        void PlaceIcon(RectTransform irt)
         {
             float size = BlockStyle.CategoryIconSize;
             irt.sizeDelta = new Vector2(size, size);
-            irt.anchoredPosition = new Vector2(Mathf.Min(8f, (BlockStyle.CategoryButtonHeight - size) / 2f), 0);
+            if (Collapsed)
+            {
+                irt.anchorMin = irt.anchorMax = new Vector2(0.5f, 0.5f); irt.pivot = new Vector2(0.5f, 0.5f);
+                irt.anchoredPosition = Vector2.zero;
+            }
+            else
+            {
+                irt.anchorMin = irt.anchorMax = new Vector2(0, 0.5f); irt.pivot = new Vector2(0, 0.5f);
+                irt.anchoredPosition = new Vector2(Mathf.Min(8f, (BlockStyle.CategoryButtonHeight - size) / 2f), 0);
+            }
         }
 
-        static void PlaceLabel(RectTransform lrt, bool hasIcon)
+        void PlaceLabel(RectTransform lrt, bool hasIcon)
         {
             float indent = Mathf.Min(8f, (BlockStyle.CategoryButtonHeight - BlockStyle.CategoryIconSize) / 2f);
             lrt.offsetMin = new Vector2(hasIcon ? indent + BlockStyle.CategoryIconSize + 6f : 10f, 0); lrt.offsetMax = new Vector2(-4, 0);
+            // a category without an icon keeps its text, so the button is never empty
+            lrt.gameObject.SetActive(!Collapsed || !hasIcon);
         }
 
-        /// <summary>Applies the theme's button size, gap and icon size to the buttons that are already there.</summary>
+        /// <summary>Applies the theme's button size, gap and icon size, and the collapsed state, to the buttons that are already there.</summary>
         void LayoutButtons()
         {
             if (categoryList == null) return;
