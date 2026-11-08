@@ -54,7 +54,8 @@ namespace Blockly.UI
         {
             if (this == null) { BlockStyle.ThemeChanged -= OnThemeChanged; return; }
             var bg = GetComponent<Image>();
-            if (bg != null) { bg.color = DefaultBackground; UiShape.Round(bg, BlockStyle.PanelCornerRadius, BlockStyle.ToolboxCorners); }
+            if (bg != null) bg.color = DefaultBackground;
+            ApplyStripCorners();
             if (flyoutPanel != null)
             {
                 var fp = flyoutPanel.GetComponent<Image>();
@@ -151,6 +152,13 @@ namespace Blockly.UI
             }
         }
 
+        /// <summary>The strip's corners: the theme's <c>ToolboxCorners</c>, or <c>ToolboxCornersWithFlyout</c> while the flyout is open beside it.</summary>
+        void ApplyStripCorners()
+        {
+            var bg = GetComponent<Image>();
+            if (bg != null) UiShape.Round(bg, BlockStyle.PanelCornerRadius, IsFlyoutOpen ? BlockStyle.ToolboxCornersWithFlyout : BlockStyle.ToolboxCorners);
+        }
+
         /// <summary>The picture name of a category: its Icon, or <c>category/&lt;name&gt;</c> when it has none.</summary>
         static string IconKey(ToolboxCategory cat) => string.IsNullOrEmpty(cat.Icon) ? "category/" + cat.Name : cat.Icon;
 
@@ -243,6 +251,7 @@ namespace Blockly.UI
             rt.sizeDelta += new Vector2(2 * pad, 2 * pad);           // padding inside the scroll area
             rt.anchoredPosition = new Vector2(pad, -pad);
             ShowFlyoutTitle(definition.Categories[index].Name);
+            ApplyStripCorners();
             if (current.HeaderHeight > 0) BuildCreateVariableButton();
             HighlightSelected();
         }
@@ -280,6 +289,7 @@ namespace Blockly.UI
             selected = -1;
             current = null;
             if (flyoutPanel != null) flyoutPanel.gameObject.SetActive(false);
+            ApplyStripCorners();
             if (buttons.Count > 0) HighlightSelected();
         }
 

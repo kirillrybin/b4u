@@ -174,6 +174,8 @@ namespace Blockly.UI
         [Header("Toolbox and flyout")]
         [Tooltip("Which corners of the category strip are rounded (PanelCornerRadius). Square the right ones when the flyout joins it.")]
         public UiCorners ToolboxCorners = UiCorners.All;
+        [Tooltip("Which corners of the category strip are rounded while a flyout is open next to it (usually the right ones are square).")]
+        public UiCorners ToolboxCornersWithFlyout = UiCorners.All;
         [Tooltip("Which corners of the flyout are rounded. Square the left ones when it joins the strip.")]
         public UiCorners FlyoutCorners = UiCorners.All;
         [Tooltip("Width of the category strip in canvas units.")]

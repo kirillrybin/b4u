@@ -119,7 +119,7 @@ namespace Blockly.UI.Tests
         public void ToolboxAndFlyoutRoundOnlyTheCornersTheThemeNames()
         {
             theme.PanelCornerRadius = 14f;
-            theme.ToolboxCorners = UiCorners.Left; theme.FlyoutCorners = UiCorners.Right;
+            theme.ToolboxCorners = UiCorners.Left; theme.ToolboxCornersWithFlyout = UiCorners.Left; theme.FlyoutCorners = UiCorners.Right;
             BlockStyle.Theme = theme;
             toolbox.SelectCategory(0);
             var strip = toolbox.GetComponent<Image>();
@@ -174,6 +174,26 @@ namespace Blockly.UI.Tests
             BlockStyle.Theme = null;
             layout.Apply(1280, 720);
             Assert.AreEqual(130f, ((RectTransform)toolbox.transform).offsetMax.x);
+        }
+
+        [Test]
+        public void TheStripChangesCornersWhileTheFlyoutIsOpen()
+        {
+            theme.PanelCornerRadius = 14f;
+            theme.ToolboxCorners = UiCorners.All; theme.ToolboxCornersWithFlyout = UiCorners.Left;
+            BlockStyle.Theme = theme;
+            var strip = toolbox.GetComponent<Image>();
+            var probe = new GameObject("probe", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            toolbox.CloseFlyout();
+            UiShape.Round(probe, 14f, UiCorners.All);
+            Assert.AreSame(probe.sprite, strip.sprite, "closed: every corner round");
+            toolbox.SelectCategory(0);
+            UiShape.Round(probe, 14f, UiCorners.Left);
+            Assert.AreSame(probe.sprite, strip.sprite, "open: the right side joins the flyout");
+            toolbox.CloseFlyout();
+            UiShape.Round(probe, 14f, UiCorners.All);
+            Assert.AreSame(probe.sprite, strip.sprite);
+            Object.DestroyImmediate(probe.gameObject);
         }
     }
 }
