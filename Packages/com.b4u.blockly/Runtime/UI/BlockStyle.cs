@@ -57,6 +57,7 @@ namespace Blockly.UI
         public static float ButtonCornerRadius => Theme.ButtonCornerRadius;
         public static float PanelCornerRadius => Theme.PanelCornerRadius;
         public static UiCorners ToolboxCorners => Theme.ToolboxCorners;
+        public static UiCorners ToolboxCornersWithFlyout => Theme.ToolboxCornersWithFlyout;
         public static UiCorners FlyoutCorners => Theme.FlyoutCorners;
         public static float ToolboxWidth => Mathf.Clamp(Theme.ToolboxWidth, 48f, 600f);
         public static float CategoryButtonHeight => Mathf.Clamp(Theme.CategoryButtonHeight, 16f, 200f);
