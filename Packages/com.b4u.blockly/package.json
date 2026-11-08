@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "unity": "6000.0",
   "description": "Native C# port of Blockly: block model, JSON/XML serialization, UGUI rendering and interpreter.",
+  "license": "MIT",
+  "author": {
+    "name": "Kirill Rybin"
+  },
   "dependencies": {
     "com.unity.ugui": "2.0.0"
   },
