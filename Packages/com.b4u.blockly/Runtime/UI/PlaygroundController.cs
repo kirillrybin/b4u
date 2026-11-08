@@ -87,6 +87,7 @@ namespace Blockly.UI
         /// <summary>Shows the first program, or the unsaved work of the last session if there is some (what Start does).</summary>
         public void BeginSession()
         {
+            BlockThemeCatalog.RestoreSaved();                          // the theme of the last session (skins have set theirs by now)
             string draft = ReadDraft();                                // before Show: showing a program discards the stored draft
             if (Count > 0) Show(0);
             if (draft != null) RestoreFrom(draft);
@@ -148,7 +149,7 @@ namespace Blockly.UI
             string current = BlockThemeCatalog.CurrentName;
             var items = new List<DropdownItem>();
             foreach (var name in BlockThemeCatalog.Names) items.Add(new DropdownItem { Label = name, Value = name, Selected = name == current });
-            themeMenu = DropdownMenu.Open(canvas, screenPoint, width, items, item => BlockThemeCatalog.Select(item.Value));
+            themeMenu = DropdownMenu.Open(canvas, screenPoint, width, items, item => { if (BlockThemeCatalog.Select(item.Value)) BlockThemeCatalog.Remember(); });
         }
 
         public bool ConsoleVisible => console == null || console.Visible;
