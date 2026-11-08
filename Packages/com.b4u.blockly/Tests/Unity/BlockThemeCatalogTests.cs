@@ -96,5 +96,21 @@ namespace Blockly.UI.Tests
             Assert.AreSame(a, BlockStyle.Theme);
             Assert.AreEqual("Theme: Candy", label.text);
         }
+
+        [Test]
+        public void TheThemeLabelFollowsTheThemeInAScene()
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Playground/Playground.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+            var c = Object.FindFirstObjectByType<PlaygroundController>();
+            var button = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == "Theme");
+            var label = button.GetComponentInChildren<TMP_Text>();
+            BlockThemeCatalog.Register("Candy", a);
+            BlockStyle.Theme = a;                                  // set before the controller starts, as a skin does
+            // in Play the scene's own fields are used and SetThemeButton is not called: OnEnable does the work (EditMode never calls it)
+            typeof(PlaygroundController).GetMethod("OnEnable", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(c, null);
+            Assert.AreEqual("Theme: Candy", label.text);
+            BlockStyle.Theme = null;
+            Assert.AreEqual("Theme: Classic", label.text);
+        }
     }
 }
