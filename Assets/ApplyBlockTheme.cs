@@ -60,13 +60,25 @@ public class ApplyBlockTheme : MonoBehaviour
         // a dark navy interface
         t.AppBackground = Hex("#1f2342");
         t.ToolbarBackground = Hex("#1f2342");
-        t.ToolboxBackground = Hex("#262b50");
-        t.FlyoutBackground = Hex("#232649");
+        t.ToolboxBackground = Hex("#252749");     // the rail and the flyout are one colour, as in the design
+        t.FlyoutBackground = Hex("#252749");
         t.WorkspaceBackground = Hex("#2b3060");
         t.ConsoleBackground = Hex("#181b33");
         t.ConsoleText = Hex("#dfe3ff");
         t.ButtonColour = Hex("#3d4377");
         t.CategoryShade = 0.6f;
+        // the rail of the design: lilac plates with coloured icons, a gradient plate and a white icon when selected
+        t.ToolboxWidth = 156f;
+        t.CategoryButtonHeight = 46f; t.CategoryGap = 12f; t.CategoryIconSize = 26f;
+        t.CategoryPlate = Hex("#494971");
+        t.CategoryPlateSelected = Hex("#494971");     // the gradient picture covers it when the app registers one
+        t.CategoryText = Hex("#b3b1d1");
+        t.CategoryTextSelected = Color.white;
+        t.ToolboxCorners = UiCorners.All;
+        t.ToolboxCornersWithFlyout = UiCorners.Left;     // the rail and the flyout join into one panel
+        t.FlyoutCorners = UiCorners.Right;
+        t.FlyoutTitle = true; t.FlyoutTitleSize = 24f; t.FlyoutTitleHeight = 64f; t.FlyoutTitleColour = Color.white;
+        t.FlyoutPadding = 24f;
         t.MenuBackground = Hex("#262b50");
         t.MenuHover = Hex("#3d4377");
         t.MenuSelected = Hex("#4a63c8");
@@ -84,7 +96,7 @@ public class ApplyBlockTheme : MonoBehaviour
         });
         t.HatHeight = 23f;      // about 0.55 of a row (42), like the proportions of the design
         t.HatStyle = Blockly.Layout.HatShape.Dome;      // a dome like a "when clicked" hat: rises at the left, slopes down to the edge
-        t.ButtonCornerRadius = 10f;    // rounded buttons and panels
+        t.ButtonCornerRadius = 12f;    // rounded buttons and panels
         t.PanelCornerRadius = 14f;
         return t;
     }

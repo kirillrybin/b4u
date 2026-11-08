@@ -42,7 +42,7 @@ public sealed class IconBlocks : IBlockPackage
     {
         new ToolboxCategory
         {
-            Name = "Moves", ColourHex = Colour.FromHue(215), Icon = "Icons/move-forward",
+            Name = "Moves", ColourHex = Colour.FromHue(215),
             Blocks = new List<Dictionary<string, object>>
             {
                 new Dictionary<string, object> { { "kind", "block" }, { "type", "icon_forward" } },
@@ -53,7 +53,7 @@ public sealed class IconBlocks : IBlockPackage
         },
         new ToolboxCategory
         {
-            Name = "Events", ColourHex = Colour.FromHue(60), Icon = "Icons/flag",
+            Name = "Events", ColourHex = Colour.FromHue(60),
             Blocks = new List<Dictionary<string, object>>
             {
                 // no previous connection: it starts a stack, so a theme rule with Hat can put a cap on it (see ApplyBlockTheme)
@@ -67,5 +67,64 @@ public sealed class IconBlocks : IBlockPackage
     {
         // the pictures are the icons of the design, in Resources/Icons (found by their path, no registration needed)
         StandardBlockSet.AddPackage(new IconBlocks());
+        RegisterCategoryLooks();
+    }
+
+    // The toolbox of the design: a lilac plate with a coloured icon, and a gradient plate with a white icon while selected.
+    // Categories are matched by name; our categories borrow the look of the six of the design.
+    static void RegisterCategoryLooks()
+    {
+        var looks = new Dictionary<string, (string icon, Color from, Color to, Vector2 dir)>
+        {
+            { "events",     ("events",     Hex("#7c7a40"), Hex("#ece98c"), new Vector2(1, 0.3f)) },
+            { "actions",    ("actions",    Hex("#3355f5"), Hex("#78c8ff"), new Vector2(1, -0.3f)) },
+            { "control",    ("control",    Hex("#8f5a22"), Hex("#ffbd6e"), new Vector2(1, 0.4f)) },
+            { "operations", ("operations", Hex("#25a5f5"), Hex("#15e6e6"), new Vector2(1, 0.3f)) },
+            { "sensors",    ("sensors",    Hex("#8f45ff"), Hex("#d3bfff"), new Vector2(0, 1)) },
+            { "variables",  ("variables",  Hex("#b04440"), Hex("#ff5a4e"), new Vector2(1, 1)) },
+            { "text",       ("text",       Hex("#10966e"), Hex("#82f0be"), new Vector2(1, 1)) },
+            { "functions",  ("functions",  Hex("#be28be"), Hex("#ff8cd2"), new Vector2(1, 1)) },
+        };
+        var names = new Dictionary<string, string>
+        {
+            { "Events", "events" }, { "Moves", "actions" }, { "Loops", "actions" }, { "Logic", "control" },
+            { "Math", "operations" }, { "Lists", "sensors" }, { "Variables", "variables" }, { "Text", "text" }, { "Functions", "functions" },
+        };
+        foreach (var kv in names)
+        {
+            var look = looks[kv.Value];
+            var icon = Resources.Load<Sprite>("Icons/category-" + look.icon);
+            var white = Resources.Load<Sprite>("Icons/category-" + look.icon + "-selected");
+            if (icon == null) continue;
+            BlockImages.Register("category/" + kv.Key, icon);
+            if (white != null) BlockImages.Register("category/" + kv.Key + "@selected", white);
+            BlockImages.Register("plate/" + kv.Key, Plate(look.from, look.to, look.dir));
+        }
+    }
+
+    static Color Hex(string html) { ColorUtility.TryParseHtmlString(html, out var c); return c; }
+
+    /// <summary>A rounded, nine-sliced plate with a linear gradient: the corner is 28 texels, shown as 12 canvas units.</summary>
+    static Sprite Plate(Color from, Color to, Vector2 dir)
+    {
+        const int S = 64, R = 28;
+        var tex = new Texture2D(S, S, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+        var px = new Color32[S * S];
+        dir = dir.normalized;
+        float min = float.MaxValue, max = float.MinValue;
+        foreach (var c in new[] { new Vector2(0, 0), new Vector2(S, 0), new Vector2(0, S), new Vector2(S, S) })
+        { float d = Vector2.Dot(c, dir); min = Mathf.Min(min, d); max = Mathf.Max(max, d); }
+        for (int y = 0; y < S; y++)
+            for (int x = 0; x < S; x++)
+            {
+                float cx = Mathf.Clamp(x + 0.5f, R, S - R), cy = Mathf.Clamp(y + 0.5f, R, S - R);
+                float dist = Mathf.Sqrt((x + 0.5f - cx) * (x + 0.5f - cx) + (y + 0.5f - cy) * (y + 0.5f - cy));
+                float a = Mathf.Clamp01(R - dist + 0.5f);
+                float t = Mathf.InverseLerp(min, max, Vector2.Dot(new Vector2(x + 0.5f, y + 0.5f), dir));
+                var col = Color.Lerp(from, to, t); col.a = a;
+                px[y * S + x] = col;
+            }
+        tex.SetPixels32(px); tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 233f, 0, SpriteMeshType.FullRect, new Vector4(R, R, R, R));
     }
 }
