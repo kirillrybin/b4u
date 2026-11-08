@@ -26,7 +26,11 @@ namespace Blockly.UI
         public const float RowHeight = 48f, RowPadding = 6f, ItemGap = 8f, ItemHeight = 36f, SideMargin = 8f;
         public const float FlyoutWidth = 360f, FlyoutMargin = 24f, ConsoleHeight = 190f, MinWorkspaceHeight = 220f;
         /// <summary>Width of the category strip: the theme's <see cref="BlockTheme.ToolboxWidth"/>.</summary>
-        public static float ToolboxWidth => BlockStyle.ToolboxWidth;
+        public float ToolboxWidth => ToolboxView != null ? ToolboxView.CurrentWidth : BlockStyle.ToolboxWidth;
+
+        ToolboxView ToolboxView => toolboxView != null ? toolboxView : (toolbox != null ? toolboxView = toolbox.GetComponent<ToolboxView>() : null);
+        ToolboxView toolboxView;
+        float lastToolboxWidth = -1f;
         const float DpPerInch = 160f;
         const float MinTitleWidth = 140f;
         /// <summary>Space kept on each side of a button's label when the button grows to fit a larger font.</summary>
@@ -134,6 +138,8 @@ namespace Blockly.UI
             }
             if (safeArea == null) return;
             if (LabelsChanged()) { dirty = true; lastSize = new Vector2(-1, -1); }
+            float tw = ToolboxWidth;
+            if (!Mathf.Approximately(tw, lastToolboxWidth)) { lastToolboxWidth = tw; lastSize = new Vector2(-1, -1); }     // the strip collapsed or expanded
             // The canvas scaler adopts a new scale a frame later, so the size in canvas units is looked at every frame and the layout is
             // redone whenever it differs from the one it was made for.
             Canvas.ForceUpdateCanvases();

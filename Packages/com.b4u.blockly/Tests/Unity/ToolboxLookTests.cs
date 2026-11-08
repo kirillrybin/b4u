@@ -195,5 +195,88 @@ namespace Blockly.UI.Tests
             Assert.AreSame(probe.sprite, strip.sprite);
             Object.DestroyImmediate(probe.gameObject);
         }
+
+        [Test]
+        public void TheStripOnlyCollapsesWhenTheThemeAllowsIt()
+        {
+            BlockStyle.Theme = theme;
+            toolbox.Collapsed = true;
+            Assert.IsFalse(toolbox.Collapsed);
+            Assert.AreEqual(130f, toolbox.CurrentWidth);
+            Assert.IsNull(toolbox.transform.Find("Toggle"), "no tab either");
+            toolbox.Collapsed = false;
+        }
+
+        [Test]
+        public void ACollapsedStripShowsSquareIconButtonsAndTheLayoutFollowsItsWidth()
+        {
+            var def = new Blockly.Editing.ToolboxDefinition();
+            def.Categories.Add(new Blockly.Editing.ToolboxCategory { Name = "Events", ColourHex = "#a0a040", Icon = "icons/events" });
+            def.Categories.Add(new Blockly.Editing.ToolboxCategory { Name = "Plain", ColourHex = "#40a0a0" });
+            var sprite = Sprite.Create(new Texture2D(4, 4), new Rect(0, 0, 4, 4), Vector2.zero);
+            BlockImages.Register("icons/events", sprite);
+            theme.ToolboxCollapsible = true; theme.ToolboxCollapsedWidth = 80f; theme.ToolboxWidth = 160f;
+            theme.CategoryButtonHeight = 46f;
+            BlockStyle.Theme = theme;
+            toolbox.SetDefinition(def);
+            var layout = Object.FindFirstObjectByType<PlaygroundLayout>();
+            layout.Apply(1280, 720);
+            var buttons = toolbox.GetComponentsInChildren<Button>(true).Where(b => b.transform.parent.name == "Categories").Select(b => (RectTransform)b.transform).ToArray();
+            Assert.Greater(buttons[0].rect.width, 100f, "expanded: a wide button");
+            Assert.IsTrue(buttons[0].Find("Text").gameObject.activeSelf);
+
+            toolbox.Collapsed = true;
+            layout.Apply(1280, 720);
+            Assert.AreEqual(80f, ((RectTransform)toolbox.transform).offsetMax.x);
+            Assert.AreEqual(80f, GameObject.Find("Scroll").GetComponent<RectTransform>().offsetMin.x, "the workspace uses the room");
+            Assert.AreEqual(46f, buttons[0].rect.width, 0.01f, "a square plate");
+            Assert.IsFalse(buttons[0].Find("Text").gameObject.activeSelf, "icon only");
+            Assert.IsTrue(buttons[1].Find("Text").gameObject.activeSelf, "a category without an icon keeps its text");
+            Assert.AreEqual(new Vector2(0.5f, 0.5f), ((RectTransform)buttons[0].Find("Icon")).anchorMin, "the icon is centred");
+
+            toolbox.Collapsed = false;
+            layout.Apply(1280, 720);
+            Assert.AreEqual(160f, ((RectTransform)toolbox.transform).offsetMax.x);
+            Assert.Greater(buttons[0].rect.width, 100f);
+            Assert.IsTrue(buttons[0].Find("Text").gameObject.activeSelf);
+            Object.DestroyImmediate(sprite.texture); Object.DestroyImmediate(sprite);
+        }
+
+        [Test]
+        public void TheRoundTabTogglesTheStripAndHidesWhileAFlyoutIsOpen()
+        {
+            theme.ToolboxCollapsible = true;
+            BlockStyle.Theme = theme;
+            var toggle = toolbox.transform.Find("Toggle");
+            Assert.NotNull(toggle, "the tab exists");
+            Assert.IsTrue(toggle.gameObject.activeSelf);
+            var chevronBefore = toggle.Find("Chevron").GetComponent<Image>().sprite;
+            toggle.GetComponent<Button>().onClick.Invoke();
+            Assert.IsTrue(toolbox.Collapsed);
+            Assert.AreNotSame(chevronBefore, toggle.Find("Chevron").GetComponent<Image>().sprite, "the arrow turns");
+            toggle.GetComponent<Button>().onClick.Invoke();
+            Assert.IsFalse(toolbox.Collapsed);
+
+            toolbox.SelectCategory(0);
+            Assert.IsFalse(toggle.gameObject.activeSelf, "the flyout covers it");
+            toolbox.CloseFlyout();
+            Assert.IsTrue(toggle.gameObject.activeSelf);
+            toolbox.SelectCategory(0);
+            toolbox.Collapsed = true;
+            Assert.IsFalse(toolbox.IsFlyoutOpen, "collapsing closes the flyout");
+        }
+
+        [Test]
+        public void TheLayoutNoticesACollapseOnItsOwn()
+        {
+            theme.ToolboxCollapsible = true; theme.ToolboxCollapsedWidth = 70f;
+            BlockStyle.Theme = theme;
+            var layout = Object.FindFirstObjectByType<PlaygroundLayout>();
+            layout.Apply(1280, 720);
+            toolbox.Collapsed = true;
+            Assert.AreEqual(70f, layout.ToolboxWidth);
+            toolbox.Collapsed = false;
+            Assert.AreEqual(130f, layout.ToolboxWidth);
+        }
     }
 }

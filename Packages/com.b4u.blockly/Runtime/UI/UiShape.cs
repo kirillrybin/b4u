@@ -51,6 +51,37 @@ namespace Blockly.UI
             return false;
         }
 
+        static readonly Sprite[] chevrons = new Sprite[2];
+
+        /// <summary>A white chevron (">" when <paramref name="right"/>, "&lt;" otherwise) with round ends; tint it with the Image colour.</summary>
+        public static Sprite Chevron(bool right)
+        {
+            int k = right ? 1 : 0;
+            if (chevrons[k] != null) return chevrons[k];
+            const int S = 64; const float half = 3.2f;
+            var tex = new Texture2D(S, S, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            var tip = new Vector2(right ? 42f : 22f, 32f);
+            var a = new Vector2(right ? 24f : 40f, 14f); var b = new Vector2(right ? 24f : 40f, 50f);
+            var px = new Color32[S * S];
+            for (int y = 0; y < S; y++)
+                for (int x = 0; x < S; x++)
+                {
+                    var p = new Vector2(x + 0.5f, y + 0.5f);
+                    float d = Mathf.Min(DistanceToSegment(p, a, tip), DistanceToSegment(p, tip, b));
+                    px[y * S + x] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(half - d + 0.5f) * 255f));
+                }
+            tex.SetPixels32(px); tex.Apply();
+            var sprite = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 100f);
+            sprite.hideFlags = HideFlags.HideAndDontSave;
+            return chevrons[k] = sprite;
+        }
+
+        static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+        {
+            var ab = b - a; float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+            return (p - (a + ab * t)).magnitude;
+        }
+
         /// <summary>Gives the image corners of <paramref name="radius"/> canvas units; 0 or less restores a plain rectangle.</summary>
         public static void Round(Graphic graphic, float radius) => Round(graphic, radius, UiCorners.All);
 
