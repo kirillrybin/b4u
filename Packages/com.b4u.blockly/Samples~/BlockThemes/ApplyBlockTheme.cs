@@ -14,9 +14,15 @@ public class ApplyBlockTheme : MonoBehaviour
     [Tooltip("Optional TextMeshPro font asset for every text of the built-in Candy theme (blocks, toolbar, toolbox, console, menus, dialogs).")]
     public TMP_FontAsset font;
 
+    // "Candy" is in the list of the Playground's Theme button from the start (built when it is first chosen)
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void RegisterCandy() => BlockThemeCatalog.Register("Candy", () => Candy(null));
+
     void OnEnable()
     {
-        BlockStyle.Theme = theme != null ? theme : Candy(font);
+        var t = theme != null ? theme : Candy(font);
+        BlockThemeCatalog.Register(theme != null ? theme.name : "Candy", t);
+        BlockStyle.Theme = t;
     }
 
     void OnDisable()

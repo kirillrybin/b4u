@@ -20,6 +20,9 @@ namespace Blockly.UI
         [SerializeField] TMP_Text title;
         [SerializeField] TMP_Text slowLabel;
         [SerializeField] TMP_Text consoleToggleLabel;
+        [SerializeField] RectTransform themeButton;
+        [SerializeField] TMP_Text themeLabel;
+        DropdownMenu themeMenu;
         [SerializeField] ToolboxView toolbox;
         [SerializeField] UnityEngine.UI.Button undoButton;
         [SerializeField] UnityEngine.UI.Button redoButton;
@@ -106,6 +109,42 @@ namespace Blockly.UI
 
         /// <summary>The toolbar button that shows and hides the console writes its state on this label.</summary>
         public void SetConsoleToggleLabel(TMP_Text label) { consoleToggleLabel = label; UpdateConsoleToggleLabel(); }
+
+        /// <summary>The toolbar's Theme button: its label shows the theme in use and a click opens the list of <see cref="BlockThemeCatalog"/>.</summary>
+        public void SetThemeButton(RectTransform button, TMP_Text label)
+        {
+            themeButton = button; themeLabel = label;
+            BlockStyle.ThemeChanged -= UpdateThemeLabel; BlockStyle.ThemeChanged += UpdateThemeLabel;
+            UpdateThemeLabel();
+        }
+
+        void UpdateThemeLabel()
+        {
+            if (this == null) { BlockStyle.ThemeChanged -= UpdateThemeLabel; return; }
+            if (themeLabel != null) themeLabel.text = "Theme: " + BlockThemeCatalog.CurrentName;
+        }
+
+        /// <summary>Opens the list of themes under the Theme button.</summary>
+        public void ShowThemeMenu()
+        {
+            if (themeButton == null) return;
+            var corners = new Vector3[4];
+            themeButton.GetWorldCorners(corners);
+            var canvas = CanvasForUi;
+            var cam = canvas == null || canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            ShowThemeMenuAt(RectTransformUtility.WorldToScreenPoint(cam, corners[0]), Mathf.Max(180f, corners[2].x - corners[0].x));
+        }
+
+        public void ShowThemeMenuAt(Vector2 screenPoint, float width = 180f)
+        {
+            var canvas = CanvasForUi;
+            if (canvas == null || ActiveDialog != null) return;
+            if (themeMenu != null && themeMenu.IsOpen) themeMenu.Close();
+            string current = BlockThemeCatalog.CurrentName;
+            var items = new List<DropdownItem>();
+            foreach (var name in BlockThemeCatalog.Names) items.Add(new DropdownItem { Label = name, Value = name, Selected = name == current });
+            themeMenu = DropdownMenu.Open(canvas, screenPoint, width, items, item => BlockThemeCatalog.Select(item.Value));
+        }
 
         public bool ConsoleVisible => console == null || console.Visible;
 

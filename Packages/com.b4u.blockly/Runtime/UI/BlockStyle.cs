@@ -7,6 +7,10 @@ namespace Blockly.UI
     public static class BlockStyle
     {
         static BlockTheme theme;
+        static bool classic = true;
+
+        /// <summary>True while no theme is set (the classic look).</summary>
+        public static bool IsClassic => classic;
 
         /// <summary>Raised after <see cref="Theme"/> is replaced; views rebuild themselves.</summary>
         public static event System.Action ThemeChanged;
@@ -18,6 +22,7 @@ namespace Blockly.UI
             set
             {
                 theme = value;
+                classic = value == null;
                 var t = Theme;
                 Blockly.Layout.BlockGeometry.Current = new Blockly.Layout.BlockGeometry
                 {
