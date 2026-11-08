@@ -190,6 +190,102 @@ namespace Blockly.UI
             return true;
         }
 
+        // ------------------------------------------------------------------ block menu
+        public const string MenuDuplicate = "duplicate", MenuCopy = "copy", MenuCut = "cut", MenuDisable = "disable", MenuDelete = "delete";
+        public const float LongPressSeconds = 0.5f;
+        Block pressBlock; Vector2 pressPoint; float pressStarted;
+
+        /// <summary>A press began on a block; held still for <see cref="LongPressSeconds"/> it opens the block menu.</summary>
+        public void BeginPress(Block block, Vector2 screenPoint)
+        {
+            if (Spawner != null) return;
+            pressBlock = block; pressPoint = screenPoint; pressStarted = Time.unscaledTime;
+        }
+
+        public void EndPress() => pressBlock = null;
+
+        /// <summary>Called every frame: opens the block menu once a press has been held long enough.</summary>
+        public void CheckLongPress(float now)
+        {
+            if (pressBlock == null || now - pressStarted < LongPressSeconds) return;
+            var block = pressBlock; pressBlock = null;
+            if (!IsDragging) ShowBlockMenu(block, pressPoint);
+        }
+
+        /// <summary>A block can be disabled when it is a statement (an expression block always runs as part of its parent).</summary>
+        public static bool CanDisable(Block block) => block != null && block.Output == null && (block.Previous != null || block.Next != null);
+
+        /// <summary>Opens the menu of a block (right click, or a long press): duplicate, copy, cut, disable / enable, delete. Selects the block.</summary>
+        public bool ShowBlockMenu(Block block, Vector2 screenPoint)
+        {
+            while (block != null && block.IsShadow) block = block.ShadowOf?.Owner;
+            if (workspace == null || Spawner != null || IsDragging || block == null || RootCanvas == null || ActiveDialog != null) return false;
+            if (IsEditingField) SubmitFieldEdit(fieldInput.text);
+            CloseMenu();
+            Select(block);
+            var items = new System.Collections.Generic.List<DropdownItem>
+            {
+                new DropdownItem { Label = "Duplicate", Value = MenuDuplicate },
+                new DropdownItem { Label = "Copy", Value = MenuCopy },
+                new DropdownItem { Label = "Cut", Value = MenuCut },
+            };
+            if (CanDisable(block)) items.Add(new DropdownItem { Label = block.Disabled ? "Enable block" : "Disable block", Value = MenuDisable });
+            items.Add(new DropdownItem { Label = "Delete", Value = MenuDelete });
+            Canvas.ForceUpdateCanvases();
+            menu = DropdownMenu.Open(RootCanvas, screenPoint, 170f, items, item => ChooseBlockMenuItem(block, item.Value));
+            return true;
+        }
+
+        /// <summary>What a block menu entry does (also what clicking it calls). Each change is one undo step.</summary>
+        public bool ChooseBlockMenuItem(Block block, string action)
+        {
+            Select(block);
+            if (SelectedBlock != block) return false;
+            switch (action)
+            {
+                case MenuDuplicate: return DuplicateSelected();
+                case MenuCopy: return CopySelected();
+                case MenuCut: return CutSelected();
+                case MenuDisable: return ToggleDisabledSelected();
+                case MenuDelete: return DeleteSelected();
+                default: return false;
+            }
+        }
+
+        /// <summary>Puts a copy of the selected block (with its inputs) just below and right of it and selects the copy. The clipboard is not touched.</summary>
+        public bool DuplicateSelected()
+        {
+            var block = SelectedBlock;
+            if (block == null || workspace == null || Layout == null || History == null || IsDragging || !Layout.ByBlock.TryGetValue(block, out var box)) return false;
+            var text = WorkspaceEditing.Copy(workspace, block);
+            if (text == null) return false;
+            CloseMenu();
+            string before = SnapshotForUndo();
+            var copy = WorkspaceEditing.Paste(workspace, text, box.X, box.Y);
+            if (copy == null) return false;
+            FieldEditStarted?.Invoke(null);
+            Rebuild();
+            Select(copy);
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        /// <summary>Disables the selected statement block (it is skipped when the program runs and looks grey), or enables it again.</summary>
+        public bool ToggleDisabledSelected()
+        {
+            var block = SelectedBlock;
+            if (!CanDisable(block) || workspace == null || History == null || IsDragging) return false;
+            CloseMenu();
+            string before = SnapshotForUndo();
+            FieldEditStarted?.Invoke(null);
+            block.Disabled = !block.Disabled;
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
         // ------------------------------------------------------------------ procedure parameters
         RectTransform paramsButton;
         public const string ParamsButtonName = "params button";
@@ -307,6 +403,7 @@ namespace Blockly.UI
 
         void LateUpdate()
         {
+            CheckLongPress(Time.unscaledTime);
             if (lastEdgeScale < 0f) return;
             float scale = CurrentEdgeScale();
             if (Mathf.Approximately(scale, lastEdgeScale)) { edgeRefreshAt = -1f; return; }

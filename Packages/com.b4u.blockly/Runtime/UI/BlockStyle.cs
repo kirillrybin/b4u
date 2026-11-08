@@ -46,6 +46,19 @@ namespace Blockly.UI
             }
         }
 
+        /// <summary>True for a disabled block and for the blocks inside it (its value inputs and statement bodies; not the blocks that follow it).</summary>
+        public static bool IsDisabled(Block block)
+        {
+            while (block != null)
+            {
+                if (block.Disabled) return true;
+                var up = block.Output?.Target;
+                if (up == null) { up = block.Previous?.Target; if (up != null && up == up.Owner.Next) up = null; }     // a follower is not inside the block before it
+                block = up?.Owner;
+            }
+            return false;
+        }
+
         public static float FontSize => Theme.FontSize;
         public static Color AppBackground => Theme.AppBackground;
         public static Color WorkspaceBackground => Theme.WorkspaceBackground;
@@ -161,7 +174,7 @@ namespace Blockly.UI
                     if (r.OverrideInputText) inTextRule = r;
                 }
             if (fillRule != null) baseColour = fillRule.Fill;
-            if (block.Disabled && t.DisabledBlend > 0f) baseColour = Color.Lerp(baseColour, new Color(0.6f, 0.6f, 0.6f), t.DisabledBlend);
+            if (t.DisabledBlend > 0f && IsDisabled(block)) baseColour = Color.Lerp(baseColour, new Color(0.6f, 0.6f, 0.6f), t.DisabledBlend);
             var fill = Fill(baseColour, shadow);
             return new BlockLook
             {
