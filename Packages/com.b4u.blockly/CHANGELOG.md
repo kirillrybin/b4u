@@ -26,6 +26,7 @@ First version.
 - A dome-shaped hat (`HatStyle`, `HatPeak`, `HatFillet`) next to the bump.
 - Theme: minimum sizes of statement openings and value holes, so notches and tabs can be bigger.
 - Toolbar buttons of the Playground widen to fit their label in the theme's toolbar font; the buttons after them and the title move along.
+- A "Console: on/off" button in the Playground toolbar hides and shows the console (`PlaygroundController.ToggleConsole`, `ConsoleView.Visible`); the workspace takes its room, lines are kept while it is hidden, and an error shows it again.
 - Toolbox and flyout look in `BlockTheme`: which panel corners are rounded (`UiCorners`), category button colours, sizes and gap, icons by category name (`category/<name>`, `@selected`, `plate/<name>`), strip width, flyout title and padding.
 - Sample **Figma skin**: the look of the design as one component (`FigmaSkin`, with `FigmaIconBlocks`, the icons and Poppins).
 - A delete panel: with `ToolboxDeletePanel` the strip turns into a dashed-border panel with a trash icon and a label while a block is dragged (`DeleteBorderColour/Width`, `DeleteDashLength/Gap`, `DeleteIconColour/Size`, `DeleteLabel`, `DeleteLabelColour/Size`; the picture `toolbox/delete` replaces the drawn trash can, `ToolboxDeleteHover` fills it while the block is over it); `WorkspaceView.BlockDragEnded`.

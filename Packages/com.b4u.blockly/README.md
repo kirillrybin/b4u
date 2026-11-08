@@ -23,7 +23,7 @@ Copy the `com.b4u.blockly` folder into your project's `Packages/` folder (an emb
 
 ## Try it
 
-**Blockly > Create Playground Scene** builds `Assets/Playground/Playground.unity` with a toolbar, a toolbox, a workspace, an output console and a set of example programs. Press Play, pick a program, press Run.
+**Blockly > Create Playground Scene** builds `Assets/Playground/Playground.unity` with a toolbar, a toolbox, a workspace, an output console and a set of example programs. Press Play, pick a program, press Run. The **Console** button hides the output console to give the workspace its room (an error shows it again).
 
 ## Use it from code
 
