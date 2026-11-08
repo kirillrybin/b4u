@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Blockly.UI
@@ -74,6 +75,36 @@ namespace Blockly.UI
             BlockStyle.Theme = theme;
             return true;
         }
+
+        /// <summary>The PlayerPrefs key that keeps the name of the theme the user chose last.</summary>
+        public const string PrefsKey = "Blockly.Theme";
+
+        /// <summary>Writes the name of the theme in use, so <see cref="RestoreSaved"/> can bring it back in the next session.</summary>
+        public static void Remember()
+        {
+            try { PlayerPrefs.SetString(PrefsKey, CurrentName); PlayerPrefs.Save(); }
+            catch (System.Exception e) when (e is System.InvalidOperationException || e is System.UnauthorizedAccessException) { }   // the choice is a convenience, never a failure
+        }
+
+        /// <summary>The theme the user chose in an earlier session; null when there is none or it is no longer in the list.</summary>
+        public static string SavedName
+        {
+            get
+            {
+                string name = PlayerPrefs.GetString(PrefsKey, null);
+                return !string.IsNullOrEmpty(name) && Names.Contains(name) ? name : null;
+            }
+        }
+
+        /// <summary>Applies the theme chosen in the last session. Without a saved choice nothing changes (a skin's own theme stays). True if one was applied.</summary>
+        public static bool RestoreSaved()
+        {
+            string name = SavedName;
+            return name != null && Select(name);
+        }
+
+        /// <summary>Forgets the saved choice.</summary>
+        public static void ForgetSaved() => PlayerPrefs.DeleteKey(PrefsKey);
 
         /// <summary>The name of the theme in use: Classic with no theme, the registered name of the current one, or "Custom" for any other.</summary>
         public static string CurrentName

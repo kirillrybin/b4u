@@ -15,7 +15,7 @@ namespace Blockly.UI.Tests
         public void SetUp() { BlockThemeCatalog.Clear(); a = BlockTheme.CreateDefault(); b = BlockTheme.CreateDefault(); }
 
         [TearDown]
-        public void TearDown() { BlockThemeCatalog.Clear(); BlockStyle.Theme = null; Object.DestroyImmediate(a); Object.DestroyImmediate(b); }
+        public void TearDown() { BlockThemeCatalog.ForgetSaved(); BlockThemeCatalog.Clear(); BlockStyle.Theme = null; Object.DestroyImmediate(a); Object.DestroyImmediate(b); }
 
         [Test]
         public void ClassicIsAlwaysFirstAndRegisteredThemesFollowInOrder()
@@ -64,6 +64,29 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void TheChosenThemeIsRememberedAndComesBackInTheNextSession()
+        {
+            BlockThemeCatalog.ForgetSaved();
+            BlockThemeCatalog.Register("Candy", a);
+            Assert.IsFalse(BlockThemeCatalog.RestoreSaved(), "nothing saved: the current look stays");
+            BlockThemeCatalog.Select("Candy"); BlockThemeCatalog.Remember();
+            BlockStyle.Theme = null;                                                   // a new session starts with the default look
+            Assert.AreEqual("Candy", BlockThemeCatalog.SavedName);
+            Assert.IsTrue(BlockThemeCatalog.RestoreSaved());
+            Assert.AreSame(a, BlockStyle.Theme);
+
+            BlockThemeCatalog.Select("Classic"); BlockThemeCatalog.Remember();         // Classic is a choice too
+            BlockStyle.Theme = a;
+            Assert.IsTrue(BlockThemeCatalog.RestoreSaved());
+            Assert.IsTrue(BlockStyle.IsClassic);
+
+            BlockThemeCatalog.Select("Candy"); BlockThemeCatalog.Remember();
+            BlockThemeCatalog.Remove("Candy");                                         // the theme is gone: ignored
+            Assert.IsNull(BlockThemeCatalog.SavedName);
+            Assert.IsFalse(BlockThemeCatalog.RestoreSaved());
+        }
+
+        [Test]
         public void AFactoryThemeIsBuiltOnceWhenFirstChosen()
         {
             int built = 0;
@@ -93,6 +116,7 @@ namespace Blockly.UI.Tests
             CollectionAssert.AreEqual(new[] { "Classic", "Candy" }, menu.Items.Select(i => i.Label));
             Assert.IsTrue(menu.Items[0].Selected);
             menu.Pick(1);
+            Assert.AreEqual("Candy", BlockThemeCatalog.SavedName, "picking in the menu is remembered");
             Assert.AreSame(a, BlockStyle.Theme);
             Assert.AreEqual("Theme: Candy", label.text);
         }
