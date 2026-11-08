@@ -26,3 +26,4 @@ First version.
 - A dome-shaped hat (`HatStyle`, `HatPeak`, `HatFillet`) next to the bump.
 - Theme: minimum sizes of statement openings and value holes, so notches and tabs can be bigger.
 - Toolbar buttons of the Playground widen to fit their label in the theme's toolbar font; the buttons after them and the title move along.
+- Toolbox and flyout look in `BlockTheme`: which panel corners are rounded (`UiCorners`), category button colours, sizes and gap, icons by category name (`category/<name>`, `@selected`, `plate/<name>`), strip width, flyout title and padding.

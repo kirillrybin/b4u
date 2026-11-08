@@ -47,5 +47,33 @@ namespace Blockly.UI.Tests
             Assert.AreSame(own, img.sprite, "a sprite the app set is not removed");
             Object.DestroyImmediate(own.texture); Object.DestroyImmediate(own);
         }
+
+        [Test]
+        public void OnlyTheChosenCornersAreRounded()
+        {
+            var img = NewImage();
+            UiShape.Round(img, 10, UiCorners.Right);
+            var tex = img.sprite.texture;
+            Assert.AreEqual(1f, tex.GetPixel(0, 0).a, 0.01f, "bottom left stays square");
+            Assert.AreEqual(1f, tex.GetPixel(0, 63).a, 0.01f, "top left stays square");
+            Assert.AreEqual(0f, tex.GetPixel(63, 0).a, 0.01f, "bottom right is round");
+            Assert.AreEqual(0f, tex.GetPixel(63, 63).a, 0.01f, "top right is round");
+            var all = NewImage();
+            UiShape.Round(all, 10);
+            Assert.AreNotSame(all.sprite, img.sprite);
+            var again = NewImage();
+            UiShape.Round(again, 20, UiCorners.Right);
+            Assert.AreSame(img.sprite, again.sprite, "one sprite per set of corners");
+            Object.DestroyImmediate(all.gameObject); Object.DestroyImmediate(again.gameObject);
+        }
+
+        [Test]
+        public void NoCornersRestoresAPlainRectangle()
+        {
+            var img = NewImage();
+            UiShape.Round(img, 12);
+            UiShape.Round(img, 12, UiCorners.None);
+            Assert.IsNull(img.sprite);
+        }
     }
 }
