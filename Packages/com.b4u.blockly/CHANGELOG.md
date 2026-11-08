@@ -25,3 +25,4 @@ First version.
 - Hats: a cap above stack-starting blocks chosen by a style rule (`Hat`, `HatHeight`, `HatWidth`).
 - A dome-shaped hat (`HatStyle`, `HatPeak`, `HatFillet`) next to the bump.
 - Theme: minimum sizes of statement openings and value holes, so notches and tabs can be bigger.
+- Toolbar buttons of the Playground widen to fit their label in the theme's toolbar font; the buttons after them and the title move along.

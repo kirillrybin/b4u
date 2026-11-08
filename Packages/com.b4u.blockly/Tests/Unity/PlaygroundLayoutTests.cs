@@ -103,5 +103,53 @@ namespace Blockly.UI.Tests
             Assert.AreEqual(new Vector2(0f, 0.05f), safe.anchorMin);
             Assert.AreEqual(new Vector2(1f, 0.95f), safe.anchorMax);
         }
+
+        [TearDown] public void ResetTheme() => BlockStyle.Theme = null;
+
+        [Test]
+        public void ALargeToolbarFontWidensTheButtonsAndKeepsThemApart()
+        {
+            var layout = Open();
+            var skin = Object.FindFirstObjectByType<PlaygroundSkin>();
+            var t = ScriptableObject.CreateInstance<BlockTheme>();
+            t.ToolbarFont.Scale = 2.2f;
+            BlockStyle.Theme = t;
+            skin.Apply();
+            layout.Apply(4000, 720);
+            var buttons = Buttons();
+            foreach (var b in buttons)
+            {
+                var text = b.GetComponentInChildren<TMPro.TMP_Text>();
+                Assert.GreaterOrEqual(b.sizeDelta.x, text.GetPreferredValues(text.text).x + 2 * PlaygroundLayout.ButtonPaddingX - 0.01f, b.name + " fits its label");
+            }
+            var boxes = buttons.Select(Box).ToArray();
+            for (int i = 0; i < boxes.Length; i++)
+                for (int j = i + 1; j < boxes.Length; j++)
+                    Assert.IsFalse(boxes[i].Overlaps(boxes[j]), buttons[i].name + " overlaps " + buttons[j].name);
+            Assert.Greater(Child("SafeArea/Toolbar/File").anchoredPosition.x, 736f, "the buttons after a wider one move right");
+            Object.DestroyImmediate(t);
+        }
+
+        [Test]
+        public void TheDefaultFontKeepsTheDesignedWidths()
+        {
+            var layout = Open();
+            layout.Apply(1280, 720);
+            Assert.AreEqual(80f, Child("SafeArea/Toolbar/Run").sizeDelta.x);
+            Assert.AreEqual(120f, Child("SafeArea/Toolbar/Slow").sizeDelta.x);
+            Assert.AreEqual(736f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
+        }
+
+        [Test]
+        public void AChangedLabelIsMeasuredAgain()
+        {
+            var layout = Open();
+            layout.Apply(1280, 720);
+            var slow = Child("SafeArea/Toolbar/Slow").GetComponentInChildren<TMPro.TMP_Text>();
+            slow.text = "A very long label for the slow button";
+            layout.Remeasure();
+            layout.Apply(1280, 720);
+            Assert.Greater(Child("SafeArea/Toolbar/Slow").sizeDelta.x, 120f);
+        }
     }
 }
