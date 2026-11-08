@@ -68,6 +68,8 @@ public sealed class IconBlocks : IBlockPackage
         // the pictures are the icons of the design, in Resources/Icons (found by their path, no registration needed)
         StandardBlockSet.AddPackage(new IconBlocks());
         RegisterCategoryLooks();
+        var trash = Resources.Load<Sprite>("Icons/trash");           // the can of the delete panel (white, tinted by DeleteIconColour)
+        if (trash != null) BlockImages.Register("toolbox/delete", trash);
     }
 
     // The toolbox of the design: a lilac plate with a coloured icon, and a gradient plate with a white icon while selected.

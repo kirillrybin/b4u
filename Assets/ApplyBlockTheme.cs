@@ -83,6 +83,11 @@ public class ApplyBlockTheme : MonoBehaviour
         t.ToolboxCollapsible = true; t.ToolboxCollapsedWidth = 86f;
         t.ToggleSize = 44f; t.ToggleTop = 24f;
         t.ToggleColour = Hex("#252749"); t.ToggleIconColour = Hex("#7370a0");
+        // while a block is dragged the rail becomes the delete panel: dashed red border, trash can, label
+        t.ToolboxDeletePanel = true; t.ToolboxDeleteHover = Hex("#2f2848");
+        t.DeleteBorderColour = Hex("#e04a4a"); t.DeleteBorderWidth = 2f; t.DeleteDashLength = 8f; t.DeleteDashGap = 8f;
+        t.DeleteIconColour = Hex("#dc544b"); t.DeleteIconSize = 40f;
+        t.DeleteLabel = "Delete"; t.DeleteLabelColour = Color.white; t.DeleteLabelSize = 18f;
         t.MenuBackground = Hex("#262b50");
         t.MenuHover = Hex("#3d4377");
         t.MenuSelected = Hex("#4a63c8");
