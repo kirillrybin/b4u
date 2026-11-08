@@ -39,14 +39,14 @@ namespace Blockly.Editing
                 var current = ws.GetVariableById(field.Value);
                 if (current != null)
                 {
-                    items.Add(new DropdownItem { Label = "Rename variable...", Value = current.Id, Action = DropdownAction.RenameVariable });
-                    items.Add(new DropdownItem { Label = "Delete the \"" + current.Name + "\" variable", Value = current.Id, Action = DropdownAction.DeleteVariable });
+                    items.Add(new DropdownItem { Label = Loc.T("Rename variable..."), Value = current.Id, Action = DropdownAction.RenameVariable });
+                    items.Add(new DropdownItem { Label = Loc.T("Delete the \"{0}\" variable", current.Name), Value = current.Id, Action = DropdownAction.DeleteVariable });
                 }
             }
             else if (field.Spec.Options != null)
             {
                 foreach (var o in field.Spec.Options)
-                    items.Add(new DropdownItem { Label = Blockly.Layout.BlockLayouter.StripBidi(o.Label), Value = o.Value, Selected = o.Value == field.Value });
+                    items.Add(new DropdownItem { Label = Blockly.Layout.BlockLayouter.StripBidi(Loc.T(o.Label)), Value = o.Value, Selected = o.Value == field.Value });
             }
             return items;
         }

@@ -79,6 +79,17 @@ A `BlockTheme` asset (Assets > Create > Blockly > Block Theme) sets the outline 
 
 Pictures: `field_image` (`src`, `width`, `height`) in a block's JSON draws a sprite; a toolbox category takes `"icon"`. A name is resolved by `BlockImages`: a sprite registered with `BlockImages.Register(name, sprite)`, then `BlockImages.Resolver`, then a Sprite in a Resources folder (path without extension). Nothing is downloaded. A missing picture leaves its space empty.
 
+## Languages
+
+Texts go through `Loc.T("English text")`: the English text is the key and a text without a translation stays in English. English and Russian come with the package. **File > Language…** in the Playground switches the language (it is remembered); from code set `Loc.Language = "ru"`. To add a language, or the texts of your own blocks:
+
+```csharp
+Loc.Register("de", "Deutsch", new Dictionary<string, string> { { "Run", "Ausführen" }, { "repeat", "wiederhole" } });
+Loc.Language = "de";
+```
+
+Labels of blocks and the texts of their dropdowns are translated (a name typed by the user, such as a procedure, is not); `{0}` marks a value in a message (`"Saved \"{0}\""`). The scene builder's toolbar buttons are translated from the text the scene was made with.
+
 ## Saving programs
 
 `PlaygroundController` saves to `Application.persistentDataPath/programs` through `IProgramStore` (`FileProgramStore`; `MemoryProgramStore` for tests). On WebGL the files are flushed to the browser's IndexedDB so they survive a page reload. Unsaved work is backed up a moment after each edit and offered again at the next start.

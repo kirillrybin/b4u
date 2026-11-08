@@ -28,6 +28,8 @@ namespace Blockly
         public string VariableType;
         public string Src;                 // field_image: where the picture comes from (resolved by the UI)
         public float ImageWidth, ImageHeight;
+        public string TranslatedPrefix;    // a label made of this translated start and a name the user typed ("with:" + the parameters)
+        public bool NoTranslate;           // a label that shows a name the user typed (not translated)
     }
 
     /// <summary>

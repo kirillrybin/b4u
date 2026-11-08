@@ -44,8 +44,8 @@ namespace Blockly.Storage
 
         /// <summary>Error text for something the user typed as a name, or null when it can be used (it may still be changed by Sanitize).</summary>
         public static string Validate(string typed)
-            => string.IsNullOrWhiteSpace(typed) ? "Enter a name."
-             : IsReserved(typed) ? "That name is used for the automatic backup. Pick another." : null;
+            => string.IsNullOrWhiteSpace(typed) ? Loc.T("Enter a name.")
+             : IsReserved(typed) ? Loc.T("That name is used for the automatic backup. Pick another.") : null;
 
         /// <summary>The store entry that holds the unsaved work of the last session. It is not a program of the user's and is not listed.</summary>
         public const string DraftName = "autosave draft";

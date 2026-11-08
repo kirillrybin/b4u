@@ -67,7 +67,7 @@ namespace Blockly
         int callDepth, syncDepth;
         long syncSteps;
 
-        /// <summary>Deeper recursion reports "Maximum call stack size exceeded" instead of overflowing the native stack.</summary>
+        /// <summary>Deeper recursion reports Loc.T("Maximum call stack size exceeded") instead of overflowing the native stack.</summary>
         public int MaxCallDepth = 200;
         /// <summary>
         /// A procedure called from inside an expression runs to completion without yielding; this caps its steps
@@ -176,7 +176,7 @@ namespace Blockly
                 BlockExecuting?.Invoke(b);
                 yield return null;      // paused *before* the block runs, so a debugger can show "about to execute"
                 if (!Handlers.TryStatement(b.Type, out var handler))
-                    throw new NotSupportedException("No statement handler for block type '" + b.Type + "'");
+                    throw new NotSupportedException(Loc.T("No statement handler for block type '{0}'", b.Type));
                 var it = handler(this, b);
                 while (it.MoveNext()) yield return null;
                 if (Pending != Signal.None) yield break;
@@ -190,7 +190,7 @@ namespace Blockly
         {
             if (b == null) return Undefined.Value;
             if (!Handlers.TryExpression(b.Type, out var handler))
-                throw new NotSupportedException("No expression handler for block type '" + b.Type + "'");
+                throw new NotSupportedException(Loc.T("No expression handler for block type '{0}'", b.Type));
             return handler(this, b);
         }
 
@@ -225,7 +225,7 @@ namespace Blockly
         {
             string name = ProcedureInfo.Name(call) ?? "";
             if (!procedures.TryGetValue(name, out var def))
-                throw new InvalidOperationException(name + " is not defined");
+                throw new InvalidOperationException(Loc.T("{0} is not defined", name));
             if (callDepth >= MaxCallDepth)
                 throw new InvalidOperationException("Maximum call stack size exceeded");
 
@@ -289,7 +289,7 @@ namespace Blockly
                 var body = RunChain(f.Definition.GetInputTargetBlock("STACK"));
                 while (body.MoveNext())
                     if (++syncSteps > MaxSyncSteps)
-                        throw new InvalidOperationException("Procedure call inside an expression ran too long; call it as a statement instead");
+                        throw new InvalidOperationException(Loc.T("Procedure call inside an expression ran too long; call it as a statement instead"));
                 return CallResult(f);
             }
             finally { ExitCall(f); syncDepth--; }

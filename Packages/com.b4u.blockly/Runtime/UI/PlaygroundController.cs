@@ -80,14 +80,18 @@ namespace Blockly.UI
         void Start() => BeginSession();
 
         // the scene keeps the label and the button as serialized fields, so SetThemeButton is not called in Play: follow the theme from here too
-        void OnEnable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; BlockStyle.ThemeChanged += UpdateThemeLabel; UpdateThemeLabel(); }
-        void OnDisable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; }
-        void OnDestroy() { BlockStyle.ThemeChanged -= UpdateThemeLabel; }
+        void OnEnable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; BlockStyle.ThemeChanged += UpdateThemeLabel; Loc.Changed -= OnLanguageChanged; Loc.Changed += OnLanguageChanged; UpdateThemeLabel(); }
+        void OnDisable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; Loc.Changed -= OnLanguageChanged; }
+        void OnDestroy() { BlockStyle.ThemeChanged -= UpdateThemeLabel; Loc.Changed -= OnLanguageChanged; }
 
         /// <summary>Shows the first program, or the unsaved work of the last session if there is some (what Start does).</summary>
         public void BeginSession()
         {
-            BlockThemeCatalog.RestoreSaved();                          // the theme of the last session (skins have set theirs by now)
+            if (Application.isPlaying)                                 // the choices of the last session, not in EditMode tests
+            {
+                ApplySavedLanguage();
+                BlockThemeCatalog.RestoreSaved();                      // skins have set their themes by now
+            }
             string draft = ReadDraft();                                // before Show: showing a program discards the stored draft
             if (Count > 0) Show(0);
             if (draft != null) RestoreFrom(draft);
@@ -127,7 +131,7 @@ namespace Blockly.UI
         void UpdateThemeLabel()
         {
             if (this == null) { BlockStyle.ThemeChanged -= UpdateThemeLabel; return; }
-            if (themeLabel != null) themeLabel.text = "Theme: " + BlockThemeCatalog.CurrentName;
+            if (themeLabel != null) themeLabel.text = Loc.T("Theme: {0}", BlockThemeCatalog.CurrentName);
         }
 
         /// <summary>Opens the list of themes under the Theme button.</summary>
@@ -166,7 +170,7 @@ namespace Blockly.UI
 
         void UpdateConsoleToggleLabel()
         {
-            if (consoleToggleLabel != null) consoleToggleLabel.text = ConsoleVisible ? "Console: on" : "Console: off";
+            if (consoleToggleLabel != null) consoleToggleLabel.text = Loc.T(ConsoleVisible ? "Console: on" : "Console: off");
         }
 
         public void Undo() => view?.Undo();
@@ -232,7 +236,7 @@ namespace Blockly.UI
             runner.CurrentBlockChanged += b => view.SetHighlight(b);
             runner.Finished += OnFinished;
             console?.Clear();
-            console?.SetStatus("Ready", ConsoleView.NeutralColour);
+            console?.SetStatus(Loc.T("Ready"), ConsoleView.NeutralColour);
             toolbox?.CloseFlyout();
         }
 
@@ -293,9 +297,9 @@ namespace Blockly.UI
             int eol = text.IndexOf('\n');
             string name = eol > 0 ? text.Substring(0, eol) : null;
             string body = eol >= 0 ? text.Substring(eol + 1) : text;
-            if (!LoadText(body, name ?? "restored program", name, dirtyNow: true)) { ClearDraft(); return false; }
+            if (!LoadText(body, name ?? Loc.T("restored program"), name, dirtyNow: true)) { ClearDraft(); return false; }
             WriteDraft();                                              // showing it cleared the copy in the store; keep one until the user saves or discards
-            Status("Restored your unsaved changes", false);
+            Status(Loc.T("Restored your unsaved changes"), false);
             return true;
         }
 
@@ -322,7 +326,7 @@ namespace Blockly.UI
         {
             var canvas = CanvasForUi;
             if (!dirty || canvas == null || ActiveDialog != null) { proceed(); return; }
-            dialog = DialogView.ShowConfirm(canvas, "Unsaved changes", "The program was changed since it was saved. Discard the changes?", proceed, null, "Discard");
+            dialog = DialogView.ShowConfirm(canvas, Loc.T("Unsaved changes"), Loc.T("The program was changed since it was saved. Discard the changes?"), proceed, null, Loc.T("Discard"));
         }
 
         void Status(string message, bool error)
@@ -331,7 +335,7 @@ namespace Blockly.UI
         /// <summary>Starts an empty program.</summary>
         public void NewProgram() => Guard(() =>
         {
-            Display(new Workspace(StandardBlockSet.CreateRegistry()), "new program", null, dirtyNow: false);
+            Display(new Workspace(StandardBlockSet.CreateRegistry()), Loc.T("new program"), null, dirtyNow: false);
         });
 
         /// <summary>Saves under the current name, or asks for one if the program has none yet.</summary>
@@ -346,11 +350,11 @@ namespace Blockly.UI
         {
             var canvas = CanvasForUi;
             if (view == null || view.Workspace == null || canvas == null || ActiveDialog != null) return;
-            dialog = DialogView.ShowPrompt(canvas, "Save program as:", savedName ?? "my program", ProgramNames.Validate, typed =>
+            dialog = DialogView.ShowPrompt(canvas, Loc.T("Save program as:"), savedName ?? Loc.T("my program"), ProgramNames.Validate, typed =>
             {
                 string name = ProgramNames.Sanitize(typed);
                 if (name != savedName && Store.Exists(name))
-                    dialog = DialogView.ShowConfirm(canvas, "Replace \"" + name + "\"?", "A saved program with this name exists. Replace it?", () => SaveTo(name), null, "Replace");
+                    dialog = DialogView.ShowConfirm(canvas, Loc.T("Replace \"{0}\"?", name), Loc.T("A saved program with this name exists. Replace it?"), () => SaveTo(name), null, Loc.T("Replace"));
                 else SaveTo(name);
             });
         }
@@ -367,12 +371,12 @@ namespace Blockly.UI
                 savedName = used; label = used; dirty = false; autosaveTimer = -1f;
                 ClearDraft();
                 RefreshTitle();
-                Status("Saved \"" + used + "\"", false);
+                Status(Loc.T("Saved \"{0}\"", used), false);
                 return true;
             }
             catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException)
             {
-                Status("Cannot save: " + e.Message, true);
+                Status(Loc.T("Cannot save: {0}", e.Message), true);
                 return false;
             }
         }
@@ -382,8 +386,8 @@ namespace Blockly.UI
         {
             string text;
             try { text = Store.Load(name); }
-            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot open: " + e.Message, true); return false; }
-            if (text == null) { Status("No saved program \"" + name + "\"", true); return false; }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status(Loc.T("Cannot open: {0}", e.Message), true); return false; }
+            if (text == null) { Status(Loc.T("No saved program \"{0}\"", name), true); return false; }
             string used = ProgramNames.Sanitize(name);
             return LoadText(text, used, used, dirtyNow: false);
         }
@@ -394,12 +398,12 @@ namespace Blockly.UI
             Workspace ws;
             try
             {
-                if (string.IsNullOrWhiteSpace(text)) throw new FormatException("the text is empty");
+                if (string.IsNullOrWhiteSpace(text)) throw new FormatException(Loc.T("the text is empty"));
                 ws = StandardBlockSet.Load(text);
             }
             catch (Exception e) when (!(e is OutOfMemoryException))
             {
-                Status("Cannot load: " + e.Message, true);
+                Status(Loc.T("Cannot load: {0}", e.Message), true);
                 return false;
             }
             Display(ws, titleText, saved, dirtyNow);
@@ -413,15 +417,15 @@ namespace Blockly.UI
             {
                 try
                 {
-                    if (!Store.Delete(name)) { Status("No saved program \"" + name + "\"", true); return; }
+                    if (!Store.Delete(name)) { Status(Loc.T("No saved program \"{0}\"", name), true); return; }
                     PlatformFiles.Flush();
                 }
-                catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot delete: " + e.Message, true); return; }
+                catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status(Loc.T("Cannot delete: {0}", e.Message), true); return; }
                 if (ProgramNames.Sanitize(name) == savedName) { savedName = null; dirty = true; RefreshTitle(); }
-                Status("Deleted \"" + name + "\"", false);
+                Status(Loc.T("Deleted \"{0}\"", name), false);
             };
             if (canvas == null || ActiveDialog != null) delete();
-            else dialog = DialogView.ShowConfirm(canvas, "Delete \"" + name + "\"?", "This saved program will be removed for good.", delete);
+            else dialog = DialogView.ShowConfirm(canvas, Loc.T("Delete \"{0}\"?", name), Loc.T("This saved program will be removed for good."), delete);
         }
 
         /// <summary>Puts the program on the clipboard as Blockly workspace JSON (loads in blockly's own playground too).</summary>
@@ -429,14 +433,14 @@ namespace Blockly.UI
         {
             if (view == null || view.Workspace == null) return;
             PlatformClipboard.Write(WorkspaceJson.Save(view.Workspace));
-            Status("Copied the program as JSON", false);
+            Status(Loc.T("Copied the program as JSON"), false);
         }
 
         /// <summary>Replaces the program with Blockly JSON or XML from the clipboard.</summary>
         public void PasteProgram() => PlatformClipboard.Read(text =>
         {
-            if (string.IsNullOrWhiteSpace(text)) { Status("The clipboard is empty or cannot be read", true); return; }
-            Guard(() => LoadText(text, "pasted program", null, dirtyNow: true));
+            if (string.IsNullOrWhiteSpace(text)) { Status(Loc.T("The clipboard is empty or cannot be read"), true); return; }
+            Guard(() => LoadText(text, Loc.T("pasted program"), null, dirtyNow: true));
         });
 
         // ---- program files
@@ -444,7 +448,7 @@ namespace Blockly.UI
         public void ExportProgram()
         {
             if (view == null || view.Workspace == null) return;
-            string name = savedName ?? "program";
+            string name = savedName ?? Loc.T("program");
             string json = WorkspaceJson.Save(view.Workspace);
             if (PlatformFileTransfer.UsesBrowser)
             {
@@ -452,8 +456,8 @@ namespace Blockly.UI
                 Status("Downloaded " + ProgramNames.Sanitize(name) + ".json", false);
                 return;
             }
-            try { Status("Exported to " + Exchange.Export(name, json), false); }
-            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot export: " + e.Message, true); }
+            try { Status(Loc.T("Exported to {0}", Exchange.Export(name, json)), false); }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status(Loc.T("Cannot export: {0}", e.Message), true); }
         }
 
         /// <summary>Loads a program from a file: the one the user picks in a browser, otherwise one chosen from the files in <see cref="Exchange"/>.</summary>
@@ -461,21 +465,21 @@ namespace Blockly.UI
         {
             if (PlatformFileTransfer.UsesBrowser)
             {
-                Status("Choose a file in the panel on the page", false);
+                Status(Loc.T("Choose a file in the panel on the page"), false);
                 PlatformFileTransfer.Pick(
                     (fileName, text) =>
                     {
-                        Status("Read " + fileName + " (" + text.Length + " characters)", false);
+                        Status(Loc.T("Read {0} ({1} characters)", fileName, text.Length), false);
                         Guard(() => LoadText(text, System.IO.Path.GetFileNameWithoutExtension(fileName), null, dirtyNow: true));
                     },
-                    reason => Status("Cannot read the file: " + reason, true));
+                    reason => Status(Loc.T("Cannot read the file: {0}", reason), true));
                 return;
             }
             var canvas = CanvasForUi;
             if (canvas == null) return;
             IReadOnlyList<string> files;
             try { files = Exchange.List(); }
-            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot read " + Exchange.Folder + ": " + e.Message, true); return; }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status(Loc.T("Cannot read {0}: {1}", Exchange.Folder, e.Message), true); return; }
             if (files.Count == 0) { Status("Put .json or .xml program files into " + Exchange.Folder + " to import them", true); return; }
             var items = new List<DropdownItem>();
             foreach (var f in files) items.Add(new DropdownItem { Label = f, Value = ImportPrefix + f });
@@ -487,13 +491,13 @@ namespace Blockly.UI
         {
             string text;
             try { text = Exchange.Read(fileName); }
-            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException || e is ArgumentException) { Status("Cannot import: " + e.Message, true); return false; }
-            if (text == null) { Status("The file " + fileName + " is gone", true); return false; }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException || e is ArgumentException) { Status(Loc.T("Cannot import: {0}", e.Message), true); return false; }
+            if (text == null) { Status(Loc.T("The file {0} is gone", fileName), true); return false; }
             return LoadText(text, System.IO.Path.GetFileNameWithoutExtension(fileName), null, dirtyNow: true);
         }
 
         // ---- the File menu
-        const string CmdExport = "export", CmdImport = "import", ImportPrefix = "import:";
+        const string CmdLanguage = "language", CmdExport = "export", CmdImport = "import", ImportPrefix = "import:";
         const string CmdNew = "new", CmdOpen = "open", CmdSave = "save", CmdSaveAs = "saveas", CmdDelete = "delete", CmdCopy = "copy", CmdPaste = "paste";
         const string OpenPrefix = "open:", DeletePrefix = "delete:";
 
@@ -515,15 +519,16 @@ namespace Blockly.UI
             CloseFileUi();
             var items = new List<DropdownItem>
             {
-                new DropdownItem { Label = "New", Value = CmdNew },
-                new DropdownItem { Label = "Open…", Value = CmdOpen },
-                new DropdownItem { Label = "Save", Value = CmdSave },
-                new DropdownItem { Label = "Save as…", Value = CmdSaveAs },
-                new DropdownItem { Label = "Delete…", Value = CmdDelete },
-                new DropdownItem { Label = "Copy as JSON", Value = CmdCopy },
-                new DropdownItem { Label = "Paste JSON or XML", Value = CmdPaste },
-                new DropdownItem { Label = PlatformFileTransfer.UsesBrowser ? "Download as file" : "Export to file", Value = CmdExport },
-                new DropdownItem { Label = PlatformFileTransfer.UsesBrowser ? "Upload a file…" : "Import from file…", Value = CmdImport },
+                new DropdownItem { Label = Loc.T("New"), Value = CmdNew },
+                new DropdownItem { Label = Loc.T("Open…"), Value = CmdOpen },
+                new DropdownItem { Label = Loc.T("Save"), Value = CmdSave },
+                new DropdownItem { Label = Loc.T("Save as…"), Value = CmdSaveAs },
+                new DropdownItem { Label = Loc.T("Delete…"), Value = CmdDelete },
+                new DropdownItem { Label = Loc.T("Copy as JSON"), Value = CmdCopy },
+                new DropdownItem { Label = Loc.T("Paste JSON or XML"), Value = CmdPaste },
+                new DropdownItem { Label = Loc.T(PlatformFileTransfer.UsesBrowser ? "Download as file" : "Export to file"), Value = CmdExport },
+                new DropdownItem { Label = Loc.T(PlatformFileTransfer.UsesBrowser ? "Upload a file…" : "Import from file…"), Value = CmdImport },
+                new DropdownItem { Label = Loc.T("Language…"), Value = CmdLanguage },
             };
             fileMenu = DropdownMenu.Open(canvas, screenPoint, width, items, item => OnFileCommand(item.Value, screenPoint, width));
         }
@@ -540,6 +545,7 @@ namespace Blockly.UI
                 case CmdPaste: PasteProgram(); break;
                 case CmdExport: ExportProgram(); break;
                 case CmdImport: ImportProgram(menuPoint, width); break;
+                case CmdLanguage: ShowLanguageMenu(menuPoint, width); break;
                 case CmdOpen: ShowSavedList(menuPoint, width, OpenPrefix); break;
                 case CmdDelete: ShowSavedList(menuPoint, width, DeletePrefix); break;
                 default:
@@ -550,16 +556,73 @@ namespace Blockly.UI
             }
         }
 
+        // ---------------------------------------------------------------- language
+        public const string LanguagePrefsKey = "Blockly.Language";
+
+        /// <summary>The list of languages (File > Language…): the chosen one is remembered for the next start.</summary>
+        void ShowLanguageMenu(Vector2 point, float width)
+        {
+            var canvas = CanvasForUi;
+            if (canvas == null) return;
+            var items = new List<DropdownItem>();
+            foreach (var code in Loc.Languages) items.Add(new DropdownItem { Label = Loc.NameOf(code), Value = code, Selected = code == Loc.Language });
+            fileMenu = DropdownMenu.Open(canvas, point, width, items, item => SetLanguage(item.Value, remember: true));
+        }
+
+        /// <summary>Switches the language of the whole interface.</summary>
+        public void SetLanguage(string code, bool remember)
+        {
+            Loc.Language = code;
+            if (!remember) return;
+            try { PlayerPrefs.SetString(LanguagePrefsKey, Loc.Language); PlayerPrefs.Save(); }
+            catch (System.Exception e) when (e is InvalidOperationException || e is UnauthorizedAccessException) { }
+        }
+
+        /// <summary>The language of the last session; on the first start, the language of the device when it is available.</summary>
+        public static void ApplySavedLanguage()
+        {
+            string saved = PlayerPrefs.GetString(LanguagePrefsKey, null);
+            if (!string.IsNullOrEmpty(saved)) { Loc.Language = saved; return; }
+            if (Application.systemLanguage == SystemLanguage.Russian) Loc.Language = Loc.Pick("ru");
+        }
+
+        // The texts the scene was built with are the English ones; each button label is translated from them
+        readonly Dictionary<TMP_Text, string> sceneTexts = new Dictionary<TMP_Text, string>();
+
+        void OnLanguageChanged()
+        {
+            if (this == null) { Loc.Changed -= OnLanguageChanged; return; }
+            LocalizeSceneTexts();
+            UpdateThemeLabel();
+            UpdateConsoleToggleLabel();
+            if (slowLabel != null) slowLabel.text = Loc.T(slow ? "Slow: on" : "Slow: off");
+        }
+
+        void LocalizeSceneTexts()
+        {
+            var canvas = CanvasForUi;
+            if (canvas == null) return;
+            Transform toolbar = null;                                   // only the toolbar's buttons: the toolbox and the dialogs translate their own
+            foreach (var rt in canvas.rootCanvas.GetComponentsInChildren<RectTransform>(true)) if (rt.name == "Toolbar") { toolbar = rt; break; }
+            if (toolbar == null) return;
+            foreach (var t in toolbar.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (t == slowLabel || t == consoleToggleLabel || t == themeLabel || t == title) continue;
+                if (!sceneTexts.TryGetValue(t, out var english)) { english = t.text; sceneTexts[t] = english; }
+                t.text = Loc.T(english);
+            }
+        }
+
         void ShowSavedList(Vector2 point, float width, string prefix)
         {
             var canvas = CanvasForUi;
             if (canvas == null) return;
             IReadOnlyList<string> names;
             try { names = Store.List(); }
-            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status("Cannot read the saved programs: " + e.Message, true); return; }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status(Loc.T("Cannot read the saved programs: {0}", e.Message), true); return; }
             var items = new List<DropdownItem>();
             foreach (var n in names) if (!ProgramNames.IsReserved(n)) items.Add(new DropdownItem { Label = n, Value = prefix + n, Selected = n == savedName });
-            if (items.Count == 0) items.Add(new DropdownItem { Label = "(no saved programs)", Value = "" });
+            if (items.Count == 0) items.Add(new DropdownItem { Label = Loc.T("(no saved programs)"), Value = "" });
             fileMenu = DropdownMenu.Open(canvas, point, width, items, item => { if (item.Value.Length > 0) OnFileCommand(item.Value, point, width); });
         }
 
@@ -569,7 +632,7 @@ namespace Blockly.UI
             if (runner == null) return;
             if (runner.State == RunnerState.Finished || runner.State == RunnerState.Idle) console?.Clear();
             runner.Run();
-            console?.SetStatus("Running…", ConsoleView.NeutralColour);
+            console?.SetStatus(Loc.T("Running…"), ConsoleView.NeutralColour);
         }
 
         public void Step()
@@ -577,21 +640,21 @@ namespace Blockly.UI
             if (runner == null) return;
             if (runner.State == RunnerState.Finished || runner.State == RunnerState.Idle) console?.Clear();
             runner.Step();
-            if (runner.State == RunnerState.Paused) console?.SetStatus("Paused", ConsoleView.NeutralColour);
+            if (runner.State == RunnerState.Paused) console?.SetStatus(Loc.T("Paused"), ConsoleView.NeutralColour);
         }
 
         public void Stop()
         {
             if (runner == null || !runner.IsActive) return;
             runner.Stop();
-            console?.SetStatus("Stopped", ConsoleView.NeutralColour);
+            console?.SetStatus(Loc.T("Stopped"), ConsoleView.NeutralColour);
         }
 
         public void ToggleSlow()
         {
             slow = !slow;
             if (runner != null) runner.Slow = slow;
-            if (slowLabel != null) slowLabel.text = slow ? "Slow: on" : "Slow: off";
+            if (slowLabel != null) slowLabel.text = Loc.T(slow ? "Slow: on" : "Slow: off");
         }
 
         void OnDragStarted(Block _)
@@ -602,8 +665,8 @@ namespace Blockly.UI
 
         void OnFinished(string error)
         {
-            if (error == null) console?.SetStatus("Finished", ConsoleView.OkColour);
-            else { SetConsoleVisible(true); console?.SetStatus("Error: " + error, ConsoleView.ErrorColour); }     // an error is never left unseen
+            if (error == null) console?.SetStatus(Loc.T("Finished"), ConsoleView.OkColour);
+            else { SetConsoleVisible(true); console?.SetStatus(Loc.T("Error: {0}", error), ConsoleView.ErrorColour); }     // an error is never left unseen
         }
     }
 }

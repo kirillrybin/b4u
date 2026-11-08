@@ -66,9 +66,23 @@ namespace Blockly.UI
         void Awake() => Initialise();
 
         // subscribed in Initialise as well, because EditMode never calls OnEnable
-        void OnEnable() { BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged; }
-        void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; }
-        void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; }
+        void OnEnable() { Subscribe(); }
+        void OnDisable() { Unsubscribe(); }
+        void OnDestroy() { Unsubscribe(); }
+
+        void Subscribe() { BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged; Loc.Changed -= OnLanguageChanged; Loc.Changed += OnLanguageChanged; }
+        void Unsubscribe() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; }
+
+        /// <summary>The category names, the flyout title and the variable button are shown again in the new language.</summary>
+        void OnLanguageChanged()
+        {
+            if (this == null) { Loc.Changed -= OnLanguageChanged; return; }
+            if (definition == null) return;
+            BuildButtons();
+            OnThemeChanged();
+            if (createVariableLabel != null) createVariableLabel.text = Loc.T("Create variable...");
+            RefreshOpenFlyout();
+        }
 
         /// <summary>Re-colours the strip, the category buttons and the flyout background after a theme change.</summary>
         void OnThemeChanged()
@@ -105,7 +119,7 @@ namespace Blockly.UI
         void Initialise()
         {
             if (definition != null) return;
-            BlockStyle.ThemeChanged -= OnThemeChanged; BlockStyle.ThemeChanged += OnThemeChanged;
+            Subscribe();
             definition = StandardBlockSet.LoadToolbox();
             if (flyoutView != null) flyoutView.Spawner = this;
             if (main != null)
@@ -183,7 +197,7 @@ namespace Blockly.UI
                 icons.Add(iconImage);
                 PlaceLabel(lrt, icon != null);
                 var t = label.GetComponent<TextMeshProUGUI>();
-                t.text = cat.Name; BlockStyle.ToolboxFont.Apply(t, 16); labels.Add(t);
+                t.text = Loc.T(cat.Name); BlockStyle.ToolboxFont.Apply(t, 16); labels.Add(t);
                 t.alignment = TextAlignmentOptions.MidlineLeft; t.raycastTarget = false;
                 t.textWrappingMode = TextWrappingModes.NoWrap;
             }
@@ -294,7 +308,7 @@ namespace Blockly.UI
             float fs = BlockStyle.DeleteLabelSize;
             var lrt = (RectTransform)deleteLabel.transform;
             lrt.sizeDelta = new Vector2(0, fs * 1.6f); lrt.anchoredPosition = new Vector2(0, -(size * 0.25f + fs * 0.9f));
-            deleteLabel.text = BlockStyle.DeleteLabel; deleteLabel.color = BlockStyle.DeleteLabelColour;
+            deleteLabel.text = Loc.T(BlockStyle.DeleteLabel); deleteLabel.color = BlockStyle.DeleteLabelColour;
             BlockStyle.ToolboxFont.Apply(deleteLabel, fs);
         }
 
@@ -409,7 +423,7 @@ namespace Blockly.UI
             float pad = BlockStyle.FlyoutPadding;
             rt.sizeDelta += new Vector2(2 * pad, 2 * pad);           // padding inside the scroll area
             rt.anchoredPosition = new Vector2(pad, -pad);
-            ShowFlyoutTitle(definition.Categories[index].Name);
+            ShowFlyoutTitle(Loc.T(definition.Categories[index].Name));
             ApplyStripCorners();
             if (current.HeaderHeight > 0) BuildCreateVariableButton();
             HighlightSelected();
@@ -492,6 +506,7 @@ namespace Blockly.UI
         public const string CreateVariableButtonName = "Create variable";
 
         Button createVariableButton;
+        TMP_Text createVariableLabel;
         public Button VariableButton => createVariableButton;
 
         void BuildCreateVariableButton()
@@ -513,7 +528,7 @@ namespace Blockly.UI
             lrt.SetParent(rt, false);
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one; lrt.offsetMin = lrt.offsetMax = Vector2.zero;
             var t = label.GetComponent<TextMeshProUGUI>();
-            t.text = "Create variable..."; BlockStyle.ToolboxFont.Apply(t, 15); t.color = Color.white; t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
+            createVariableLabel = t; t.text = Loc.T("Create variable..."); BlockStyle.ToolboxFont.Apply(t, 15); t.color = Color.white; t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
         }
 
         // ------------------------------------------------------------------ spawning
