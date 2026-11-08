@@ -76,6 +76,34 @@ namespace Blockly.UI
             return chevrons[k] = sprite;
         }
 
+        /// <summary>A white trash can (a body with a tilted lid and a knob); tint it with the image colour.</summary>
+        public static Sprite Trash()
+        {
+            if (trash != null) return trash;
+            const int S = 64;
+            var tex = new Texture2D(S, S, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            var lidA = new Vector2(10f, 41f); var lidB = new Vector2(54f, 49f); var knob = new Vector2(31f, 50f);
+            var px = new Color32[S * S];
+            for (int y = 0; y < S; y++)
+                for (int x = 0; x < S; x++)
+                {
+                    var p = new Vector2(x + 0.5f, y + 0.5f);
+                    // body: a rounded box, x 15..49, y 5..39
+                    var c = new Vector2(32f, 22f); var q = new Vector2(Mathf.Abs(p.x - c.x) - (17f - 6f), Mathf.Abs(p.y - c.y) - (17f - 6f));
+                    float body = new Vector2(Mathf.Max(q.x, 0f), Mathf.Max(q.y, 0f)).magnitude + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - 6f;
+                    float lid = DistanceToSegment(p, lidA, lidB) - 3.2f;
+                    float knobD = (p - knob).magnitude - 3.6f;
+                    float d = Mathf.Min(body, Mathf.Min(lid, knobD));
+                    px[y * S + x] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(0.5f - d) * 255f));
+                }
+            tex.SetPixels32(px); tex.Apply();
+            trash = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 100f);
+            trash.hideFlags = HideFlags.HideAndDontSave;
+            return trash;
+        }
+
+        static Sprite trash;
+
         static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
         {
             var ab = b - a; float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);

@@ -89,6 +89,7 @@ namespace Blockly.UI
                 foreach (var t in createVariableButton.GetComponentsInChildren<TMP_Text>(true)) BlockStyle.ToolboxFont.Apply(t, 15);
             if (createVariableButton != null && createVariableButton.targetGraphic != null) createVariableButton.targetGraphic.color = BlockStyle.VariableButton;
             ApplyCollapsed();
+            PaintDeletePanel();
             if (definition != null) HighlightSelected();
         }
 
@@ -101,9 +102,14 @@ namespace Blockly.UI
             if (main != null)
             {
                 main.DeleteArea = (RectTransform)transform;
-                main.BlockDragStarted += _ => CloseFlyout();
+                main.BlockDragStarted += _ => { CloseFlyout(); SetDeletePanel(true); };
+                main.BlockDragEnded += () => SetDeletePanel(false);
                 main.WorkspaceEdited += RefreshOpenFlyout;
-                main.DeleteHoverChanged += over => { var bg = GetComponent<Image>(); if (bg != null) bg.color = over ? BlockStyle.ToolboxDeleteHover : DefaultBackground; };
+                main.DeleteHoverChanged += over =>
+                {
+                    var bg = GetComponent<Image>(); if (bg != null) bg.color = over ? BlockStyle.ToolboxDeleteHover : DefaultBackground;
+                    overDelete = over; PaintDeletePanel();
+                };
             }
             BuildButtons();
             CloseFlyout();
@@ -192,7 +198,7 @@ namespace Blockly.UI
         /// <summary>The round tab on the right edge of the strip: shown when the theme allows collapsing and no flyout covers it.</summary>
         void UpdateToggle()
         {
-            bool show = BlockStyle.ToolboxCollapsible && !IsFlyoutOpen;
+            bool show = BlockStyle.ToolboxCollapsible && !IsFlyoutOpen && !dragging;
             if (toggleImage == null)
             {
                 if (!show) return;
@@ -223,6 +229,63 @@ namespace Blockly.UI
             irect.anchoredPosition = new Vector2(-size * 0.08f, 0f);
             toggleIcon.sprite = BlockImages.Get(Collapsed ? "toolbox/expand" : "toolbox/collapse") ?? UiShape.Chevron(Collapsed);
             toggleIcon.color = BlockStyle.ToggleIconColour;
+        }
+
+        GameObject deletePanel;
+        Image deleteBackground, deleteIcon;
+        DashedBorder deleteBorder;
+        TMP_Text deleteLabel;
+        bool dragging, overDelete;
+
+        /// <summary>While a block is dragged the strip shows the delete panel (when the theme asks for it): a dashed border, a trash icon and a label.</summary>
+        void SetDeletePanel(bool on)
+        {
+            dragging = on; if (!on) overDelete = false;
+            UpdateToggle();
+            if (!on || !BlockStyle.ToolboxDeletePanel) { if (deletePanel != null) deletePanel.SetActive(false); return; }
+            if (deletePanel == null)
+            {
+                deletePanel = new GameObject("DeletePanel", typeof(RectTransform), typeof(Image));
+                var rt = (RectTransform)deletePanel.transform;
+                rt.SetParent(transform, false);
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = rt.offsetMax = Vector2.zero;
+                deleteBackground = deletePanel.GetComponent<Image>(); deleteBackground.raycastTarget = false;
+                var b = new GameObject("Border", typeof(RectTransform), typeof(DashedBorder));
+                var brt = (RectTransform)b.transform; brt.SetParent(rt, false);
+                brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one; brt.offsetMin = brt.offsetMax = Vector2.zero;
+                deleteBorder = b.GetComponent<DashedBorder>();
+                var i = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+                var irt = (RectTransform)i.transform; irt.SetParent(rt, false);
+                irt.anchorMin = irt.anchorMax = new Vector2(0.5f, 0.5f); irt.pivot = new Vector2(0.5f, 0.5f);
+                deleteIcon = i.GetComponent<Image>(); deleteIcon.raycastTarget = false; deleteIcon.preserveAspect = true;
+                var l = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+                var lrt = (RectTransform)l.transform; lrt.SetParent(rt, false);
+                lrt.anchorMin = new Vector2(0, 0.5f); lrt.anchorMax = new Vector2(1, 0.5f); lrt.pivot = new Vector2(0.5f, 0.5f);
+                deleteLabel = l.GetComponent<TextMeshProUGUI>();
+                deleteLabel.alignment = TextAlignmentOptions.Center; deleteLabel.raycastTarget = false;
+                deleteLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            }
+            deletePanel.SetActive(true);
+            deletePanel.transform.SetAsLastSibling();
+            PaintDeletePanel();
+        }
+
+        void PaintDeletePanel()
+        {
+            if (deletePanel == null || !deletePanel.activeSelf) return;
+            deleteBackground.color = overDelete ? BlockStyle.ToolboxDeleteHover : BlockStyle.ToolboxBackground;
+            UiShape.Round(deleteBackground, BlockStyle.PanelCornerRadius, IsFlyoutOpen ? BlockStyle.ToolboxCornersWithFlyout : BlockStyle.ToolboxCorners);
+            deleteBorder.Set(BlockStyle.DeleteBorderColour, BlockStyle.DeleteBorderWidth, BlockStyle.DeleteDashLength, BlockStyle.DeleteDashGap);
+            float size = BlockStyle.DeleteIconSize;
+            var irt = (RectTransform)deleteIcon.transform;
+            irt.sizeDelta = new Vector2(size, size); irt.anchoredPosition = new Vector2(0, size * 0.25f);
+            deleteIcon.sprite = BlockImages.Get("toolbox/delete") ?? UiShape.Trash();
+            deleteIcon.color = BlockStyle.DeleteIconColour;
+            float fs = BlockStyle.DeleteLabelSize;
+            var lrt = (RectTransform)deleteLabel.transform;
+            lrt.sizeDelta = new Vector2(0, fs * 1.6f); lrt.anchoredPosition = new Vector2(0, -(size * 0.25f + fs * 0.9f));
+            deleteLabel.text = BlockStyle.DeleteLabel; deleteLabel.color = BlockStyle.DeleteLabelColour;
+            BlockStyle.ToolboxFont.Apply(deleteLabel, fs);
         }
 
         /// <summary>The picture name of a category: its Icon, or <c>category/&lt;name&gt;</c> when it has none.</summary>

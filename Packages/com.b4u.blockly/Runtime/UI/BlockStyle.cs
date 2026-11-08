@@ -43,6 +43,16 @@ namespace Blockly.UI
         public static Color ToolbarBackground => Theme.ToolbarBackground;
         public static Color ToolboxBackground => Theme.ToolboxBackground;
         public static Color ToolboxDeleteHover => Theme.ToolboxDeleteHover;
+        public static bool ToolboxDeletePanel => Theme.ToolboxDeletePanel;
+        public static Color DeleteBorderColour => Theme.DeleteBorderColour;
+        public static float DeleteBorderWidth => Mathf.Clamp(Theme.DeleteBorderWidth, 0f, 20f);
+        public static float DeleteDashLength => Mathf.Max(1f, Theme.DeleteDashLength);
+        public static float DeleteDashGap => Mathf.Max(0f, Theme.DeleteDashGap);
+        public static Color DeleteIconColour => Theme.DeleteIconColour;
+        public static float DeleteIconSize => Mathf.Clamp(Theme.DeleteIconSize, 8f, 200f);
+        public static string DeleteLabel => Theme.DeleteLabel ?? "";
+        public static Color DeleteLabelColour => Theme.DeleteLabelColour;
+        public static float DeleteLabelSize => Mathf.Clamp(Theme.DeleteLabelSize, 6f, 100f);
         public static Color FlyoutBackground => Theme.FlyoutBackground;
         public static Color ConsoleBackground => Theme.ConsoleBackground;
         public static Color ConsoleText => Theme.ConsoleText;
