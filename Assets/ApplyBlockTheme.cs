@@ -79,6 +79,10 @@ public class ApplyBlockTheme : MonoBehaviour
         t.FlyoutCorners = UiCorners.Right;
         t.FlyoutTitle = true; t.FlyoutTitleSize = 24f; t.FlyoutTitleHeight = 64f; t.FlyoutTitleColour = Color.white;
         t.FlyoutPadding = 24f;
+        // the rail collapses to square icon buttons; a round tab on its edge toggles it
+        t.ToolboxCollapsible = true; t.ToolboxCollapsedWidth = 86f;
+        t.ToggleSize = 44f; t.ToggleTop = 24f;
+        t.ToggleColour = Hex("#252749"); t.ToggleIconColour = Hex("#7370a0");
         t.MenuBackground = Hex("#262b50");
         t.MenuHover = Hex("#3d4377");
         t.MenuSelected = Hex("#4a63c8");
