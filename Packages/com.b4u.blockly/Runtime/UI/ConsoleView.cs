@@ -50,6 +50,18 @@ namespace Blockly.UI
             BlockStyle.ConsoleFont.Apply(status, fontBase.Value.status);
         }
 
+        /// <summary>Whether the console panel is shown. Hiding it only hides the panel: lines keep arriving and are there when it is shown again.</summary>
+        public bool Visible
+        {
+            get => gameObject.activeSelf;
+            set
+            {
+                if (gameObject.activeSelf == value) return;
+                gameObject.SetActive(value);
+                if (value) Refresh();                         // scrolls to the newest line
+            }
+        }
+
         public void Append(string line)
         {
             lines.Add(line ?? "");

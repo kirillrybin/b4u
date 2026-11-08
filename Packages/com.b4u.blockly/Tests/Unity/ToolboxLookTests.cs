@@ -317,7 +317,7 @@ namespace Blockly.UI.Tests
             list.anchoredPosition = new Vector2(6f, list.anchoredPosition.y);      // wherever the scroll view put the list
             Canvas.ForceUpdateCanvases();
             toolbox.AlignTitle();
-            var title = Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None).First(t => t.gameObject.name == "Title");
+            var title = toolbox.FlyoutView.GetComponentInParent<ScrollRect>().GetComponentsInChildren<TMP_Text>(true).First(t => t.gameObject.name == "Title");
             title.ForceMeshUpdate();
             float glyph = title.transform.TransformPoint(title.textInfo.characterInfo[0].bottomLeft).x;
             var c = new Vector3[4];

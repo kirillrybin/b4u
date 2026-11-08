@@ -156,6 +156,41 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void TheConsoleButtonHidesAndShowsTheConsoleAndTheWorkspaceTakesItsRoom()
+        {
+            var c = Open();
+            c.Show(0);
+            var button = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(b => b.name == "ConsoleToggle");
+            Assert.AreEqual(1, button.onClick.GetPersistentEventCount());
+            Assert.AreSame(c, button.onClick.GetPersistentTarget(0));
+            Assert.AreEqual("ToggleConsole", button.onClick.GetPersistentMethodName(0));
+            var label = button.GetComponentInChildren<TMP_Text>();
+            var layout = Object.FindFirstObjectByType<PlaygroundLayout>();
+            var scroll = (RectTransform)GameObject.Find("Scroll").transform;
+            layout.Apply(1280, 720);
+            Assert.IsTrue(c.ConsoleVisible);
+            Assert.AreEqual("Console: on", label.text);
+            Assert.AreEqual(190f, scroll.offsetMin.y);
+
+            c.Run(); RunToEnd(c);
+            int lines = c.Console.Lines.Count;
+            c.ToggleConsole();
+            Assert.IsFalse(c.ConsoleVisible);
+            Assert.IsFalse(c.Console.gameObject.activeSelf);
+            Assert.AreEqual("Console: off", label.text);
+            layout.Apply(1280, 720);
+            Assert.AreEqual(0f, layout.EffectiveConsoleHeight);
+            Assert.AreEqual(0f, scroll.offsetMin.y, "the workspace reaches the bottom");
+
+            c.Console.Append("while hidden");
+            c.ToggleConsole();
+            Assert.IsTrue(c.ConsoleVisible);
+            Assert.AreEqual(lines + 1, c.Console.Lines.Count, "nothing was lost while it was hidden");
+            layout.Apply(1280, 720);
+            Assert.AreEqual(190f, scroll.offsetMin.y);
+        }
+
+        [Test]
         public void SwitchingProgramsStopsTheRunningOneAndClearsTheConsole()
         {
             var c = Open();

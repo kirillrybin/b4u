@@ -31,6 +31,7 @@ namespace Blockly.UI
         ToolboxView ToolboxView => toolboxView != null ? toolboxView : (toolbox != null ? toolboxView = toolbox.GetComponent<ToolboxView>() : null);
         ToolboxView toolboxView;
         float lastToolboxWidth = -1f;
+        bool lastConsoleVisible = true;
         const float DpPerInch = 160f;
         const float MinTitleWidth = 140f;
         /// <summary>Space kept on each side of a button's label when the button grows to fit a larger font.</summary>
@@ -138,6 +139,8 @@ namespace Blockly.UI
             }
             if (safeArea == null) return;
             if (LabelsChanged()) { dirty = true; lastSize = new Vector2(-1, -1); }
+            bool consoleVisible = console == null || console.gameObject.activeSelf;
+            if (consoleVisible != lastConsoleVisible) { lastConsoleVisible = consoleVisible; lastSize = new Vector2(-1, -1); }     // shown or hidden
             float tw = ToolboxWidth;
             if (!Mathf.Approximately(tw, lastToolboxWidth)) { lastToolboxWidth = tw; lastSize = new Vector2(-1, -1); }     // the strip collapsed or expanded
             // The canvas scaler adopts a new scale a frame later, so the size in canvas units is looked at every frame and the layout is
@@ -192,7 +195,8 @@ namespace Blockly.UI
             toolbar.sizeDelta = new Vector2(0, ToolbarHeight);
 
             // panels
-            float consoleHeight = Mathf.Clamp(height - ToolbarHeight - MinWorkspaceHeight, 70f, ConsoleHeight);
+            bool consoleVisible = console == null || console.gameObject.activeSelf;
+            float consoleHeight = consoleVisible ? Mathf.Clamp(height - ToolbarHeight - MinWorkspaceHeight, 70f, ConsoleHeight) : 0f;
             EffectiveConsoleHeight = consoleHeight;
             float flyoutWidth = Mathf.Min(FlyoutWidth, width - ToolboxWidth - FlyoutMargin);
             SetPanel(workspace, ToolboxWidth, consoleHeight, 0, ToolbarHeight);

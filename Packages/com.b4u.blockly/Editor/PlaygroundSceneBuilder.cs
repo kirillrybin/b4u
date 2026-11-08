@@ -132,8 +132,9 @@ namespace Blockly.EditorTools
             var undo = Button("Undo", bar, "Undo", 546, 84);
             var redo = Button("Redo", bar, "Redo", 636, 84);
             var file = Button("File", bar, "File", 736, 74);
+            var consoleToggle = Button("ConsoleToggle", bar, "Console: on", 822, 140);
             var title = Label("Title", bar, 18, 36, TextAlignmentOptions.MidlineLeft);
-            Place(title.rectTransform, 822, 6, 440, 36);
+            Place(title.rectTransform, 974, 6, 290, 36);
 
             var controller = new GameObject("Playground").AddComponent<PlaygroundController>();
             controller.Configure(programs, view, consoleView, title, slow.GetComponentInChildren<TMP_Text>(), toolboxView, undo, redo, (RectTransform)file.transform);
@@ -142,9 +143,11 @@ namespace Blockly.EditorTools
             Wire(stop, controller.Stop); Wire(slow, controller.ToggleSlow);
             Wire(undo, controller.Undo); Wire(redo, controller.Redo);
             Wire(file, controller.ShowFileMenu);
+            Wire(consoleToggle, controller.ToggleConsole);
+            controller.SetConsoleToggleLabel(consoleToggle.GetComponentInChildren<TMP_Text>());
 
             var skin = canvasGo.AddComponent<PlaygroundSkin>();
-            var buttons = new[] { prev, next, run, step, stop, slow, undo, redo, file };
+            var buttons = new[] { prev, next, run, step, stop, slow, undo, redo, file, consoleToggle };
             var toolbarTexts = new List<TMP_Text> { title };
             foreach (var b in buttons) toolbarTexts.Add(b.GetComponentInChildren<TMP_Text>());
             skin.Configure(appBackground, scroll.GetComponent<Image>(), bar.GetComponent<Image>(), panel.GetComponent<Image>(), flyoutPanel.GetComponent<Image>(),
@@ -153,7 +156,7 @@ namespace Blockly.EditorTools
             var layout = canvasGo.AddComponent<PlaygroundLayout>();
             layout.Configure(scaler, ui, bar,
                 new[] { (RectTransform)prev.transform, (RectTransform)next.transform, (RectTransform)run.transform, (RectTransform)step.transform, (RectTransform)stop.transform,
-                        (RectTransform)slow.transform, (RectTransform)undo.transform, (RectTransform)redo.transform, (RectTransform)file.transform },
+                        (RectTransform)slow.transform, (RectTransform)undo.transform, (RectTransform)redo.transform, (RectTransform)file.transform, (RectTransform)consoleToggle.transform },
                 title.rectTransform, scroll, toolboxRt, flyoutPanel, panel);
 
             Directory.CreateDirectory(Root);

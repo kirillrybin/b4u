@@ -19,6 +19,7 @@ namespace Blockly.UI
         [SerializeField] ConsoleView console;
         [SerializeField] TMP_Text title;
         [SerializeField] TMP_Text slowLabel;
+        [SerializeField] TMP_Text consoleToggleLabel;
         [SerializeField] ToolboxView toolbox;
         [SerializeField] UnityEngine.UI.Button undoButton;
         [SerializeField] UnityEngine.UI.Button redoButton;
@@ -101,6 +102,26 @@ namespace Blockly.UI
         {
             programs = programAssets; view = workspaceView; console = consoleView; title = titleText; slowLabel = slowButtonLabel; toolbox = toolboxView;
             undoButton = undo; redoButton = redo; fileButton = file;
+        }
+
+        /// <summary>The toolbar button that shows and hides the console writes its state on this label.</summary>
+        public void SetConsoleToggleLabel(TMP_Text label) { consoleToggleLabel = label; UpdateConsoleToggleLabel(); }
+
+        public bool ConsoleVisible => console == null || console.Visible;
+
+        /// <summary>Shows the console, or hides it to give the workspace the room. The layout follows on its own.</summary>
+        public void ToggleConsole() => SetConsoleVisible(!ConsoleVisible);
+
+        public void SetConsoleVisible(bool visible)
+        {
+            if (console == null) return;
+            console.Visible = visible;
+            UpdateConsoleToggleLabel();
+        }
+
+        void UpdateConsoleToggleLabel()
+        {
+            if (consoleToggleLabel != null) consoleToggleLabel.text = ConsoleVisible ? "Console: on" : "Console: off";
         }
 
         public void Undo() => view?.Undo();
@@ -537,7 +558,7 @@ namespace Blockly.UI
         void OnFinished(string error)
         {
             if (error == null) console?.SetStatus("Finished", ConsoleView.OkColour);
-            else console?.SetStatus("Error: " + error, ConsoleView.ErrorColour);
+            else { SetConsoleVisible(true); console?.SetStatus("Error: " + error, ConsoleView.ErrorColour); }     // an error is never left unseen
         }
     }
 }
