@@ -306,5 +306,24 @@ namespace Blockly.UI.Tests
             view.CancelDrag();
             Assert.IsFalse(panel.gameObject.activeSelf, "the strip is back to its buttons");
         }
+
+        [Test]
+        public void TheFlyoutTitleStartsAtTheLeftmostEdgeOfTheBlocks()
+        {
+            theme.FlyoutTitle = true; theme.FlyoutTitleSize = 30f;
+            BlockStyle.Theme = theme;
+            toolbox.SelectCategory(0);
+            var list = (RectTransform)toolbox.FlyoutView.transform;
+            list.anchoredPosition = new Vector2(6f, list.anchoredPosition.y);      // wherever the scroll view put the list
+            Canvas.ForceUpdateCanvases();
+            toolbox.AlignTitle();
+            var title = Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None).First(t => t.gameObject.name == "Title");
+            title.ForceMeshUpdate();
+            float glyph = title.transform.TransformPoint(title.textInfo.characterInfo[0].bottomLeft).x;
+            var c = new Vector3[4];
+            float edge = toolbox.FlyoutView.GetComponentsInChildren<PolygonGraphic>().Where(g => g.Polygon != null && g.Polygon.Length > 0)
+                .Min(g => { g.rectTransform.GetWorldCorners(c); return c[0].x + g.Polygon.Min(v => (float)v.X) * g.transform.lossyScale.x; });
+            Assert.AreEqual(edge, glyph, 0.1f, "the title starts where the drawn blocks start");
+        }
     }
 }
