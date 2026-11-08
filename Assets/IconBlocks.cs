@@ -62,6 +62,10 @@ public sealed class IconBlocks : IBlockPackage
         },
     };
 
+    // the icons, plates and the trash belong to the Figma look: the other themes of the Theme list show the toolbox without them
+    static readonly Dictionary<string, Sprite> skinImages = new Dictionary<string, Sprite>();
+    static bool IsFigmaTheme => BlockStyle.Theme != null && BlockStyle.Theme.name == "Figma";
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Install()
     {
@@ -69,7 +73,9 @@ public sealed class IconBlocks : IBlockPackage
         StandardBlockSet.AddPackage(new IconBlocks());
         RegisterCategoryLooks();
         var trash = Resources.Load<Sprite>("Icons/trash");           // the can of the delete panel (white, tinted by DeleteIconColour)
-        if (trash != null) BlockImages.Register("toolbox/delete", trash);
+        if (trash != null) skinImages["toolbox/delete"] = trash;
+        var previous = BlockImages.Resolver;
+        BlockImages.Resolver = key => (IsFigmaTheme && skinImages.TryGetValue(key, out var sprite) ? sprite : null) ?? previous?.Invoke(key);
     }
 
     // The toolbox of the design: a lilac plate with a coloured icon, and a gradient plate with a white icon while selected.
@@ -98,9 +104,9 @@ public sealed class IconBlocks : IBlockPackage
             var icon = Resources.Load<Sprite>("Icons/category-" + look.icon);
             var white = Resources.Load<Sprite>("Icons/category-" + look.icon + "-selected");
             if (icon == null) continue;
-            BlockImages.Register("category/" + kv.Key, icon);
-            if (white != null) BlockImages.Register("category/" + kv.Key + "@selected", white);
-            BlockImages.Register("plate/" + kv.Key, Plate(look.from, look.to, look.dir));
+            skinImages["category/" + kv.Key] = icon;
+            if (white != null) skinImages["category/" + kv.Key + "@selected"] = white;
+            skinImages["plate/" + kv.Key] = Plate(look.from, look.to, look.dir);
         }
     }
 
