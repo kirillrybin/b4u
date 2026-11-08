@@ -93,7 +93,7 @@ Command-line builds: `Unity -batchmode -executeMethod Blockly.EditorTools.BuildT
 
 ### Phones
 
-`PlaygroundLayout` fits the Playground to the screen: the content stays inside the safe area (notch, rounded corners), phones get a UI scale from the screen density so buttons are big enough for a finger, the toolbar wraps onto more rows when it does not fit on one, and the console and flyout shrink on small screens. A desktop window keeps the original layout.
+`PlaygroundLayout` fits the Playground to the screen: the content stays inside the safe area (notch, rounded corners), phones get a UI scale from the screen density so buttons are big enough for a finger, the toolbar wraps onto more rows when it does not fit on one, toolbar buttons widen to fit their labels in a larger or bolder toolbar font, and the console and flyout shrink on small screens. A desktop window keeps the original layout.
 
 ## Known limits
 
