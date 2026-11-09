@@ -96,7 +96,7 @@ public sealed class IconBlocks : IBlockPackage
         var names = new Dictionary<string, string>
         {
             { "Events", "events" }, { "Moves", "actions" }, { "Loops", "actions" }, { "Logic", "control" },
-            { "Math", "operations" }, { "Lists", "sensors" }, { "Variables", "variables" }, { "Text", "text" }, { "Functions", "functions" },
+            { "Math", "operations" }, { "Lists", "sensors" }, { "Colour", "functions" }, { "Variables", "variables" }, { "Text", "text" }, { "Functions", "functions" },
         };
         foreach (var kv in names)
         {
