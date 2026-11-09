@@ -162,6 +162,7 @@ namespace Blockly
                         if (a.TryGetValue("max", out var mx) && mx is double d2) spec.Max = d2;
                         if (a.TryGetValue("precision", out var pr) && pr is double d3) spec.Precision = d3;
                     }
+                    else if (type == "field_colour") spec.Text = Colour.Normalize(Json.Json.GetString(a, "colour", "#ff0000")) ?? "#ff0000";
                     else if (type == "field_checkbox") spec.Checked = Json.Json.GetBool(a, "checked");
                     else if (type == "field_variable")
                     {
@@ -226,6 +227,51 @@ namespace Blockly
             }
             return "#a5a5a5";
         }
+
+        /// <summary>"#rgb" or "#rrggbb" (any case) as "#rrggbb"; null for anything else.</summary>
+        public static string Normalize(string s)
+        {
+            if (string.IsNullOrEmpty(s) || s[0] != '#') return null;
+            if (s.Length == 4) s = "#" + s[1] + s[1] + s[2] + s[2] + s[3] + s[3];
+            if (s.Length != 7) return null;
+            for (int i = 1; i < 7; i++) if (!Uri.IsHexDigit(s[i])) return null;
+            return s.ToLowerInvariant();
+        }
+
+        /// <summary>Blockly's colour_rgb: red, green and blue as 0-100 (clamped), as "#rrggbb".</summary>
+        public static string FromPercent(double red, double green, double blue)
+            => "#" + Channel(red).ToString("x2") + Channel(green).ToString("x2") + Channel(blue).ToString("x2");
+
+        static int Channel(double percent)
+        {
+            if (double.IsNaN(percent)) percent = 0;
+            return (int)Math.Floor(Math.Min(Math.Max(percent, 0), 100) * 2.55 + 0.5);
+        }
+
+        /// <summary>Blockly's colour_blend: the first colour at ratio 0, the second at 1 (ratio clamped), as "#rrggbb"; "#000000" for a colour that is not valid.</summary>
+        public static string Blend(string first, string second, double ratio)
+        {
+            string a = Normalize(first) ?? "#000000", b = Normalize(second) ?? "#000000";
+            ratio = double.IsNaN(ratio) ? 0 : Math.Min(Math.Max(ratio, 0), 1);
+            int Mix(int i) => (int)Math.Floor(Convert.ToInt32(a.Substring(i, 2), 16) * (1 - ratio) + Convert.ToInt32(b.Substring(i, 2), 16) * ratio + 0.5);
+            return "#" + Mix(1).ToString("x2") + Mix(3).ToString("x2") + Mix(5).ToString("x2");
+        }
+
+        /// <summary>The 70 colours of Blockly's colour field, in rows of <see cref="PaletteColumns"/>.</summary>
+        public static readonly string[] Palette =
+        {
+            "#ffffff", "#cccccc", "#c0c0c0", "#999999", "#666666", "#333333", "#000000",
+            "#ffcccc", "#ff6666", "#ff0000", "#cc0000", "#990000", "#660000", "#330000",
+            "#ffcc99", "#ff9966", "#ff9900", "#ff6600", "#cc6600", "#993300", "#663300",
+            "#ffff99", "#ffff66", "#ffcc66", "#ffcc33", "#cc9933", "#996633", "#663333",
+            "#ffffcc", "#ffff33", "#ffff00", "#ffcc00", "#999900", "#666600", "#333300",
+            "#99ffcc", "#66ff99", "#33ff33", "#33cc00", "#009900", "#006600", "#003300",
+            "#99ffff", "#33ffff", "#66cccc", "#00cccc", "#339999", "#336666", "#003333",
+            "#ccffff", "#66ffff", "#33ccff", "#3366ff", "#3333ff", "#000099", "#000066",
+            "#ccccff", "#9999ff", "#6666cc", "#6633ff", "#6600cc", "#333399", "#330099",
+            "#ffccff", "#ff99ff", "#cc66cc", "#cc33cc", "#993399", "#663366", "#330033",
+        };
+        public const int PaletteColumns = 7;
 
         // Port of Blockly.utils.colour.hsvToHex with saturation 0.45, value 0.65 (channels are floored).
         public static string FromHue(double hue)

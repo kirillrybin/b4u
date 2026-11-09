@@ -46,7 +46,69 @@ namespace Blockly.UI
             return menu;
         }
 
-        void Build(Canvas root, RectTransform rootRt, Vector2 screenPoint, float minWidth, IList<DropdownItem> entries)
+        const float SwatchSize = 24f, SwatchGap = 3f, SwatchPadding = 8f;
+
+        /// <summary>
+        /// A grid of colour swatches (the palette of a colour field) instead of a list. <see cref="Items"/> has one entry per colour
+        /// (label and value are its "#rrggbb"), so <see cref="Pick"/> works the same way.
+        /// </summary>
+        public static DropdownMenu OpenColours(Canvas anyCanvasInHierarchy, Vector2 screenPoint, IList<string> colours, int columns, string current, Action<DropdownItem> onPick, Action onClose = null)
+        {
+            var root = anyCanvasInHierarchy.rootCanvas;
+            var go = new GameObject("DropdownMenu", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(root.transform, false);
+            Stretch(rt);
+            var c = go.GetComponent<Canvas>();
+            c.overrideSorting = true; c.sortingOrder = 200;
+
+            var menu = go.AddComponent<DropdownMenu>();
+            menu.onPick = onPick; menu.onClose = onClose;
+            menu.BuildColours(root, rt, screenPoint, colours, Mathf.Max(1, columns), current);
+            return menu;
+        }
+
+        void BuildColours(Canvas root, RectTransform rootRt, Vector2 screenPoint, IList<string> colours, int columns, string current)
+        {
+            AddBlocker(rootRt);
+            AddPanel(rootRt);
+            int rows = (colours.Count + columns - 1) / columns;
+            float width = SwatchPadding * 2 + columns * SwatchSize + (columns - 1) * SwatchGap;
+            float height = SwatchPadding * 2 + rows * SwatchSize + (rows - 1) * SwatchGap;
+            for (int i = 0; i < colours.Count; i++)
+            {
+                string hex = colours[i];
+                var item = new DropdownItem { Label = hex, Value = hex, Selected = string.Equals(hex, current, StringComparison.OrdinalIgnoreCase) };
+                items.Add(item);
+                var pos = new Vector2(SwatchPadding + (i % columns) * (SwatchSize + SwatchGap), -(SwatchPadding + (i / columns) * (SwatchSize + SwatchGap)));
+                // a frame behind the swatch: faint for every colour (so white shows on a light panel), bright and wider for the current one
+                float grow = item.Selected ? 3f : 1f;
+                var frame = new GameObject("Frame", typeof(RectTransform), typeof(Image));
+                var frt = (RectTransform)frame.transform;
+                frt.SetParent(Panel, false);
+                frt.anchorMin = frt.anchorMax = new Vector2(0, 1); frt.pivot = new Vector2(0, 1);
+                frt.sizeDelta = new Vector2(SwatchSize + 2 * grow, SwatchSize + 2 * grow);
+                frt.anchoredPosition = pos + new Vector2(-grow, grow);
+                var fimg = frame.GetComponent<Image>(); fimg.raycastTarget = false;
+                fimg.color = item.Selected ? Color.white : new Color(1, 1, 1, 0.18f);
+
+                var b = new GameObject("Swatch " + hex, typeof(RectTransform), typeof(Image), typeof(Button));
+                var brt = (RectTransform)b.transform;
+                brt.SetParent(Panel, false);
+                brt.anchorMin = brt.anchorMax = new Vector2(0, 1); brt.pivot = new Vector2(0, 1);
+                brt.sizeDelta = new Vector2(SwatchSize, SwatchSize);
+                brt.anchoredPosition = pos;
+                ColorUtility.TryParseHtmlString(hex, out var colour);
+                var img = b.GetComponent<Image>(); img.color = colour;
+                var btn = b.GetComponent<Button>(); btn.targetGraphic = img; btn.transition = Selectable.Transition.None;
+                int index = i;
+                btn.onClick.AddListener(() => Pick(index));
+                buttons.Add(btn);
+            }
+            Place(root, rootRt, screenPoint, width, height);
+        }
+
+        void AddBlocker(RectTransform rootRt)
         {
             // full-screen catcher: a click anywhere outside the list closes it
             var blocker = new GameObject("Blocker", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -55,12 +117,22 @@ namespace Blockly.UI
             blocker.GetComponent<Image>().color = new Color(0, 0, 0, 0);
             blocker.GetComponent<Button>().onClick.AddListener(Close);
             blocker.GetComponent<Button>().transition = Selectable.Transition.None;
+        }
 
+        GameObject AddPanel(RectTransform rootRt)
+        {
             var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
             Panel = (RectTransform)panel.transform;
             Panel.SetParent(rootRt, false);
             panel.GetComponent<Image>().color = Back;
             UiShape.Round(panel.GetComponent<Image>(), BlockStyle.PanelCornerRadius);
+            return panel;
+        }
+
+        void Build(Canvas root, RectTransform rootRt, Vector2 screenPoint, float minWidth, IList<DropdownItem> entries)
+        {
+            AddBlocker(rootRt);
+            var panel = AddPanel(rootRt);
 
             // measure with the real font so labels never wrap or clip
             var probe = MakeLabel(Panel, "probe", "");

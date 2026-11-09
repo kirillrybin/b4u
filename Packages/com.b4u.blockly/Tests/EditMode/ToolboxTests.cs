@@ -34,10 +34,10 @@ namespace Blockly.Tests
 
         // ---------------------------------------------------------------- definition
         [Test]
-        public void StandardToolboxHasTheSevenBlocklyCategories()
+        public void StandardToolboxHasTheBlocklyCategories()
         {
             var t = Toolbox;
-            Assert.AreEqual(new[] { "Logic", "Loops", "Math", "Text", "Lists", "Variables", "Functions" }, t.Categories.Select(c => c.Name).ToArray());
+            Assert.AreEqual(new[] { "Logic", "Loops", "Math", "Text", "Lists", "Colour", "Variables", "Functions" }, t.Categories.Select(c => c.Name).ToArray());
             Assert.AreEqual(CategoryKind.Variables, t.Categories.Single(c => c.Name == "Variables").Kind);
             Assert.AreEqual(CategoryKind.Procedures, t.Categories.Single(c => c.Name == "Functions").Kind);
             Assert.AreEqual(Colour.FromHue(210), t.Categories[0].ColourHex);

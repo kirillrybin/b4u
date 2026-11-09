@@ -55,7 +55,7 @@ namespace Blockly.UI.Tests
         {
             tb.SelectCategory(0); tb.CloseFlyout();
             var names = tb.transform.Cast<Transform>().First(t => t.name == "Categories").Cast<Transform>().Select(t => t.name).ToArray();
-            Assert.AreEqual(new[] { "Logic", "Loops", "Math", "Text", "Lists", "Variables", "Functions" }, names);
+            Assert.AreEqual(new[] { "Logic", "Loops", "Math", "Text", "Lists", "Colour", "Variables", "Functions" }, names);
             Assert.IsFalse(tb.IsFlyoutOpen);
         }
 

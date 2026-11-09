@@ -5,7 +5,7 @@ namespace Blockly.Layout
     {
         public const float RowMinHeight = 24f;
         public const float PadLeft = 8f, PadRight = 8f, ItemGap = 4f;
-        public const float FieldPadX = 5f, FieldHeight = 20f, LabelHeight = 16f, CheckboxWidth = 16f;
+        public const float FieldPadX = 5f, FieldHeight = 20f, LabelHeight = 16f, CheckboxWidth = 16f, ColourWidth = 30f;
 
         // Output tab (puzzle knob) and the matching indent on the parent
         public const float TabWidth = 8f, TabHeight = 15f, TabTop = 5f;

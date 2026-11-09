@@ -24,7 +24,8 @@ namespace Blockly.UI
             if (e != null && e.button != PointerEventData.InputButton.Left) return;
             if (view == null) return;
             view.Select(block);
-            if (Blockly.Editing.FieldEditing.IsDropdown(field)) view.ShowDropdown(block, field);
+            if (Blockly.Editing.FieldEditing.IsColour(field)) view.ShowColourPicker(block, field);
+            else if (Blockly.Editing.FieldEditing.IsDropdown(field)) view.ShowDropdown(block, field);
             else view.BeginFieldEdit(block, field);
         }
     }

@@ -67,7 +67,7 @@ namespace Blockly
             { "No statement handler for block type '{0}'", "Нет обработчика команды для блока '{0}'" },
             { "No expression handler for block type '{0}'", "Нет обработчика выражения для блока '{0}'" },
             // ---- categories
-            { "Logic", "Логика" }, { "Loops", "Циклы" }, { "Math", "Математика" }, { "Text", "Текст" }, { "Lists", "Списки" },
+            { "Colour", "Цвет" }, { "Logic", "Логика" }, { "Loops", "Циклы" }, { "Math", "Математика" }, { "Text", "Текст" }, { "Lists", "Списки" },
             { "Variables", "Переменные" }, { "Functions", "Функции" }, { "Events", "События" }, { "Moves", "Движения" },
             // ---- block labels
             { "Y:", "Y:" }, { "append text", "добавить текст" }, { "as", "как" }, { "atan2 of X:", "atan2 от X:" }, { "by", "на" },
@@ -85,6 +85,8 @@ namespace Blockly
             { "return", "вернуть" }, { "reverse", "перевернуть" }, { "set", "присвоить" }, { "sort", "сортировать" },
             { "test", "проверка" }, { "times", "раз" }, { "to", "до" }, { "trim spaces from", "убрать пробелы с" }, { "with", "с" },
             { "with:", "с:" }, { "else if", "иначе если" }, { "else", "иначе" }, { "then", "то" },
+            { "colour with red", "цвет с красным" }, { "green", "зелёным" }, { "blue", "синим" },
+            { "blend colour 1", "смешать цвет 1" }, { "colour 2", "цвет 2" }, { "ratio", "доля" }, { "random colour", "случайный цвет" },
             { "when", "когда" }, { "clicked", "нажат" },
             // ---- block dropdown options
             { "# from end", "№ с конца" }, { "10^", "10^" }, { "Title Case", "Каждое Слово С Заглавной" }, { "UPPER CASE", "ВСЕ ЗАГЛАВНЫЕ" },

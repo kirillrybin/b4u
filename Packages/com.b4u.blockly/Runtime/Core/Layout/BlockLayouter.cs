@@ -12,6 +12,7 @@ namespace Blockly.Layout
         public float X, Y, W, H;
         public bool Editable;      // draws a field background; labels are plain text
         public bool IsDropdown;
+        public string Colour;      // field_colour: the colour of the swatch ("#rrggbb"), drawn instead of text
         public string ImageSrc;    // field_image: a picture instead of text
     }
 
@@ -62,7 +63,7 @@ namespace Blockly.Layout
         // ------------------------------------------------------------------ measured tree
         sealed class Item
         {
-            public Field Field; public string Text; public bool Editable, Dropdown; public string ImageSrc;
+            public Field Field; public string Text; public bool Editable, Dropdown; public string ImageSrc, Colour;
             public Input Slot; public Measured SlotChild;
             public float W, H;
         }
@@ -262,7 +263,7 @@ namespace Blockly.Layout
             {
                 foreach (var f in input.Fields)
                 {
-                    string t = f.Spec.FieldType == "field_image" || f.Spec.FieldType == "field_checkbox" ? "" : DisplayText(f);
+                    string t = f.Spec.FieldType == "field_image" || f.Spec.FieldType == "field_checkbox" ? "" : f.Spec.FieldType == "field_colour" ? f.Value : DisplayText(f);
                     if (t.Length > 0) parts.Add(t);
                 }
                 if (input.Kind == InputKind.Dummy) continue;
@@ -288,7 +289,12 @@ namespace Blockly.Layout
                     row.Items.Add(it);
                     continue;
                 }
-                if (f.Spec.FieldType == "field_checkbox")
+                if (f.Spec.FieldType == "field_colour")
+                {
+                    it.Colour = Blockly.Colour.Normalize(f.Value) ?? "#000000";
+                    it.W = Metrics.ColourWidth; it.H = G.FieldHeight;
+                }
+                else if (f.Spec.FieldType == "field_checkbox")
                 {
                     it.W = Metrics.CheckboxWidth; it.H = G.FieldHeight;
                 }
@@ -323,6 +329,7 @@ namespace Blockly.Layout
             {
                 case "field_variable": return workspace.GetVariableById(f.Value)?.Name ?? f.Value ?? "";
                 case "field_checkbox": return f.Value == "TRUE" ? "✓" : "";
+                case "field_colour": return "";
                 case "field_dropdown":
                     if (f.Spec.Options != null)
                         foreach (var o in f.Spec.Options) if (o.Value == f.Value) return Loc.T(o.Label);
@@ -391,7 +398,7 @@ namespace Blockly.Layout
                         box.Fields.Add(new FieldBox
                         {
                             Field = it.Field, Text = it.Text, X = cx, Y = fy, W = it.W, H = it.H,
-                            Editable = it.Editable, IsDropdown = it.Dropdown, ImageSrc = it.ImageSrc,
+                            Editable = it.Editable, IsDropdown = it.Dropdown, ImageSrc = it.ImageSrc, Colour = it.Colour,
                         });
                     }
                     cx += it.W + G.ItemGap;

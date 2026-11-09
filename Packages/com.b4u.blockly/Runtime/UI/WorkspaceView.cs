@@ -587,6 +587,26 @@ namespace Blockly.UI
             return true;
         }
 
+        /// <summary>Opens the palette under a colour field; choosing a colour sets the field.</summary>
+        public bool ShowColourPicker(Block block, Field field)
+        {
+            if (workspace == null || Spawner != null || IsDragging || block == null || field == null || !FieldEditing.IsColour(field)) return false;
+            if (RootCanvas == null || Layout == null || !Layout.ByBlock.TryGetValue(block, out var blockBox)) return false;
+            if (IsEditingField) SubmitFieldEdit(fieldInput.text);
+            CloseMenu();
+            if (!Layout.ByBlock.TryGetValue(block, out blockBox)) return false;
+            var fieldBox = blockBox.Fields.Find(f => f.Field == field);
+            if (fieldBox == null) return false;
+
+            FieldEditStarted?.Invoke(block);
+            var canvas = RootCanvas;
+            Canvas.ForceUpdateCanvases();
+            var cam = canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            var below = WorkspaceToScreen(new Vector2(fieldBox.X, fieldBox.Y + fieldBox.H), cam);
+            menu = DropdownMenu.OpenColours(canvas, below, Colour.Palette, Colour.PaletteColumns, field.Value, item => ApplyFieldValue(block, field, item.Value));
+            return true;
+        }
+
         /// <summary>What happens when a menu entry is chosen (also what clicking an entry calls).</summary>
         public void ChooseDropdownItem(Block block, Field field, DropdownItem item)
         {
@@ -1132,6 +1152,20 @@ namespace Blockly.UI
                 if (sprite == null) return;                        // the space stays reserved; nothing to draw
                 var pic = rt.gameObject.AddComponent<Image>();
                 pic.sprite = sprite; pic.preserveAspect = true; pic.raycastTarget = false;
+                return;
+            }
+
+            if (f.Colour != null)
+            {
+                // a swatch: the colour itself in the field's frame
+                ColorUtility.TryParseHtmlString(f.Colour, out var swatch);
+                var box4 = new[] { new Vec2(0, 0), new Vec2(f.W, 0), new Vec2(f.W, f.H), new Vec2(0, f.H) };
+                if (BlockStyle.FieldCornerRadius > 0) box4 = Geometry.RoundCorners(box4, BlockStyle.FieldCornerRadius).ToArray();
+                var sg = rt.gameObject.AddComponent<PolygonGraphic>();
+                sg.SetShape(box4, swatch, look.Stroke, Mathf.Max(1f, BlockStyle.FieldStrokeWidth));
+                sg.EdgeWidth = edgeWidth;
+                sg.raycastTarget = Spawner == null;
+                if (Spawner == null) rt.gameObject.AddComponent<FieldClickTarget>().Init(this, box.Block, f.Field);
                 return;
             }
 

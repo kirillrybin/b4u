@@ -10,6 +10,7 @@ First version.
 - Editing: toolbox and flyouts, drag and snap, field editing, dropdowns, variables, procedure parameters, selection and Delete, copy / cut / paste, undo / redo, zoom.
 - Playground scene and controller with a File menu to save, open, delete, copy and paste programs; saved programs persist on WebGL.
 - Block menu: right click on a block, or hold a press on a touch screen, for Duplicate, Copy, Cut, Disable / Enable block, Collapse / Expand block and Delete. A disabled block (and what is inside it) is grey and skipped when the program runs.
+- Colour field and blocks: `field_colour` shows a swatch and opens a palette of 70 colours (`Colour.Palette`) under it; blocks `colour_picker`, `colour_random`, `colour_rgb` (0-100 per channel) and `colour_blend`, a Colour category in the toolbox; colours are `"#rrggbb"` text values for the interpreter.
 - Collapsed blocks: a collapsed block is drawn as one line with a summary of what is inside (up to 40 characters); the contents stay in the program, run as before and are saved (`collapsed`).
 - Localization: `Loc` translates the toolbar, menus, dialogs, messages, category names and the labels of the blocks; English and Russian come with the package, `Loc.Register` adds a language. The File menu has Language…, the choice is remembered, and on the first start the language of the device is used.
 - Licensed under MIT (`LICENSE.md`, `NOTICE.md`).
