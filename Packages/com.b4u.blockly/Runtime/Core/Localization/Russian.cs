@@ -49,6 +49,7 @@ namespace Blockly
             { "That name is used for the automatic backup. Pick another.", "Это имя занято автоматической копией. Выберите другое." },
             // ---- block menu, variables, procedures
             { "Duplicate", "Дублировать" }, { "Copy", "Копировать" }, { "Cut", "Вырезать" },
+            { "Collapse block", "Свернуть блок" }, { "Expand block", "Развернуть блок" },
             { "Disable block", "Отключить блок" }, { "Enable block", "Включить блок" },
             { "params", "параметры" },
             { "Parameters of \"{0}\" (separated by commas):", "Параметры «{0}» (через запятую):" },

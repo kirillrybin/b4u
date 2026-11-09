@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Blockly.Layout
 {
@@ -153,6 +154,16 @@ namespace Blockly.Layout
             Row cur = null;
             void Close() { if (cur != null) { m.Rows.Add(cur); cur = null; } }
 
+            if (block.Collapsed && !shadow)
+            {
+                // a collapsed block is one row with a short summary of what is inside it; its inputs are not laid out
+                string summary = Ellipsis(Summary(block), MaxCollapsedText);
+                var field = new Field { Spec = new ArgSpec { Kind = ArgKind.Label, FieldType = "field_label", Text = summary, NoTranslate = true }, Value = summary };
+                cur = new Row();
+                cur.Items.Add(new Item { Field = field, Text = summary, W = text.Width(summary), H = G.LabelHeight });
+                Close();
+            }
+            else
             foreach (var input in block.Inputs)
             {
                 if (input.Kind == InputKind.Statement)
@@ -236,6 +247,30 @@ namespace Blockly.Layout
             }
             m.H = y + m.BottomPad;
             return m;
+        }
+
+        /// <summary>The longest summary shown on a collapsed block.</summary>
+        public const int MaxCollapsedText = 40;
+
+        static string Ellipsis(string s, int max) => s.Length <= max ? s : s.Substring(0, max - 1).TrimEnd() + "…";
+
+        /// <summary>What a collapsed block shows: its labels and fields, with the blocks plugged into it in place ("?" for an empty input).</summary>
+        string Summary(Block block)
+        {
+            var parts = new List<string>();
+            foreach (var input in block.Inputs)
+            {
+                foreach (var f in input.Fields)
+                {
+                    string t = f.Spec.FieldType == "field_image" || f.Spec.FieldType == "field_checkbox" ? "" : DisplayText(f);
+                    if (t.Length > 0) parts.Add(t);
+                }
+                if (input.Kind == InputKind.Dummy) continue;
+                var child = ChildOf(input.Connection, out _);
+                if (input.Kind == InputKind.Value) parts.Add(child != null ? Summary(child) : "?");
+                else if (child != null) parts.Add("…");
+            }
+            return string.Join(" ", parts.Where(p => p.Length > 0));
         }
 
         void AddFields(Row row, Input input)
