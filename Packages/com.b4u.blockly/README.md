@@ -13,6 +13,13 @@ A native C# port of [Blockly](https://developers.google.com/blockly) for Unity 6
 
 Unity 6 (6000.0 or newer; developed and tested on 6000.3), `com.unity.ugui` 2.0.0 (includes TextMeshPro). Import the TextMeshPro essentials once with **Blockly > Setup > Import TMP Essentials**.
 
+### Compatibility
+
+- **Unity:** 6000.0 or newer (tested on 6000.3). Unity 2022 and older ship `com.unity.ugui` 1.0.0, so the dependency does not resolve there.
+- **UI and render pipeline:** UGUI with TextMeshPro, drawn in Screen Space Overlay, so any render pipeline works (Built-in is tested; URP and HDRP were not tried).
+- **Input:** the mouse and touch work through the EventSystem. The keyboard (Ctrl+C / V / X / Z / Y, Delete, zoom keys, Esc in menus and dialogs) needs the old Input Manager: set Player Settings > Active Input Handling to *Input Manager (Old)* or *Both*. The Playground scene uses `StandaloneInputModule`; with only the new Input System, use `InputSystemUIInputModule` in your own scene (then there are no keyboard shortcuts).
+- **Platforms:** see the table below. `Blockly.Core` has no Unity references and can be used in any C# project.
+
 ## Install
 
 Copy the `com.b4u.blockly` folder into your project's `Packages/` folder (an embedded package), or point to it from `Packages/manifest.json`:
