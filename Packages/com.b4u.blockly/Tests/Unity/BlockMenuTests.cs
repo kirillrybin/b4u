@@ -44,7 +44,7 @@ namespace Blockly.UI.Tests
             Assert.IsTrue(view.ShowBlockMenu(print, new Vector2(100, 100)));
             Assert.AreSame(print, view.SelectedBlock, "the block is selected");
             var menu = Object.FindFirstObjectByType<DropdownMenu>();
-            CollectionAssert.AreEqual(new[] { "Duplicate", "Copy", "Cut", "Disable block", "Delete" }, menu.Items.Select(i => i.Label));
+            CollectionAssert.AreEqual(new[] { "Duplicate", "Copy", "Cut", "Disable block", "Collapse block", "Delete" }, menu.Items.Select(i => i.Label));
 
             var text = print.GetInputTargetBlock("TEXT");
             view.ShowBlockMenu(text, new Vector2(100, 100));
@@ -86,6 +86,28 @@ namespace Blockly.UI.Tests
             Assert.IsTrue(view.ChooseBlockMenuItem(second, WorkspaceView.MenuDisable), "the same entry enables it again");
             Assert.IsFalse(second.Disabled);
             Assert.IsFalse(view.ChooseBlockMenuItem(text, WorkspaceView.MenuDisable), "an expression cannot be disabled");
+        }
+
+        [Test]
+        public void CollapseShrinksTheBlockToOneLineAndExpandBringsItBack()
+        {
+            var view = NewView();
+            var first = view.Workspace.TopBlocks[0];
+            float tall = view.Layout.ByBlock[first].W;
+            Assert.IsTrue(view.ChooseBlockMenuItem(first, WorkspaceView.MenuCollapse));
+            Assert.IsTrue(first.Collapsed);
+            Assert.IsFalse(view.Layout.ByBlock.ContainsKey(first.GetInputTargetBlock("TEXT")), "what is inside is not drawn");
+            Assert.AreEqual(1, Count(view, "two"), "but it is still in the program");
+            view.ShowBlockMenu(first, Vector2.zero);
+            var menu = Object.FindFirstObjectByType<DropdownMenu>();
+            CollectionAssert.Contains(menu.Items.Select(i => i.Label).ToList(), "Expand block");
+            Assert.IsTrue(view.Undo());
+            first = view.Workspace.TopBlocks[0];
+            Assert.IsFalse(first.Collapsed);
+            Assert.IsTrue(view.Layout.ByBlock.ContainsKey(first.GetInputTargetBlock("TEXT")));
+            Assert.IsTrue(view.ChooseBlockMenuItem(first, WorkspaceView.MenuCollapse));
+            Assert.IsTrue(view.ChooseBlockMenuItem(first, WorkspaceView.MenuCollapse), "the same entry expands it");
+            Assert.IsFalse(first.Collapsed);
         }
 
         [Test]

@@ -191,7 +191,7 @@ namespace Blockly.UI
         }
 
         // ------------------------------------------------------------------ block menu
-        public const string MenuDuplicate = "duplicate", MenuCopy = "copy", MenuCut = "cut", MenuDisable = "disable", MenuDelete = "delete";
+        public const string MenuDuplicate = "duplicate", MenuCopy = "copy", MenuCut = "cut", MenuDisable = "disable", MenuCollapse = "collapse", MenuDelete = "delete";
         public const float LongPressSeconds = 0.5f;
         Block pressBlock; Vector2 pressPoint; float pressStarted;
 
@@ -215,6 +215,9 @@ namespace Blockly.UI
         /// <summary>A block can be disabled when it is a statement (an expression block always runs as part of its parent).</summary>
         public static bool CanDisable(Block block) => block != null && block.Output == null && (block.Previous != null || block.Next != null);
 
+        /// <summary>A block can be collapsed when something can be inside it (an input), and any collapsed block can be expanded.</summary>
+        public static bool CanCollapse(Block block) => block != null && (block.Collapsed || block.Inputs.Any(i => i.Kind != InputKind.Dummy));
+
         /// <summary>Opens the menu of a block (right click, or a long press): duplicate, copy, cut, disable / enable, delete. Selects the block.</summary>
         public bool ShowBlockMenu(Block block, Vector2 screenPoint)
         {
@@ -230,6 +233,7 @@ namespace Blockly.UI
                 new DropdownItem { Label = Loc.T("Cut"), Value = MenuCut },
             };
             if (CanDisable(block)) items.Add(new DropdownItem { Label = Loc.T(block.Disabled ? "Enable block" : "Disable block"), Value = MenuDisable });
+            if (CanCollapse(block)) items.Add(new DropdownItem { Label = Loc.T(block.Collapsed ? "Expand block" : "Collapse block"), Value = MenuCollapse });
             items.Add(new DropdownItem { Label = Loc.T("Delete"), Value = MenuDelete });
             Canvas.ForceUpdateCanvases();
             menu = DropdownMenu.Open(RootCanvas, screenPoint, 170f, items, item => ChooseBlockMenuItem(block, item.Value));
@@ -247,6 +251,7 @@ namespace Blockly.UI
                 case MenuCopy: return CopySelected();
                 case MenuCut: return CutSelected();
                 case MenuDisable: return ToggleDisabledSelected();
+                case MenuCollapse: return ToggleCollapsedSelected();
                 case MenuDelete: return DeleteSelected();
                 default: return false;
             }
@@ -280,6 +285,21 @@ namespace Blockly.UI
             string before = SnapshotForUndo();
             FieldEditStarted?.Invoke(null);
             block.Disabled = !block.Disabled;
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        /// <summary>Collapses the selected block to one line (what is inside it is kept and runs as before), or expands it again.</summary>
+        public bool ToggleCollapsedSelected()
+        {
+            var block = SelectedBlock;
+            if (!CanCollapse(block) || workspace == null || History == null || IsDragging) return false;
+            CloseMenu();
+            string before = SnapshotForUndo();
+            FieldEditStarted?.Invoke(null);
+            block.Collapsed = !block.Collapsed;
             Rebuild();
             RecordForUndo(before);
             WorkspaceEdited?.Invoke();
