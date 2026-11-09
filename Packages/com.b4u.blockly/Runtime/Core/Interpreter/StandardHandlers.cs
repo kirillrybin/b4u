@@ -239,6 +239,10 @@ namespace Blockly
             });
             r.Expression("math_random_float", (it, b) => it.Random.NextDouble());
             r.Expression("math_on_list", MathOnList);
+            r.Expression("colour_picker", (it, b) => Colour.Normalize(b.GetFieldValue("COLOUR")) ?? "#000000");
+            r.Expression("colour_random", (it, b) => Colour.FromPercent(it.Random.NextDouble() * 100, it.Random.NextDouble() * 100, it.Random.NextDouble() * 100));
+            r.Expression("colour_rgb", (it, b) => Colour.FromPercent(Num(it, b, "RED", 0), Num(it, b, "GREEN", 0), Num(it, b, "BLUE", 0)));
+            r.Expression("colour_blend", (it, b) => Colour.Blend(JsValue.ToStr(it.EvalInput(b, "COLOUR1", "#000000")), JsValue.ToStr(it.EvalInput(b, "COLOUR2", "#000000")), Num(it, b, "RATIO", 0.5)));
             r.Simple("math_change", (it, b) =>
             {
                 string id = b.GetFieldValue("VAR");

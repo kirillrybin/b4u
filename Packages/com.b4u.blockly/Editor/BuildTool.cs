@@ -53,7 +53,7 @@ namespace Blockly.EditorTools
             if (target == BuildTarget.WebGL)
             {
                 // A phone's browser tab has little memory and has to compile the whole wasm module: build for size, strip what is unused.
-                UnityEditor.WebGL.UserBuildSettings.codeOptimization = UnityEditor.WebGL.WasmCodeOptimization.DiskSize;
+                SetWebGlCodeOptimizationToDiskSize();
                 PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
             }
 
@@ -67,6 +67,25 @@ namespace Blockly.EditorTools
             Debug.Log("[Build] " + targetName + ": " + summary.result + ", " + summary.totalErrors + " errors, " + summary.totalWarnings + " warnings, "
                       + (summary.totalSize / (1024 * 1024)) + " MB, " + summary.totalTime.TotalSeconds.ToString("0") + " s -> " + location);
             return summary.result == BuildResult.Succeeded;
+        }
+
+        /// <summary>
+        /// UnityEditor.WebGL exists only where the WebGL build module is installed, and this assembly is compiled by every project that
+        /// uses the package. So the setting is reached by name: a project without the module compiles, and a WebGL build (which needs
+        /// the module anyway) still gets the size optimisation.
+        /// </summary>
+        static void SetWebGlCodeOptimizationToDiskSize()
+        {
+            const string assembly = "UnityEditor.WebGL.Extensions";
+            var settings = Type.GetType("UnityEditor.WebGL.UserBuildSettings, " + assembly);
+            var optimization = Type.GetType("UnityEditor.WebGL.WasmCodeOptimization, " + assembly);
+            var property = settings?.GetProperty("codeOptimization");
+            if (property == null || optimization == null)
+            {
+                Debug.LogWarning("[Build] The WebGL build module is not installed; skipping the code size setting.");
+                return;
+            }
+            property.SetValue(null, Enum.Parse(optimization, "DiskSize"));
         }
 
         static (BuildTarget, BuildTargetGroup, string) Resolve(string name, string output)

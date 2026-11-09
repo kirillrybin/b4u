@@ -25,6 +25,9 @@ namespace Blockly.Editing
         public static bool IsEditableText(Field f)
             => f.Spec.FieldType == "field_input" || f.Spec.FieldType == "field_number";
 
+        /// <summary>A colour field: a swatch that opens a palette.</summary>
+        public static bool IsColour(Field f) => f.Spec.FieldType == "field_colour";
+
         public static bool IsDropdown(Field f)
             => f.Spec.FieldType == "field_dropdown" || f.Spec.FieldType == "field_variable";
 
@@ -68,6 +71,11 @@ namespace Blockly.Editing
             {
                 value = input;
                 return input != null;                       // existence is checked against the workspace in SetValue
+            }
+            if (field.Spec.FieldType == "field_colour")
+            {
+                value = Colour.Normalize(input);                // anything that is not #rgb or #rrggbb is refused
+                return value != null;
             }
             if (field.Spec.FieldType != "field_number")
             {
