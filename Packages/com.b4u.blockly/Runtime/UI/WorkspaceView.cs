@@ -423,6 +423,7 @@ namespace Blockly.UI
 
         void LateUpdate()
         {
+            UpdateGrid();
             CheckLongPress(Time.unscaledTime);
             if (lastEdgeScale < 0f) return;
             float scale = CurrentEdgeScale();
@@ -443,9 +444,32 @@ namespace Blockly.UI
             if (workspace != null && Spawner == null) Rebuild();      // the flyout is drawn again by the toolbox, which also puts its button back
         }
 
+        // ------------------------------------------------------------------ grid
+        WorkspaceGrid grid;
+        public WorkspaceGrid Grid => grid;
+
+        /// <summary>Draws the grid of the theme behind the blocks (main workspaces only) and keeps it in step with panning and zoom.</summary>
+        public void UpdateGrid()
+        {
+            float spacing = Spawner == null ? BlockStyle.GridSpacing : 0f;
+            if (spacing <= 0f)
+            {
+                if (grid != null) grid.gameObject.SetActive(false);
+                return;
+            }
+            if (grid == null)
+            {
+                if (!(transform.parent is RectTransform viewport)) return;
+                grid = WorkspaceGrid.Create(viewport);
+            }
+            grid.gameObject.SetActive(true);
+            grid.Apply(spacing, BlockStyle.GridColour, BlockStyle.GridDot, ((RectTransform)transform).anchoredPosition, Zoom);
+        }
+
         void OnThemeChanged()
         {
             if (this == null) { BlockStyle.ThemeChanged -= OnThemeChanged; return; }   // destroyed without OnDestroy (EditMode)
+            UpdateGrid();
             if (measureTemplate != null) { Configure(measureTemplate); measurer.Clear(); measuredVersion = BlockStyle.Version; }
             Rebuild();
         }
@@ -826,7 +850,7 @@ namespace Blockly.UI
             if (IsEditingField) SubmitFieldEdit(fieldInput.text);          // accept what was typed before moving things around
             string before = stateBefore ?? SnapshotForUndo();
             EnsureMeasurer();
-            var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer));
+            var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer)) { GridSpacing = Spawner == null && BlockStyle.GridSnap ? BlockStyle.GridSpacing : 0f };
             if (!d.Begin(block, isNew)) return false;
             dragger = d;
             dragBefore = before;

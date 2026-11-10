@@ -437,5 +437,43 @@ namespace Blockly.Tests
             Assert.AreEqual(saved, WorkspaceJson.Save(reloaded));
             Assert.Greater(spawned, 10, name); Assert.Greater(deleted, 5, name); Assert.Greater(connectedNew, 0, name + ": some spawned blocks should have snapped in");
         }
+
+        // ---------------------------------------------------------------- grid
+        [Test]
+        public void WithAGridABlockMovesInStepsAndLandsOnIt()
+        {
+            var env = FromXml("<block type=\"text_print\" x=\"13\" y=\"7\"></block>");
+            env.Dragger.GridSpacing = 20f;
+            var b = env.Top(0);
+            Assert.IsTrue(env.Dragger.Begin(b));
+            env.Dragger.MoveTo(52, 71);
+            Assert.AreEqual(60, b.X); Assert.AreEqual(80, b.Y);
+            env.Dragger.MoveTo(49, 69);
+            Assert.AreEqual(40, b.X); Assert.AreEqual(60, b.Y);
+            Assert.AreEqual(DropOutcome.Moved, env.Dragger.End());
+            Assert.AreEqual(40, b.X); Assert.AreEqual(60, b.Y);
+        }
+
+        [Test]
+        public void MovingByAnAmountKeepsAddingUpUnderAGrid()
+        {
+            var env = FromXml("<block type=\"text_print\" x=\"0\" y=\"0\"></block>");
+            env.Dragger.GridSpacing = 20f;
+            var b = env.Top(0);
+            env.Dragger.Begin(b);
+            for (int i = 0; i < 5; i++) env.Dragger.MoveBy(6, 0);          // 30 in all: more than one step
+            Assert.AreEqual(40, b.X);                                       // 30 / 20 rounds to 2 steps
+            Assert.AreEqual(0, b.Y);
+        }
+
+        [Test]
+        public void WithoutAGridTheBlockGoesWhereItIsPut()
+        {
+            var env = FromXml("<block type=\"text_print\" x=\"0\" y=\"0\"></block>");
+            var b = env.Top(0);
+            env.Dragger.Begin(b);
+            env.Dragger.MoveTo(13.5, 7.25);
+            Assert.AreEqual(13.5, b.X); Assert.AreEqual(7.25, b.Y);
+        }
     }
 }

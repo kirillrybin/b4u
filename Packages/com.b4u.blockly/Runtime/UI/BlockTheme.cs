@@ -149,6 +149,14 @@ namespace Blockly.UI
         [Header("Interface (Playground, toolbox, menus, dialogs)")]
         public Color AppBackground = new Color(0.17f, 0.17f, 0.2f);
         public Color WorkspaceBackground = new Color(0.97f, 0.97f, 0.97f);
+        [Tooltip("Distance between the points of the workspace grid, in workspace units. 0 draws no grid.")]
+        public float GridSpacing = 0f;
+        [Tooltip("Colour of the grid points.")]
+        public Color GridColour = new Color(0f, 0f, 0f, 0.22f);
+        [Tooltip("Size of a grid point, in workspace units.")]
+        public float GridDot = 2f;
+        [Tooltip("With a grid, a block that is dropped on its own lands on the grid (a block that snaps to another one is not moved).")]
+        public bool GridSnap = true;
         public Color ToolbarBackground = new Color(0.17f, 0.17f, 0.2f);
         public Color ToolboxBackground = new Color(0.22f, 0.22f, 0.26f);
         [Tooltip("Toolbox colour while a block is dragged over it (the trash).")]

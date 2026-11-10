@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Blockly.UI
 {
     /// <summary>
-    /// Ready-made themes that come with the package: "Dark" (a dark workspace) and "High Contrast" (heavy white outlines on black).
+    /// Ready-made themes that come with the package: "Dark" (a dark workspace with a grid) and "High Contrast" (heavy white outlines on black).
     /// They are in <see cref="BlockThemeCatalog"/> from the start of the app; <see cref="Dark"/> and <see cref="HighContrast"/> build
     /// a fresh copy to start your own theme from.
     /// </summary>
@@ -33,6 +33,8 @@ namespace Blockly.UI
             t.ToolboxBackground = Hex("#1d2027");
             t.FlyoutBackground = Hex("#22262e");
             t.WorkspaceBackground = Hex("#2a2e37");
+            t.GridSpacing = 24f;                       // a dotted grid; blocks dropped on their own land on it
+            t.GridColour = new Color(1f, 1f, 1f, 0.14f);
             t.ConsoleBackground = Hex("#101216");
             t.ConsoleText = Hex("#d6d9e0");
             t.ButtonColour = Hex("#3a3f4c");

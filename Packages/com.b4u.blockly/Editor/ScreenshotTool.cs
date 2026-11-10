@@ -58,6 +58,13 @@ namespace Blockly.EditorTools
                 if (Arg("-blocklySlow") == "1") controller.ToggleSlow();
                 if (Arg("-blocklyCode") == "1") controller.SetCodeVisible(true);
                 if (Arg("-blocklyCodeLanguage") != null) { controller.SetCodeVisible(true); controller.CodePanel.PickLanguage(Arg("-blocklyCodeLanguage")); }
+                if (Arg("-blocklyTheme") != null) 
+                {
+                    BuiltInThemes.Register(); BlockThemeCatalog.Select(Arg("-blocklyTheme"));
+                    foreach (var skin in UnityEngine.Object.FindObjectsByType<PlaygroundSkin>(FindObjectsSortMode.None)) skin.Apply();     // edit mode does not run OnEnable
+                    controller.View.UpdateGrid();
+                    Canvas.ForceUpdateCanvases();
+                }
                 if (Arg("-blocklySearch") != null) controller.Toolbox.Search(Arg("-blocklySearch"));
                 if (Arg("-blocklyFlyout") != null) controller.Toolbox.SelectCategory(int.Parse(Arg("-blocklyFlyout")));
 
