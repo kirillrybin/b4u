@@ -360,5 +360,33 @@ namespace Blockly.UI.Tests
             Assert.IsFalse(text.richText);
             StringAssert.Contains("<b>bold</b>", text.text);
         }
+
+        const string FailingProgram = "<xml xmlns=\"https://developers.google.com/blockly/xml\"><block type=\"procedures_callnoreturn\"><mutation name=\"nope\"></mutation></block></xml>";
+
+        [Test]
+        public void AnErrorShowsAHiddenConsoleAgainWithARedStatus()
+        {
+            var c = Open();
+            Assert.IsTrue(c.LoadText(FailingProgram, "failing", null, false));
+            c.SetConsoleVisible(false);
+            Assert.IsFalse(c.ConsoleVisible);
+            c.Run(); RunToEnd(c);
+            Assert.IsTrue(c.ConsoleVisible, "an error is never left unseen");
+            StringAssert.StartsWith("Error: ", c.Console.StatusText);
+            StringAssert.Contains("nope is not defined", c.Console.StatusText);
+            var label = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == "ConsoleToggle").GetComponentInChildren<TMP_Text>();
+            Assert.AreEqual("Console: on", label.text);
+        }
+
+        [Test]
+        public void AProgramThatEndsWellLeavesAHiddenConsoleHidden()
+        {
+            var c = Open();
+            ShowByName(c, "text");
+            c.SetConsoleVisible(false);
+            c.Run(); RunToEnd(c);
+            Assert.IsFalse(c.ConsoleVisible);
+            Assert.AreEqual("Finished", c.Console.StatusText);
+        }
     }
 }
