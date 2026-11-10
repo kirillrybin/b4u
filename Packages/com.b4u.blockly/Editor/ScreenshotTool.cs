@@ -57,6 +57,7 @@ namespace Blockly.EditorTools
                 if (!controller.ShowByName(name)) throw new ArgumentException("no such program: " + name);
                 if (Arg("-blocklySlow") == "1") controller.ToggleSlow();
                 if (Arg("-blocklyCode") == "1") controller.SetCodeVisible(true);
+                if (Arg("-blocklyCodeLanguage") != null) { controller.SetCodeVisible(true); controller.CodePanel.PickLanguage(Arg("-blocklyCodeLanguage")); }
                 if (Arg("-blocklyFlyout") != null) controller.Toolbox.SelectCategory(int.Parse(Arg("-blocklyFlyout")));
 
                 int steps = int.Parse(Arg("-blocklySteps", "0"));
