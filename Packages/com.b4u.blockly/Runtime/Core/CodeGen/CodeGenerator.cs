@@ -61,15 +61,19 @@ namespace Blockly
         /// <summary>The languages the Playground offers, in order.</summary>
         public static IReadOnlyList<CodeLanguage> All { get { Ensure(); return all; } }
 
-        static CodeLanguage javaScript;
+        static CodeLanguage javaScript, python;
         /// <summary>JavaScript, shared; safe to add custom blocks to.</summary>
         public static CodeLanguage JavaScript { get { Ensure(); return javaScript; } }
+        /// <summary>Python 3, shared; safe to add custom blocks to.</summary>
+        public static CodeLanguage Python { get { Ensure(); return python; } }
 
         static void Ensure()
         {
             if (javaScript != null) return;
             javaScript = JavaScriptGenerators.Create();
+            python = PythonGenerators.Create();
             all.Add(javaScript);
+            all.Add(python);
         }
 
         /// <summary>Adds a language to <see cref="All"/>.</summary>
@@ -98,6 +102,22 @@ namespace Blockly
         readonly Dictionary<string, string> procedureNames = new Dictionary<string, string>();
         readonly Dictionary<string, string> helperNames = new Dictionary<string, string>();
         readonly List<string> definitions = new List<string>();
+        readonly List<string> imports = new List<string>();
+        readonly List<List<string>> scopes = new List<List<string>>();
+
+        /// <summary>The import lines the code needs, in the order they were asked for (for languages that have them).</summary>
+        public IReadOnlyList<string> Imports => imports;
+        public void AddImport(string line) { if (!imports.Contains(line)) imports.Add(line); }
+
+        /// <summary>Starts collecting the variables a piece of code (a procedure body) uses; <see cref="EndScope"/> returns them.</summary>
+        public void BeginScope() => scopes.Add(new List<string>());
+
+        public List<string> EndScope()
+        {
+            var s = scopes[scopes.Count - 1];
+            scopes.RemoveAt(scopes.Count - 1);
+            return s;
+        }
 
         internal CodeGenerator(CodeLanguage language, Workspace workspace, CodeOptions options)
         {
@@ -137,6 +157,7 @@ namespace Blockly
                 variableNames[key] = name;
             }
             if (!variableOrder.Contains(key)) variableOrder.Add(key);
+            foreach (var scope in scopes) if (!scope.Contains(name)) scope.Add(name);
             return name;
         }
 

@@ -103,6 +103,7 @@ namespace Blockly.UI
             Subscribe();
             ApplyTheme();
             Localize();
+            RestoreLanguage();
             languageLabel.text = Language.Name;
         }
 
@@ -154,11 +155,27 @@ namespace Blockly.UI
             menu = DropdownMenu.Open(canvas, point, 150f, items, item => PickLanguage(item.Value));
         }
 
-        /// <summary>Switches to the language called <paramref name="name"/>.</summary>
+        /// <summary>The PlayerPrefs key that keeps the language the user chose last.</summary>
+        public const string PrefsKey = "Blockly.CodeLanguage";
+
+        /// <summary>Switches to the language called <paramref name="name"/> and remembers the choice for the next session.</summary>
         public bool PickLanguage(string name)
         {
-            foreach (var l in CodeLanguage.All) if (l.Name == name) { Language = l; return true; }
+            foreach (var l in CodeLanguage.All)
+                if (l.Name == name)
+                {
+                    Language = l;
+                    try { PlayerPrefs.SetString(PrefsKey, name); PlayerPrefs.Save(); }
+                    catch (Exception e) when (e is InvalidOperationException || e is UnauthorizedAccessException) { }   // a convenience, never a failure
+                    return true;
+                }
             return false;
+        }
+
+        void RestoreLanguage()
+        {
+            string saved = PlayerPrefs.GetString(PrefsKey, null);
+            foreach (var l in CodeLanguage.All) if (l.Name == saved) language = l;
         }
 
         // ------------------------------------------------------------ look
