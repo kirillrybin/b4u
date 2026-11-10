@@ -123,19 +123,20 @@ namespace Blockly.EditorTools
             // --- toolbar ---
             var bar = Anchored("Toolbar", ui, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, ToolbarHeight));
             bar.gameObject.AddComponent<Image>().color = Dark;
-            var prev = Button("Prev", bar, "<", 8, 56);
-            var next = Button("Next", bar, ">", 70, 56);
-            var run = Button("Run", bar, "Run", 150, 80);
-            var step = Button("Step", bar, "Step", 236, 80);
-            var stop = Button("Stop", bar, "Stop", 322, 80);
-            var slow = Button("Slow", bar, "Slow: off", 408, 120);
-            var undo = Button("Undo", bar, "Undo", 546, 84);
-            var redo = Button("Redo", bar, "Redo", 636, 84);
-            var file = Button("File", bar, "File", 736, 74);
-            var consoleToggle = Button("ConsoleToggle", bar, "Console: on", 822, 140);
-            var themeButton = Button("Theme", bar, "Theme: Classic", 972, 170);
+            var prev = Button("Prev", bar, "<", 8, 52);
+            var next = Button("Next", bar, ">", 64, 52);
+            var run = Button("Run", bar, "Run", 124, 74);
+            var step = Button("Step", bar, "Step", 204, 74);
+            var stop = Button("Stop", bar, "Stop", 284, 74);
+            var slow = Button("Slow", bar, "Slow: off", 364, 112);
+            var undo = Button("Undo", bar, "Undo", 482, 76);
+            var redo = Button("Redo", bar, "Redo", 564, 76);
+            var file = Button("File", bar, "File", 646, 66);
+            var consoleToggle = Button("ConsoleToggle", bar, "Console: on", 718, 135);
+            var themeButton = Button("Theme", bar, "Theme: Classic", 859, 167);
+            var codeButton = Button("CodeToggle", bar, "Code", 1032, 76);
             var title = Label("Title", bar, 18, 36, TextAlignmentOptions.MidlineLeft);
-            Place(title.rectTransform, 1150, 6, 122, 36);
+            Place(title.rectTransform, 1114, 6, 158, 36);
 
             var controller = new GameObject("Playground").AddComponent<PlaygroundController>();
             controller.Configure(programs, view, consoleView, title, slow.GetComponentInChildren<TMP_Text>(), toolboxView, undo, redo, (RectTransform)file.transform);
@@ -148,9 +149,10 @@ namespace Blockly.EditorTools
             controller.SetConsoleToggleLabel(consoleToggle.GetComponentInChildren<TMP_Text>());
             Wire(themeButton, controller.ShowThemeMenu);
             controller.SetThemeButton((RectTransform)themeButton.transform, themeButton.GetComponentInChildren<TMP_Text>());
+            Wire(codeButton, controller.ToggleCode);
 
             var skin = canvasGo.AddComponent<PlaygroundSkin>();
-            var buttons = new[] { prev, next, run, step, stop, slow, undo, redo, file, consoleToggle, themeButton };
+            var buttons = new[] { prev, next, run, step, stop, slow, undo, redo, file, consoleToggle, themeButton, codeButton };
             var toolbarTexts = new List<TMP_Text> { title };
             foreach (var b in buttons) toolbarTexts.Add(b.GetComponentInChildren<TMP_Text>());
             skin.Configure(appBackground, scroll.GetComponent<Image>(), bar.GetComponent<Image>(), panel.GetComponent<Image>(), flyoutPanel.GetComponent<Image>(),
@@ -159,7 +161,7 @@ namespace Blockly.EditorTools
             var layout = canvasGo.AddComponent<PlaygroundLayout>();
             layout.Configure(scaler, ui, bar,
                 new[] { (RectTransform)prev.transform, (RectTransform)next.transform, (RectTransform)run.transform, (RectTransform)step.transform, (RectTransform)stop.transform,
-                        (RectTransform)slow.transform, (RectTransform)undo.transform, (RectTransform)redo.transform, (RectTransform)file.transform, (RectTransform)consoleToggle.transform, (RectTransform)themeButton.transform },
+                        (RectTransform)slow.transform, (RectTransform)undo.transform, (RectTransform)redo.transform, (RectTransform)file.transform, (RectTransform)consoleToggle.transform, (RectTransform)themeButton.transform, (RectTransform)codeButton.transform },
                 title.rectTransform, scroll, toolboxRt, flyoutPanel, panel);
 
             Directory.CreateDirectory(Root);
