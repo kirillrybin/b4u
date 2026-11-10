@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, skin/figma]
+  pull_request:
+
+jobs:
+  core:
+    name: Blockly.Core tests (.NET, Node, Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # the tests export every fixture program to JavaScript and Python, run the code and compare its output with real Blockly's
+      - name: Run the tests
+        run: dotnet test dev/Core.Tests/Core.Tests.csproj --configuration Release --logger "console;verbosity=normal"
