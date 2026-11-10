@@ -25,6 +25,12 @@ namespace Blockly.Editing
         /// <summary>How far a displaced block is pushed away when it has nowhere to go.</summary>
         public const float BumpDistance = 32f;
 
+        /// <summary>
+        /// Distance between the points of a grid the dragged block's top-left corner lands on (0: no grid). The block moves in steps of
+        /// the grid while it is dragged; one that snaps to another block joins it instead.
+        /// </summary>
+        public float GridSpacing;
+
         readonly Workspace workspace;
         readonly BlockLayouter layouter;
 
@@ -34,6 +40,7 @@ namespace Blockly.Editing
         LayoutResult staticLayout;
         Connection originalParent;               // parent-side connection the block was attached to, if any
         double startX, startY;
+        double rawX, rawY;                       // where the pointer put the block, before the grid
 
         public BlockDragger(Workspace workspace, BlockLayouter layouter)
         {
@@ -77,6 +84,7 @@ namespace Blockly.Editing
             block.X = startX; block.Y = startY;
 
             dragged = block;
+            rawX = startX; rawY = startY;
             draggedSet = new HashSet<Block>(block.Descendants());
             lastInChain = block;
             while (lastInChain.NextBlock != null) lastInChain = lastInChain.NextBlock;
@@ -88,15 +96,18 @@ namespace Blockly.Editing
         }
 
         // ------------------------------------------------------------------ move
-        public void MoveBy(double dx, double dy) => MoveTo(dragged.X + dx, dragged.Y + dy);
+        public void MoveBy(double dx, double dy) => MoveTo(rawX + dx, rawY + dy);
 
         /// <summary>Moves the block's top-left corner to workspace position (x, y) and refreshes the snap candidate.</summary>
         public void MoveTo(double x, double y)
         {
             if (!IsDragging) return;
-            dragged.X = x; dragged.Y = y;
+            rawX = x; rawY = y;
+            dragged.X = OnGrid(x); dragged.Y = OnGrid(y);
             Candidate = FindCandidate();
         }
+
+        double OnGrid(double v) => GridSpacing > 0f ? Math.Round(v / GridSpacing) * GridSpacing : v;
 
         SnapCandidate? FindCandidate()
         {

@@ -62,6 +62,10 @@ namespace Blockly.UI
         public static float FontSize => Theme.FontSize;
         public static Color AppBackground => Theme.AppBackground;
         public static Color WorkspaceBackground => Theme.WorkspaceBackground;
+        public static float GridSpacing => Mathf.Max(0f, Theme.GridSpacing);
+        public static Color GridColour => Theme.GridColour;
+        public static float GridDot => Mathf.Max(0.5f, Theme.GridDot);
+        public static bool GridSnap => Theme.GridSnap;
         public static Color ToolbarBackground => Theme.ToolbarBackground;
         public static Color ToolboxBackground => Theme.ToolboxBackground;
         public static Color ToolboxDeleteHover => Theme.ToolboxDeleteHover;
