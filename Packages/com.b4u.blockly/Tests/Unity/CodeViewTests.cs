@@ -14,12 +14,13 @@ namespace Blockly.UI.Tests
         [SetUp]
         public void SetUp()
         {
+            PlayerPrefs.DeleteKey(CodeView.PrefsKey);
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Playground/Playground.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
             c = Object.FindFirstObjectByType<PlaygroundController>();
             c.ShowByName("if_else");
         }
 
-        [TearDown] public void TearDown() { BlockStyle.Theme = null; Loc.Language = Loc.English; }
+        [TearDown] public void TearDown() { BlockStyle.Theme = null; Loc.Language = Loc.English; PlayerPrefs.DeleteKey(CodeView.PrefsKey); }
 
         [Test]
         public void TheCodeButtonIsInTheToolbarAndShowsAndHidesThePanel()
@@ -43,6 +44,27 @@ namespace Blockly.UI.Tests
             StringAssert.StartsWith("var x;", code.Code);
             StringAssert.Contains("console.log('done');", code.ShownText);
             Assert.AreEqual("", code.Error);
+        }
+
+        [Test]
+        public void ThePythonLanguageCanBePickedAndIsRemembered()
+        {
+            c.SetCodeVisible(true);
+            var code = c.CodePanel;
+            Assert.IsTrue(code.PickLanguage("Python"));
+            Assert.AreEqual("Python", code.LanguageName);
+            StringAssert.StartsWith("x = None", code.Code);
+            StringAssert.Contains("print('done')", code.ShownText);
+            Assert.AreEqual("Python", code.LanguageButton.GetComponentInChildren<TMP_Text>().text);
+            Assert.AreEqual("Python", PlayerPrefs.GetString(CodeView.PrefsKey));
+            Assert.IsFalse(code.PickLanguage("Cobol"));
+
+            Object.DestroyImmediate(code.gameObject);                       // a new session builds the panel again
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Playground/Playground.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+            c = Object.FindFirstObjectByType<PlaygroundController>();
+            c.ShowByName("if_else");
+            c.SetCodeVisible(true);
+            Assert.AreEqual("Python", c.CodePanel.LanguageName);
         }
 
         [Test]
