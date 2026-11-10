@@ -55,8 +55,69 @@ namespace Blockly.UI.Tests
         {
             tb.SelectCategory(0); tb.CloseFlyout();
             var names = tb.transform.Cast<Transform>().First(t => t.name == "Categories").Cast<Transform>().Select(t => t.name).ToArray();
-            Assert.AreEqual(new[] { "Logic", "Loops", "Math", "Text", "Lists", "Colour", "Variables", "Functions" }, names);
+            Assert.AreEqual(new[] { "Logic", "Loops", "Math", "Text", "Lists", "Colour", "Variables", "Functions", "Search" }, names);
             Assert.IsFalse(tb.IsFlyoutOpen);
+        }
+
+        // ---------------------------------------------------------------- search
+        [Test]
+        public void TheSearchButtonIsTheLastOneAndOpensAFlyoutWithAField()
+        {
+            Assert.AreEqual(tb.Definition.Categories.Count, tb.SearchIndex);
+            Assert.IsFalse(tb.IsSearchOpen);
+            tb.ToggleCategory(tb.SearchIndex);
+            Assert.IsTrue(tb.IsSearchOpen);
+            Assert.NotNull(tb.SearchInput);
+            Assert.IsTrue(tb.SearchInput.gameObject.activeInHierarchy);
+            Assert.AreEqual(0, tb.FlyoutView.Layout.Boxes.Count, "no words, no blocks");
+            tb.ToggleCategory(tb.SearchIndex);
+            Assert.IsFalse(tb.IsFlyoutOpen);
+        }
+
+        [Test]
+        public void TypingInTheFieldFiltersTheBlocksOfTheFlyout()
+        {
+            tb.ToggleCategory(tb.SearchIndex);
+            tb.SearchInput.text = "print";
+            Assert.AreEqual("print", tb.SearchQuery);
+            var types = tb.FlyoutView.Layout.Boxes.Select(b => b.Block).Where(b => !b.IsShadow && b.Parent == null).Select(b => b.Type).ToArray();
+            CollectionAssert.Contains(types, "text_print");
+            CollectionAssert.DoesNotContain(types, "controls_if");
+            tb.SearchInput.text = "qwertyuiop";
+            Assert.AreEqual("Nothing found", tb.SearchHintText);
+            Assert.AreEqual(0, tb.FlyoutView.Layout.Boxes.Count);
+            tb.SearchInput.text = "";
+            Assert.AreEqual("", tb.SearchHintText);
+        }
+
+        [Test]
+        public void SearchOpensTheFlyoutByCodeAndTheFoundBlockCanBeDraggedOut()
+        {
+            tb.Search("print");
+            Assert.IsTrue(tb.IsSearchOpen);
+            Assert.AreEqual("print", tb.SearchInput.text);
+            var target = FlyoutBlock("text_print");
+            int before = main.Workspace.TopBlocks.Count;
+            var ped = PressOnFlyoutBlock(target);
+            Assert.IsTrue(tb.TrySpawn(target.Block, ped, tb.FlyoutView));
+            main.OnEndDrag(ped);
+            Assert.AreEqual(before + 1, main.Workspace.TopBlocks.Count);
+        }
+
+        [Test]
+        public void TheFieldAndTheResultsAreTranslatedAndKeepTheirPlaceWhenTheProgramChanges()
+        {
+            tb.Search("print");
+            Loc.Language = Loc.Pick("ru");
+            try
+            {
+                Assert.AreEqual("Поиск блоков...", tb.SearchInput.placeholder.GetComponent<TMP_Text>().text);
+                var before = tb.FlyoutView.Layout.Boxes.Count;
+                main.NotifyEdited();                                    // an edit refreshes the open flyout, the words stay
+                Assert.AreEqual("print", tb.SearchQuery);
+                Assert.AreEqual(before, tb.FlyoutView.Layout.Boxes.Count);
+            }
+            finally { Loc.Language = Loc.English; }
         }
 
         [Test]
