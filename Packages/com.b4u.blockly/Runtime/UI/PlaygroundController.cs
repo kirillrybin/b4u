@@ -176,6 +176,7 @@ namespace Blockly.UI
                 var scroll = view.GetComponentInParent<UnityEngine.UI.ScrollRect>();
                 if (scroll == null) return;
                 codeView = CodeView.Create((RectTransform)scroll.transform);
+                codeView.SaveRequested += ExportCode;
             }
             if (codeView == null) return;
             codeView.Show(view.Workspace);
@@ -483,6 +484,23 @@ namespace Blockly.UI
                 return;
             }
             try { Status(Loc.T("Exported to {0}", Exchange.Export(name, json)), false); }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status(Loc.T("Cannot export: {0}", e.Message), true); }
+        }
+
+        /// <summary>
+        /// Gives the code of the program as a file named after the program (<c>.js</c>, <c>.py</c>): a download in a browser, otherwise a file in
+        /// <see cref="Exchange"/>. The Save button of the code panel calls this.
+        /// </summary>
+        public void ExportCode(CodeLanguage language, string code)
+        {
+            string file = ProgramNames.Sanitize(savedName ?? Loc.T("program")) + language.FileExtension;
+            if (PlatformFileTransfer.UsesBrowser)
+            {
+                PlatformFileTransfer.Download(file, code);
+                Status("Downloaded " + file, false);
+                return;
+            }
+            try { Status(Loc.T("Exported to {0}", Exchange.Export(savedName ?? Loc.T("program"), code, language.FileExtension)), false); }
             catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Status(Loc.T("Cannot export: {0}", e.Message), true); }
         }
 

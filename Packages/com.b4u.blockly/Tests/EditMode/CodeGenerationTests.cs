@@ -181,6 +181,7 @@ def show(x):
         public void BothLanguagesAreOffered()
         {
             CollectionAssert.AreEqual(new[] { "JavaScript", "Python" }, CodeLanguage.All.Select(l => l.Name).ToArray());
+            CollectionAssert.AreEqual(new[] { ".js", ".py" }, CodeLanguage.All.Select(l => l.FileExtension).ToArray());
         }
 
         [Test]

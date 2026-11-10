@@ -24,10 +24,16 @@ namespace Blockly.Storage
         }
 
         /// <summary>Writes <paramref name="text"/> to <c>name.json</c> (the name made safe as a file name) and returns the full path.</summary>
-        public string Export(string name, string text)
+        public string Export(string name, string text) => Export(name, text, ".json");
+
+        /// <summary>
+        /// Writes <paramref name="text"/> to <c>name</c> + <paramref name="extension"/> (".js" for exported code). Only programs (.json, .xml)
+        /// are offered again by <see cref="List"/>, so exported code stays in the folder for the user to take.
+        /// </summary>
+        public string Export(string name, string text, string extension)
         {
             Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, ProgramNames.Sanitize(name) + ".json");
+            string path = Path.Combine(directory, ProgramNames.Sanitize(name) + extension);
             string temp = path + ".tmp";
             File.WriteAllText(temp, text ?? "");
             if (File.Exists(path)) File.Delete(path);
