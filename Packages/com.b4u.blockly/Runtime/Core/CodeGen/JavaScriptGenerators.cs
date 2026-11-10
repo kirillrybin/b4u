@@ -29,7 +29,7 @@ namespace Blockly
 
         internal static CodeLanguage Create()
         {
-            var l = new CodeLanguage("JavaScript") { Indent = "  ", DefaultPrint = "console.log", Quote = Quote };
+            var l = new CodeLanguage("JavaScript") { Indent = "  ", FileExtension = ".js", DefaultPrint = "console.log", Quote = Quote };
             foreach (var w in ReservedWords) l.Reserved.Add(w);
             l.Assemble = (g, variables, defs, code) =>
             {
