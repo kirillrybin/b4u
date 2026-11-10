@@ -21,6 +21,9 @@ namespace Blockly.UI
         [SerializeField] WorkspaceView main;
 
         ToolboxDefinition definition;
+        // the categories of the definition plus the Search one at the end, which is not part of any toolbox file
+        readonly List<ToolboxCategory> categories = new List<ToolboxCategory>();
+        ToolboxCategory searchCategory;
         readonly List<Image> buttons = new List<Image>();
         readonly List<Image> icons = new List<Image>();            // null where a category has no icon
         readonly List<TMP_Text> labels = new List<TMP_Text>();
@@ -111,8 +114,8 @@ namespace Blockly.UI
         /// <summary>Whether some category has, or has lost, its picture since the buttons were built.</summary>
         bool IconsChanged()
         {
-            for (int i = 0; i < definition.Categories.Count && i < icons.Count; i++)
-                if ((BlockImages.Get(IconKey(definition.Categories[i])) != null) != (icons[i] != null)) return true;
+            for (int i = 0; i < categories.Count && i < icons.Count; i++)
+                if ((BlockImages.Get(IconKey(categories[i])) != null) != (icons[i] != null)) return true;
             return false;
         }
 
@@ -121,6 +124,7 @@ namespace Blockly.UI
             if (definition != null) return;
             Subscribe();
             definition = StandardBlockSet.LoadToolbox();
+            ListCategories();
             if (flyoutView != null) flyoutView.Spawner = this;
             if (main != null)
             {
@@ -146,8 +150,16 @@ namespace Blockly.UI
         {
             Initialise();
             definition = def;
+            ListCategories();
             BuildButtons();
             CloseFlyout();
+        }
+
+        void ListCategories()
+        {
+            categories.Clear();
+            categories.AddRange(definition.Categories);
+            categories.Add(searchCategory ?? (searchCategory = new ToolboxCategory { Name = "Search", ColourHex = "#8c8c8c", Kind = CategoryKind.Search }));
         }
 
         // ------------------------------------------------------------------ category buttons
@@ -162,10 +174,10 @@ namespace Blockly.UI
             buttons.Clear(); icons.Clear(); labels.Clear();
 
             float y = 0;
-            for (int i = 0; i < definition.Categories.Count; i++)
+            for (int i = 0; i < categories.Count; i++)
             {
                 int index = i;
-                var cat = definition.Categories[i];
+                var cat = categories[i];
                 var go = new GameObject(cat.Name, typeof(RectTransform), typeof(Image), typeof(Button));
                 var rt = (RectTransform)go.transform;
                 rt.SetParent(categoryList, false);
@@ -383,7 +395,7 @@ namespace Blockly.UI
         {
             for (int i = 0; i < buttons.Count; i++)
             {
-                var cat = definition.Categories[i];
+                var cat = categories[i];
                 bool on = i == selected;
                 var baseColour = BlockStyle.Parse(cat.ColourHex);
                 var plate = on ? BlockStyle.CategoryPlateSelected : BlockStyle.CategoryPlate;
@@ -414,19 +426,129 @@ namespace Blockly.UI
         public void SelectCategory(int index)
         {
             Initialise();
-            if (main == null || main.Workspace == null || index < 0 || index >= definition.Categories.Count) return;
+            if (main == null || main.Workspace == null || index < 0 || index >= categories.Count) return;
+            bool opening = !IsFlyoutOpen || selected != index;
             selected = index;
+            var category = categories[index];
+            bool searching = category.Kind == CategoryKind.Search;
+            if (searching) category.Blocks = ToolboxSearch.Find(definition, main.Workspace, searchQuery);
             flyoutPanel.gameObject.SetActive(true);                 // before measuring: TMP needs an active hierarchy
-            current = Flyout.Build(definition.Categories[index], main.Workspace, flyoutView.Measurer);
+            current = Flyout.Build(category, main.Workspace, flyoutView.Measurer);
             flyoutView.SetWorkspace(current.Workspace);
             var rt = (RectTransform)flyoutView.transform;
             float pad = BlockStyle.FlyoutPadding;
             rt.sizeDelta += new Vector2(2 * pad, 2 * pad);           // padding inside the scroll area
             rt.anchoredPosition = new Vector2(pad, -pad);
-            ShowFlyoutTitle(Loc.T(definition.Categories[index].Name));
+            ShowFlyoutTitle(Loc.T(category.Name));
+            ShowSearchField(searching, searching ? category.Blocks.Count : 0, opening);
             ApplyStripCorners();
             if (current.HeaderHeight > 0) BuildCreateVariableButton();
             HighlightSelected();
+        }
+
+        // ------------------------------------------------------------------ search
+        const float SearchHeight = 34f, SearchGap = 6f;
+        string searchQuery = "";
+        TMP_InputField searchInput;
+        TMP_Text searchPlaceholder, searchHint;
+
+        /// <summary>The index of the Search category (the last button).</summary>
+        public int SearchIndex => categories.Count - 1;
+        /// <summary>The words the Search category looks for.</summary>
+        public string SearchQuery => searchQuery;
+        public TMP_InputField SearchInput => searchInput;
+        public bool IsSearchOpen => IsFlyoutOpen && selected >= 0 && selected == SearchIndex;
+        /// <summary>The text under the search field when nothing was found (empty otherwise).</summary>
+        public string SearchHintText => searchHint != null && searchHint.gameObject.activeSelf ? searchHint.text : "";
+
+        /// <summary>Looks for blocks by their words and shows them in the flyout of the Search category (opened if it is not).</summary>
+        public void Search(string query)
+        {
+            Initialise();
+            searchQuery = query ?? "";
+            if (searchInput != null && searchInput.text != searchQuery) searchInput.SetTextWithoutNotify(searchQuery);
+            if (main == null || main.Workspace == null) return;
+            SelectCategory(SearchIndex);
+        }
+
+        void OnSearchTyped(string text)
+        {
+            searchQuery = text ?? "";
+            if (IsSearchOpen) SelectCategory(SearchIndex);
+        }
+
+        void ShowSearchField(bool show, int results, bool focus)
+        {
+            if (!show)
+            {
+                if (searchInput != null) searchInput.gameObject.SetActive(false);
+                if (searchHint != null) searchHint.gameObject.SetActive(false);
+                return;
+            }
+            if (searchInput == null) BuildSearchField();
+            float titleHeight = BlockStyle.FlyoutTitle ? BlockStyle.FlyoutTitleHeight : 0f;
+            var rt = (RectTransform)searchInput.transform;
+            rt.anchoredPosition = new Vector2(0, -(titleHeight + SearchGap)); rt.sizeDelta = new Vector2(-16f, SearchHeight);
+            var scroll = flyoutPanel.GetComponent<ScrollRect>();
+            if (scroll != null && scroll.viewport != null)
+                scroll.viewport.offsetMax = new Vector2(scroll.viewport.offsetMax.x, -(titleHeight + SearchHeight + 2 * SearchGap));
+            searchInput.gameObject.SetActive(true);
+            if (searchInput.text != searchQuery) searchInput.SetTextWithoutNotify(searchQuery);
+            searchPlaceholder.text = Loc.T("Search blocks...");
+            bool none = results == 0 && searchQuery.Trim().Length > 0;
+            searchHint.gameObject.SetActive(none);
+            if (none) searchHint.text = Loc.T("Nothing found");
+            var hrt = searchHint.rectTransform;
+            hrt.anchoredPosition = new Vector2(0, -(titleHeight + SearchHeight + 3 * SearchGap));
+            if (focus && Application.isPlaying) { searchInput.Select(); searchInput.ActivateInputField(); }
+        }
+
+        void BuildSearchField()
+        {
+            var go = new GameObject("Search", typeof(RectTransform), typeof(Image));
+            go.SetActive(false);                                    // finish wiring before the input field enables
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(flyoutPanel, false);
+            rt.anchorMin = new Vector2(0, 1); rt.anchorMax = new Vector2(1, 1); rt.pivot = new Vector2(0.5f, 1);
+            var bg = go.GetComponent<Image>();
+            bg.color = new Color(1f, 1f, 1f, 0.95f);
+            UiShape.Round(bg, BlockStyle.ButtonCornerRadius);
+
+            var area = new GameObject("TextArea", typeof(RectTransform), typeof(RectMask2D));
+            var art = (RectTransform)area.transform;
+            art.SetParent(rt, false);
+            art.anchorMin = Vector2.zero; art.anchorMax = Vector2.one; art.offsetMin = new Vector2(10, 2); art.offsetMax = new Vector2(-10, -2);
+            var dark = new Color(0.1f, 0.1f, 0.12f);
+            TMP_Text MakeText(string name, Color colour)
+            {
+                var t = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+                var trt = (RectTransform)t.transform;
+                trt.SetParent(art, false);
+                trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.offsetMin = trt.offsetMax = Vector2.zero;
+                var text = t.GetComponent<TextMeshProUGUI>();
+                BlockStyle.ToolboxFont.Apply(text, 15); text.color = colour; text.alignment = TextAlignmentOptions.MidlineLeft;
+                text.textWrappingMode = TextWrappingModes.NoWrap; text.richText = false;
+                return text;
+            }
+            var typed = MakeText("Text", dark);
+            searchPlaceholder = MakeText("Placeholder", new Color(0.1f, 0.1f, 0.12f, 0.45f));
+            searchPlaceholder.fontStyle = FontStyles.Italic;
+
+            searchInput = go.AddComponent<TMP_InputField>();
+            searchInput.textViewport = art; searchInput.textComponent = typed; searchInput.placeholder = searchPlaceholder; searchInput.targetGraphic = bg;
+            searchInput.lineType = TMP_InputField.LineType.SingleLine; searchInput.richText = false;
+            searchInput.onValueChanged.AddListener(OnSearchTyped);
+
+            var hint = new GameObject("Hint", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var hrt = (RectTransform)hint.transform;
+            hrt.SetParent(flyoutPanel, false);
+            hrt.anchorMin = new Vector2(0, 1); hrt.anchorMax = new Vector2(1, 1); hrt.pivot = new Vector2(0.5f, 1);
+            hrt.sizeDelta = new Vector2(-16f, 24f);
+            searchHint = hint.GetComponent<TextMeshProUGUI>();
+            BlockStyle.ToolboxFont.Apply(searchHint, 15);
+            searchHint.color = BlockStyle.FlyoutTitleColour; searchHint.alignment = TextAlignmentOptions.MidlineLeft; searchHint.raycastTarget = false;
+            hint.SetActive(false);
+            go.SetActive(true);
         }
 
         /// <summary>The name of the open category above its blocks, when the theme asks for it; the blocks scroll below it.</summary>

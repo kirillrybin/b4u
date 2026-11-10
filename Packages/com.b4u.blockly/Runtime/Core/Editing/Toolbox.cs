@@ -5,7 +5,7 @@ using Blockly.Layout;
 
 namespace Blockly.Editing
 {
-    public enum CategoryKind { Static, Variables, Procedures }
+    public enum CategoryKind { Static, Variables, Procedures, Search }
 
     public sealed class ToolboxCategory
     {
