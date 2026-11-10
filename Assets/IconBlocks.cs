@@ -92,11 +92,12 @@ public sealed class IconBlocks : IBlockPackage
             { "variables",  ("variables",  Hex("#b04440"), Hex("#ff5a4e"), new Vector2(1, 1)) },
             { "text",       ("text",       Hex("#10966e"), Hex("#82f0be"), new Vector2(1, 1)) },
             { "functions",  ("functions",  Hex("#be28be"), Hex("#ff8cd2"), new Vector2(1, 1)) },
+            { "search",     ("search",     Hex("#5c6475"), Hex("#b9c0d0"), new Vector2(1, 0.5f)) },
         };
         var names = new Dictionary<string, string>
         {
             { "Events", "events" }, { "Moves", "actions" }, { "Loops", "actions" }, { "Logic", "control" },
-            { "Math", "operations" }, { "Lists", "sensors" }, { "Colour", "functions" }, { "Variables", "variables" }, { "Text", "text" }, { "Functions", "functions" },
+            { "Math", "operations" }, { "Lists", "sensors" }, { "Colour", "functions" }, { "Variables", "variables" }, { "Text", "text" }, { "Functions", "functions" }, { "Search", "search" },
         };
         foreach (var kv in names)
         {
