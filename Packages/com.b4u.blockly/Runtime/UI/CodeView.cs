@@ -17,7 +17,7 @@ namespace Blockly.UI
         const float HeaderHeight = 40f, Margin = 8f, ButtonHeight = 28f;
 
         TMP_Text body;
-        TMP_Text languageLabel, copyLabel, closeLabel;
+        TMP_Text languageLabel, copyLabel, saveLabel, closeLabel;
         Image panel;
         Image[] buttonImages;
         ScrollRect scroll;
@@ -27,6 +27,7 @@ namespace Blockly.UI
 
         public Button LanguageButton { get; private set; }
         public Button CopyButton { get; private set; }
+        public Button SaveButton { get; private set; }
         public Button CloseButton { get; private set; }
 
         /// <summary>The code of the last refresh; empty when the program could not be exported.</summary>
@@ -36,6 +37,9 @@ namespace Blockly.UI
         /// <summary>What the panel shows: the code, or the reason there is none.</summary>
         public string ShownText => body != null ? body.text : "";
         public string LanguageName => Language.Name;
+
+        /// <summary>Raised by the Save button with the language and the code to put in a file.</summary>
+        public event Action<CodeLanguage, string> SaveRequested;
 
         /// <summary>Raised when the panel is hidden by its close button.</summary>
         public event Action Closed;
@@ -75,12 +79,13 @@ namespace Blockly.UI
 
             LanguageButton = MakeButton(rt, "Language", 0, 150, out languageLabel);
             CopyButton = MakeButton(rt, "Copy", 0, 90, out copyLabel);
+            SaveButton = MakeButton(rt, "Save", 0, 90, out saveLabel);
             CloseButton = MakeButton(rt, "Close", 0, 90, out closeLabel);
-            Place(LanguageButton, Margin, 150); Place(CopyButton, Margin + 158, 90);
+            Place(LanguageButton, Margin, 150); Place(CopyButton, Margin + 158, 90); Place(SaveButton, Margin + 256, 90);
             var close = (RectTransform)CloseButton.transform;                                    // the close button sits at the right end
             close.anchorMin = close.anchorMax = new Vector2(1, 1); close.pivot = new Vector2(1, 1);
             close.anchoredPosition = new Vector2(-Margin, -(HeaderHeight - ButtonHeight) / 2f); close.sizeDelta = new Vector2(90, ButtonHeight);
-            buttonImages = new[] { LanguageButton.GetComponent<Image>(), CopyButton.GetComponent<Image>(), CloseButton.GetComponent<Image>() };
+            buttonImages = new[] { LanguageButton.GetComponent<Image>(), CopyButton.GetComponent<Image>(), SaveButton.GetComponent<Image>(), CloseButton.GetComponent<Image>() };
 
             var viewport = New("Viewport", rt, typeof(RectMask2D));
             viewport.anchorMin = Vector2.zero; viewport.anchorMax = Vector2.one;
@@ -99,6 +104,7 @@ namespace Blockly.UI
 
             LanguageButton.onClick.AddListener(ChooseLanguage);
             CopyButton.onClick.AddListener(Copy);
+            SaveButton.onClick.AddListener(Save);
             CloseButton.onClick.AddListener(Close);
             Subscribe();
             ApplyTheme();
@@ -135,6 +141,13 @@ namespace Blockly.UI
         {
             if (code.Length == 0) return;
             PlatformClipboard.Write(code);
+        }
+
+        /// <summary>Asks for the code to be saved as a file (the Playground does it; see <see cref="SaveRequested"/>).</summary>
+        public void Save()
+        {
+            if (code.Length == 0) return;
+            SaveRequested?.Invoke(Language, code);
         }
 
         public void Close() { Visible = false; Closed?.Invoke(); }
@@ -197,13 +210,14 @@ namespace Blockly.UI
             BlockStyle.ConsoleFont.Apply(body, bodySize);
             body.color = error.Length > 0 ? ConsoleView.ErrorColour : BlockStyle.ConsoleText;
             foreach (var img in buttonImages) { img.color = BlockStyle.ButtonColour; UiShape.Round(img, BlockStyle.ButtonCornerRadius); }
-            foreach (var t in new[] { languageLabel, copyLabel, closeLabel }) { t.color = BlockStyle.ButtonText; BlockStyle.ToolbarFont.Apply(t, 15f); }
+            foreach (var t in new[] { languageLabel, copyLabel, saveLabel, closeLabel }) { t.color = BlockStyle.ButtonText; BlockStyle.ToolbarFont.Apply(t, 15f); }
         }
 
         void Localize()
         {
             if (this == null) { Loc.Changed -= Localize; return; }
             copyLabel.text = Loc.T("Copy");
+            saveLabel.text = Loc.T("Save");
             closeLabel.text = Loc.T("Close");
             if (error.Length > 0) Refresh();                    // the message is in the language too
         }

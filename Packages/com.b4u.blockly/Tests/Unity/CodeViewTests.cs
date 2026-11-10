@@ -103,6 +103,27 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void SaveWritesTheCodeToAFileOfTheLanguageAndTellsWhere()
+        {
+            string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "blockly-code-" + System.Guid.NewGuid().ToString("N"));
+            c.Exchange = new Blockly.Storage.FileExchange(dir);
+            try
+            {
+                c.SetCodeVisible(true);
+                c.CodePanel.SaveButton.onClick.Invoke();
+                string js = System.IO.Path.Combine(dir, "program.js");
+                Assert.IsTrue(System.IO.File.Exists(js));
+                Assert.AreEqual(c.CodePanel.Code, System.IO.File.ReadAllText(js));
+                StringAssert.Contains("program.js", c.Console.StatusText);
+                c.CodePanel.PickLanguage("Python");
+                c.CodePanel.SaveButton.onClick.Invoke();
+                Assert.AreEqual(c.CodePanel.Code, System.IO.File.ReadAllText(System.IO.Path.Combine(dir, "program.py")));
+                CollectionAssert.IsEmpty(c.Exchange.List(), "code files are not offered as programs to import");
+            }
+            finally { if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true); }
+        }
+
+        [Test]
         public void ABlockWithoutAGeneratorShowsAMessageInsteadOfCode()
         {
             var reg = new BlockRegistry();
@@ -129,6 +150,7 @@ namespace Blockly.UI.Tests
             BlockThemeCatalog.Select("Classic");
             Loc.Language = Loc.Pick("ru");
             Assert.AreEqual("Закрыть", c.CodePanel.CloseButton.GetComponentInChildren<TMP_Text>().text);
+            Assert.AreEqual("Сохранить", c.CodePanel.SaveButton.GetComponentInChildren<TMP_Text>().text);
         }
     }
 }

@@ -26,6 +26,16 @@ namespace Blockly.Tests
         }
 
         [Test]
+        public void CodeIsExportedWithItsOwnExtensionAndIsNotListedAsAProgram()
+        {
+            var x = new FileExchange(dir);
+            string path = x.Export("a/my code", "print(1)\n", ".py");
+            Assert.AreEqual(Path.Combine(dir, "a_my code.py"), path);
+            Assert.AreEqual("print(1)\n", File.ReadAllText(path));
+            CollectionAssert.IsEmpty(x.List());
+        }
+
+        [Test]
         public void ExportMakesTheNameSafe()
         {
             var x = new FileExchange(dir);

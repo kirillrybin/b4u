@@ -38,6 +38,8 @@ namespace Blockly
         public readonly string Name;
         /// <summary>What one level of nesting adds to a line.</summary>
         public string Indent = "  ";
+        /// <summary>The extension of a file with this language's code, with the dot (".js").</summary>
+        public string FileExtension = ".txt";
         public string DefaultPrint = "console.log";
         public readonly HashSet<string> Reserved = new HashSet<string>();
         /// <summary>Puts the variable line, the helper functions and the procedures in front of the main code.</summary>

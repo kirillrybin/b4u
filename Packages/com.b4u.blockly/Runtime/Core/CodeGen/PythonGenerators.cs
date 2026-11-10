@@ -31,7 +31,7 @@ namespace Blockly
 
         internal static CodeLanguage Create()
         {
-            var l = new CodeLanguage("Python") { Indent = "    ", DefaultPrint = "print", Quote = Quote };
+            var l = new CodeLanguage("Python") { Indent = "    ", FileExtension = ".py", DefaultPrint = "print", Quote = Quote };
             foreach (var w in ReservedWords) l.Reserved.Add(w);
             l.Assemble = (g, variables, defs, code) =>
             {
