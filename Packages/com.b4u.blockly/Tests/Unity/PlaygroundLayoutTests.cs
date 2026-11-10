@@ -29,8 +29,8 @@ namespace Blockly.UI.Tests
             layout.Apply(1280, 720);
             Assert.AreEqual(1, layout.ToolbarRows);
             Assert.AreEqual(48f, layout.ToolbarHeight);
-            Assert.AreEqual(150f, Child("SafeArea/Toolbar/Run").anchoredPosition.x);
-            Assert.AreEqual(736f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
+            Assert.AreEqual(124f, Child("SafeArea/Toolbar/Run").anchoredPosition.x);
+            Assert.AreEqual(646f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
             Assert.AreEqual(190f, layout.EffectiveConsoleHeight);
             Assert.AreEqual(-48f, Child("SafeArea/Scroll").offsetMax.y);
         }
@@ -90,8 +90,8 @@ namespace Blockly.UI.Tests
             layout.Apply(360, 780);
             layout.Apply(1280, 720);
             Assert.AreEqual(1, layout.ToolbarRows);
-            Assert.AreEqual(150f, Child("SafeArea/Toolbar/Run").anchoredPosition.x);
-            Assert.AreEqual(1150f, Child("SafeArea/Toolbar/Title").anchoredPosition.x);
+            Assert.AreEqual(124f, Child("SafeArea/Toolbar/Run").anchoredPosition.x);
+            Assert.AreEqual(1114f, Child("SafeArea/Toolbar/Title").anchoredPosition.x);
         }
 
         [Test]
@@ -135,9 +135,9 @@ namespace Blockly.UI.Tests
         {
             var layout = Open();
             layout.Apply(1280, 720);
-            Assert.AreEqual(80f, Child("SafeArea/Toolbar/Run").sizeDelta.x);
-            Assert.AreEqual(120f, Child("SafeArea/Toolbar/Slow").sizeDelta.x);
-            Assert.AreEqual(736f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
+            Assert.AreEqual(74f, Child("SafeArea/Toolbar/Run").sizeDelta.x);
+            Assert.AreEqual(112f, Child("SafeArea/Toolbar/Slow").sizeDelta.x);
+            Assert.AreEqual(646f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
         }
 
         [Test]

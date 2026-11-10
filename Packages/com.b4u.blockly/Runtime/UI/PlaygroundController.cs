@@ -158,6 +158,30 @@ namespace Blockly.UI
 
         public bool ConsoleVisible => console == null || console.Visible;
 
+        // ---------------------------------------------------------------- code panel
+        CodeView codeView;
+
+        /// <summary>The panel that shows the program as code (null until it is first shown).</summary>
+        public CodeView CodePanel => codeView;
+        public bool CodeVisible => codeView != null && codeView.Visible;
+
+        public void ToggleCode() => SetCodeVisible(!CodeVisible);
+
+        /// <summary>Shows or hides the code of the program, over the right half of the workspace. It follows every edit.</summary>
+        public void SetCodeVisible(bool visible)
+        {
+            if (view == null) return;
+            if (visible && codeView == null)
+            {
+                var scroll = view.GetComponentInParent<UnityEngine.UI.ScrollRect>();
+                if (scroll == null) return;
+                codeView = CodeView.Create((RectTransform)scroll.transform);
+            }
+            if (codeView == null) return;
+            codeView.Show(view.Workspace);
+            codeView.Visible = visible;
+        }
+
         /// <summary>Shows the console, or hides it to give the workspace the room. The layout follows on its own.</summary>
         public void ToggleConsole() => SetConsoleVisible(!ConsoleVisible);
 
@@ -238,10 +262,12 @@ namespace Blockly.UI
             console?.Clear();
             console?.SetStatus(Loc.T("Ready"), ConsoleView.NeutralColour);
             toolbox?.CloseFlyout();
+            codeView?.Show(ws);
         }
 
         void OnEdited()
         {
+            codeView?.Show(view.Workspace);
             if (!dirty) { dirty = true; RefreshTitle(); }
             autosaveTimer = autosaveDelay;                             // every edit restarts the wait, so a burst of edits is written once
         }

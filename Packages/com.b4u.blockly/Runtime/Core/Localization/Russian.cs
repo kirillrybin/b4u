@@ -65,6 +65,8 @@ namespace Blockly
             { "Maximum call stack size exceeded", "Превышена максимальная глубина вызовов" },
             { "Procedure call inside an expression ran too long; call it as a statement instead", "Вызов процедуры в выражении выполнялся слишком долго; вызовите её как команду" },
             { "No statement handler for block type '{0}'", "Нет обработчика команды для блока '{0}'" },
+            { "No code generator for block type '{0}'", "Нет генератора кода для блока '{0}'" },
+            { "Code", "Код" }, { "Close", "Закрыть" },
             { "No expression handler for block type '{0}'", "Нет обработчика выражения для блока '{0}'" },
             // ---- categories
             { "Colour", "Цвет" }, { "Logic", "Логика" }, { "Loops", "Циклы" }, { "Math", "Математика" }, { "Text", "Текст" }, { "Lists", "Списки" },
