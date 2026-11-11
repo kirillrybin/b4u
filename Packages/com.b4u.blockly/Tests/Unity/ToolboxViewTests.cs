@@ -389,5 +389,53 @@ namespace Blockly.UI.Tests
         {
             Assert.AreSame(tb.transform, main.DeleteArea);
         }
+
+        // ---------------------------------------------------------------- a list longer than the strip
+        void ShrinkStrip(float height)
+        {
+            var list = (RectTransform)tb.transform.Cast<Transform>().First(t => t.name == "Categories");
+            list.anchorMin = new Vector2(0, 1); list.anchorMax = new Vector2(1, 1); list.pivot = new Vector2(0.5f, 1);
+            list.offsetMin = new Vector2(6, -height); list.offsetMax = new Vector2(-6, 0);        // a list of the given height, from the top
+        }
+
+        [Test]
+        public void ACategoryListThatDoesNotFitScrollsAndTheLastButtonCanBeReached()
+        {
+            ShrinkStrip(300f);
+            tb.ScrollCategories(0f);
+            Assert.IsTrue(tb.CategoriesOverflow);
+            var list = tb.transform.Cast<Transform>().First(t => t.name == "Categories");
+            var last = (RectTransform)list.GetChild(list.childCount - 1);
+            float top = last.anchoredPosition.y;
+            Assert.Less(top, -300f, "below the end of the list at first");
+            tb.ScrollCategories(10000f);                                       // as far as it goes
+            Assert.AreEqual(tb.CategoryContentHeight - tb.CategoryViewHeight, tb.CategoryScroll, 0.01f);
+            Assert.GreaterOrEqual(last.anchoredPosition.y - BlockStyle.CategoryButtonHeight, -tb.CategoryViewHeight - 0.01f, "the last button is in view");
+            tb.ScrollCategories(-10000f);
+            Assert.AreEqual(0f, tb.CategoryScroll);
+        }
+
+        [Test]
+        public void ChoosingACategoryScrollsItsButtonIntoView()
+        {
+            ShrinkStrip(300f);
+            tb.ScrollCategories(0f);
+            Assert.AreEqual(0f, tb.CategoryScroll);
+            tb.SelectCategory(tb.SearchIndex);
+            Assert.Greater(tb.CategoryScroll, 0f);
+            var list = tb.transform.Cast<Transform>().First(t => t.name == "Categories");
+            var button = (RectTransform)list.GetChild(tb.SearchIndex);
+            Assert.GreaterOrEqual(button.anchoredPosition.y - BlockStyle.CategoryButtonHeight, -tb.CategoryViewHeight - 0.01f);
+            Assert.LessOrEqual(button.anchoredPosition.y, 0.01f);
+        }
+
+        [Test]
+        public void AListThatFitsStaysWhereItIs()
+        {
+            ShrinkStrip(5000f);
+            tb.ScrollCategories(100f);
+            Assert.IsFalse(tb.CategoriesOverflow);
+            Assert.AreEqual(0f, tb.CategoryScroll);
+        }
     }
 }

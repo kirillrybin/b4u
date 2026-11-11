@@ -61,10 +61,11 @@ namespace Blockly.UI
         /// <summary>Creates the panel, hidden, filling the right half of <paramref name="parent"/>.</summary>
         public static CodeView Create(RectTransform parent)
         {
-            var go = new GameObject("Code", typeof(RectTransform), typeof(Image));
+            var go = new GameObject("Code", typeof(RectTransform), typeof(Image), typeof(Canvas), typeof(GraphicRaycaster));
             go.SetActive(false);
             var rt = (RectTransform)go.transform;
             rt.SetParent(parent, false);
+
             rt.anchorMin = new Vector2(0.5f, 0); rt.anchorMax = new Vector2(1, 1);
             rt.offsetMin = new Vector2(0, Margin); rt.offsetMax = new Vector2(-Margin, -Margin);
             var v = go.AddComponent<CodeView>();
@@ -74,17 +75,14 @@ namespace Blockly.UI
 
         void Build(RectTransform rt)
         {
+            var parent = (RectTransform)rt.parent;
             panel = GetComponent<Image>();
             panel.color = BlockStyle.ConsoleBackground;
 
-            LanguageButton = MakeButton(rt, "Language", 0, 150, out languageLabel);
-            CopyButton = MakeButton(rt, "Copy", 0, 90, out copyLabel);
-            SaveButton = MakeButton(rt, "Save", 0, 90, out saveLabel);
-            CloseButton = MakeButton(rt, "Close", 0, 90, out closeLabel);
-            Place(LanguageButton, Margin, 150); Place(CopyButton, Margin + 158, 90); Place(SaveButton, Margin + 256, 90);
-            var close = (RectTransform)CloseButton.transform;                                    // the close button sits at the right end
-            close.anchorMin = close.anchorMax = new Vector2(1, 1); close.pivot = new Vector2(1, 1);
-            close.anchoredPosition = new Vector2(-Margin, -(HeaderHeight - ButtonHeight) / 2f); close.sizeDelta = new Vector2(90, ButtonHeight);
+            LanguageButton = MakeButton(rt, "Language", 0, 130, out languageLabel);
+            CopyButton = MakeButton(rt, "Copy", 0, 76, out copyLabel);
+            SaveButton = MakeButton(rt, "Save", 0, 76, out saveLabel);
+            CloseButton = MakeButton(rt, "Close", 0, 76, out closeLabel);
             buttonImages = new[] { LanguageButton.GetComponent<Image>(), CopyButton.GetComponent<Image>(), SaveButton.GetComponent<Image>(), CloseButton.GetComponent<Image>() };
 
             var viewport = New("Viewport", rt, typeof(RectMask2D));
@@ -111,6 +109,126 @@ namespace Blockly.UI
             Localize();
             RestoreLanguage();
             languageLabel.text = Language.Name;
+            laidOutFor = -1f;
+            Layout(parent.rect.width > 0f ? parent.rect.width : 2 * NarrowWidth);
+        }
+
+        // ------------------------------------------------------------ layout
+        /// <summary>A workspace area narrower than this (a phone held upright) gives the whole width to the panel.</summary>
+        public const float NarrowWidth = 640f;
+        const float ButtonGap = 6f;
+        const float MinButtonWidth = 48f, ButtonPaddingX = 8f;
+        float fontScale = 1f;
+
+        /// <summary>
+        /// The width the panel has: half of a wide workspace area; on a narrow one all of the width inside <paramref name="screenWidth"/>
+        /// (the whole screen, so it covers the toolbox too: beside the toolbox a phone has room for very little).
+        /// </summary>
+        public static float PanelWidth(float parentWidth, float screenWidth) => parentWidth < NarrowWidth ? screenWidth - 2 * Margin : parentWidth / 2f - Margin;
+
+        void OnRectTransformDimensionsChange()
+        {
+            if (LanguageButton != null && transform.parent is RectTransform parent) Layout(parent.rect.width);
+        }
+
+        /// <summary>
+        /// Fits the panel to a workspace area <paramref name="parentWidth"/> wide: the right half of a wide area, all of a narrow one; the
+        /// four buttons of the header share the width (shrinking, labels with them, when it is short) and none covers another.
+        /// </summary>
+        public void Layout(float parentWidth)
+        {
+            if (parentWidth <= 0f || LanguageButton == null || inLayout) return;       // changing the panel's own size raises OnRectTransformDimensionsChange again
+            if (Mathf.Approximately(parentWidth, laidOutFor)) return;
+            inLayout = true;
+            try { LayOutFor(parentWidth); }
+            finally { inLayout = false; }
+        }
+
+        bool inLayout;
+        float laidOutFor = -1f, panelWidth;
+        /// <summary>The width the panel was laid out for.</summary>
+        public float LaidOutWidth => panelWidth;
+
+        void LayOutFor(float parentWidth)
+        {
+            laidOutFor = parentWidth;
+            var rt = (RectTransform)transform;
+            var parent = (RectTransform)rt.parent;
+            bool narrow = parentWidth < NarrowWidth;
+            float screenWidth = parentWidth, left = Margin;
+            if (narrow && parent.parent is RectTransform screen && screen.rect.width > 0f)
+            {
+                screenWidth = screen.rect.width;                                              // the panel starts at the screen's left edge, not the workspace's
+                left = parent.InverseTransformPoint(screen.TransformPoint(new Vector3(screen.rect.xMin, 0f, 0f))).x - parent.rect.xMin + Margin;
+            }
+            rt.anchorMin = new Vector2(narrow ? 0f : 0.5f, 0f); rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(narrow ? left : 0f, Margin); rt.offsetMax = new Vector2(-Margin, -Margin);
+            panelWidth = PanelWidth(parentWidth, screenWidth);
+
+            // each button is as wide as its label needs; when they do not all fit, the labels (and so the buttons) get smaller together
+            fontScale = 1f;
+            ApplyFonts();
+            var buttons = new[] { LanguageButton, CopyButton, SaveButton, CloseButton };
+            var labels = new[] { languageLabel, copyLabel, saveLabel, closeLabel };
+            var text = new float[buttons.Length];
+            float total = 0f;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                float measured = Measure(labels[i]);
+                text[i] = Mathf.Max(MinButtonWidth - 2 * ButtonPaddingX, measured);          // a little more than measured: bold and kerning
+                total += text[i];
+            }
+            float padding = 2 * ButtonPaddingX * buttons.Length;                           // the room around a label does not shrink with the font
+            float available = panelWidth - 2 * Margin - (buttons.Length - 1) * ButtonGap - padding;
+            float scale = total > 0f ? Mathf.Clamp(available / total, 0.2f, 1f) : 1f;
+            measuredWidths = new float[buttons.Length];
+            for (int i = 0; i < buttons.Length; i++) measuredWidths[i] = Measure(labels[i]);
+            recheckFrames = 4;
+            float x = Margin;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                float w = text[i] * scale + 2 * ButtonPaddingX;
+                Place(buttons[i], x, w);
+                x += w + ButtonGap;
+            }
+            fontScale = Mathf.Max(0.5f, scale);
+            ApplyFonts();
+        }
+
+        // A font that makes its glyphs on demand (a dynamic atlas) measures a label wider once the glyphs are drawn: the widths are looked at
+        // again for a few frames after every layout, and the header is fitted again when one has changed.
+        float[] measuredWidths;
+        int recheckFrames;
+
+        void LateUpdate()
+        {
+            if (recheckFrames <= 0) return;
+            recheckFrames--;
+            Recheck();
+        }
+
+        /// <summary>Measures the four labels again; when one is wider or narrower than at the last layout, fits the header again. True if it did.</summary>
+        public bool Recheck()
+        {
+            if (measuredWidths == null || languageLabel == null) return false;
+            var labels = new[] { languageLabel, copyLabel, saveLabel, closeLabel };
+            for (int i = 0; i < labels.Length; i++)
+                if (Mathf.Abs(Measure(labels[i]) - measuredWidths[i]) > 1f) { Refit(); return true; }
+            return false;
+        }
+
+        float Measure(TMP_Text label) => Mathf.Ceil(label.GetPreferredValues(label.text).x * 1.08f);
+
+        /// <summary>Fits the header again after a label changed (another language, another theme font).</summary>
+        void Refit()
+        {
+            laidOutFor = -1f;
+            if (LanguageButton != null && transform.parent is RectTransform parent && parent.rect.width > 0f) Layout(parent.rect.width);
+        }
+
+        void ApplyFonts()
+        {
+            foreach (var t in new[] { languageLabel, copyLabel, saveLabel, closeLabel }) { t.color = BlockStyle.ButtonText; BlockStyle.ToolbarFont.Apply(t, 15f * fontScale); }
         }
 
         // ------------------------------------------------------------ content
@@ -128,7 +246,7 @@ namespace Blockly.UI
             }
             body.color = error.Length > 0 ? ConsoleView.ErrorColour : BlockStyle.ConsoleText;
             body.text = error.Length > 0 ? error : code;
-            if (languageLabel != null) languageLabel.text = Language.Name;
+            if (languageLabel != null && languageLabel.text != Language.Name) { languageLabel.text = Language.Name; Refit(); }
             if (isActiveAndEnabled)
             {
                 LayoutRebuilder.ForceRebuildLayoutImmediate(body.rectTransform);
@@ -198,7 +316,20 @@ namespace Blockly.UI
             Loc.Changed -= Localize; Loc.Changed += Localize;
         }
 
-        void OnEnable() { Subscribe(); }
+        void OnEnable()
+        {
+            Subscribe();
+            ApplySorting();
+        }
+
+        /// <summary>Draws the panel above the toolbox and flyout (on a phone it covers them) and below menus and dialogs. Done once it is nested in the scene's canvas.</summary>
+        void ApplySorting()
+        {
+            var canvas = GetComponent<Canvas>();
+            canvas.overrideSorting = true; canvas.sortingOrder = SortingOrder;
+        }
+
+        const int SortingOrder = 100;
         void OnDisable() { BlockStyle.ThemeChanged -= ApplyTheme; Loc.Changed -= Localize; }
         void OnDestroy() { BlockStyle.ThemeChanged -= ApplyTheme; Loc.Changed -= Localize; }
 
@@ -210,7 +341,8 @@ namespace Blockly.UI
             BlockStyle.ConsoleFont.Apply(body, bodySize);
             body.color = error.Length > 0 ? ConsoleView.ErrorColour : BlockStyle.ConsoleText;
             foreach (var img in buttonImages) { img.color = BlockStyle.ButtonColour; UiShape.Round(img, BlockStyle.ButtonCornerRadius); }
-            foreach (var t in new[] { languageLabel, copyLabel, saveLabel, closeLabel }) { t.color = BlockStyle.ButtonText; BlockStyle.ToolbarFont.Apply(t, 15f); }
+            ApplyFonts();
+            Refit();                                                   // another font, other label widths
         }
 
         void Localize()
@@ -219,6 +351,7 @@ namespace Blockly.UI
             copyLabel.text = Loc.T("Copy");
             saveLabel.text = Loc.T("Save");
             closeLabel.text = Loc.T("Close");
+            Refit();
             if (error.Length > 0) Refresh();                    // the message is in the language too
         }
 
