@@ -123,6 +123,12 @@ namespace Blockly.UI
         {
             if (definition != null) return;
             Subscribe();
+            if (categoryList != null)
+            {
+                if (categoryList.GetComponent<RectMask2D>() == null) categoryList.gameObject.AddComponent<RectMask2D>();
+                var scroller = categoryList.GetComponent<CategoryScroller>() ?? categoryList.gameObject.AddComponent<CategoryScroller>();
+                scroller.Owner = this;
+            }
             definition = StandardBlockSet.LoadToolbox();
             ListCategories();
             if (flyoutView != null) flyoutView.Spawner = this;
@@ -340,8 +346,78 @@ namespace Blockly.UI
             // collapsed: a square plate in the middle of the strip
             float inset = Collapsed ? Mathf.Max(0f, (ListWidth() - h) / 2f) : 0f;
             rt.sizeDelta = new Vector2(-2f * inset, h);
-            rt.anchoredPosition = new Vector2(0, -y);
+            rt.anchoredPosition = new Vector2(0, -y + categoryScroll);
             y += h + BlockStyle.CategoryGap;
+        }
+
+        // ------------------------------------------------------------------ scrolling the category list
+        // More categories than fit (a phone held upright, the Search button at the end): the list scrolls with a drag or the wheel.
+        float categoryScroll, categoryContentHeight;
+
+        /// <summary>How far the category buttons are moved up, in canvas units (0 shows the first one at the top).</summary>
+        public float CategoryScroll => categoryScroll;
+        /// <summary>The height all the buttons need and the height the list has.</summary>
+        public float CategoryContentHeight => categoryContentHeight;
+        public float CategoryViewHeight => categoryList != null ? categoryList.rect.height : 0f;
+        /// <summary>True when the buttons do not all fit and the list can be scrolled.</summary>
+        public bool CategoriesOverflow => categoryContentHeight > CategoryViewHeight + 0.5f;
+
+        void SetContentHeight(float y)
+        {
+            categoryContentHeight = Mathf.Max(0f, y - BlockStyle.CategoryGap) + 6f;      // a little room under the last button
+            ClampScroll();
+        }
+
+        void ClampScroll()
+        {
+            float max = Mathf.Max(0f, categoryContentHeight - CategoryViewHeight);
+            float clamped = Mathf.Clamp(categoryScroll, 0f, max);
+            if (Mathf.Approximately(clamped, categoryScroll)) return;
+            categoryScroll = clamped;
+            if (categoryList != null) MoveButtons();
+        }
+
+        /// <summary>Scrolls the category list by <paramref name="delta"/> canvas units (positive shows the buttons further down).</summary>
+        public void ScrollCategories(float delta)
+        {
+            categoryScroll += delta;
+            float max = Mathf.Max(0f, categoryContentHeight - CategoryViewHeight);
+            categoryScroll = Mathf.Clamp(categoryScroll, 0f, max);
+            if (categoryList != null) MoveButtons();
+        }
+
+        void MoveButtons()
+        {
+            float y = 0;
+            for (int i = 0; i < categoryList.childCount; i++)
+            {
+                var rt = (RectTransform)categoryList.GetChild(i);
+                rt.anchoredPosition = new Vector2(0, -y + categoryScroll);
+                y += BlockStyle.CategoryButtonHeight + BlockStyle.CategoryGap;
+            }
+        }
+
+        /// <summary>Scrolls the list just enough for the button of category <paramref name="index"/> to be in view.</summary>
+        void ShowCategoryButton(int index)
+        {
+            if (categoryList == null || index < 0) return;
+            float step = BlockStyle.CategoryButtonHeight + BlockStyle.CategoryGap, top = index * step, bottom = top + BlockStyle.CategoryButtonHeight;
+            if (top < categoryScroll) ScrollCategories(top - categoryScroll);
+            else if (bottom > categoryScroll + CategoryViewHeight) ScrollCategories(bottom - categoryScroll - CategoryViewHeight);
+        }
+
+        void OnRectTransformDimensionsChange()
+        {
+            if (definition != null) ClampScroll();
+        }
+
+        /// <summary>Takes the drag and the wheel over the category buttons and scrolls the list with them.</summary>
+        sealed class CategoryScroller : MonoBehaviour, IBeginDragHandler, IDragHandler, IScrollHandler
+        {
+            public ToolboxView Owner;
+            public void OnBeginDrag(PointerEventData e) { }
+            public void OnDrag(PointerEventData e) => Owner.ScrollCategories(e.delta.y / Mathf.Max(0.01f, transform.lossyScale.y));
+            public void OnScroll(PointerEventData e) => Owner.ScrollCategories(-e.scrollDelta.y * 30f);
         }
 
         void PlaceIcon(RectTransform irt)
@@ -382,6 +458,7 @@ namespace Blockly.UI
                 var text = rt.Find("Text") as RectTransform;
                 if (text != null) PlaceLabel(text, icon != null);
             }
+            SetContentHeight(y);
         }
 
         static Color Shade(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
@@ -429,6 +506,7 @@ namespace Blockly.UI
             if (main == null || main.Workspace == null || index < 0 || index >= categories.Count) return;
             bool opening = !IsFlyoutOpen || selected != index;
             selected = index;
+            ShowCategoryButton(index);
             var category = categories[index];
             bool searching = category.Kind == CategoryKind.Search;
             if (searching) category.Blocks = ToolboxSearch.Find(definition, main.Workspace, searchQuery);

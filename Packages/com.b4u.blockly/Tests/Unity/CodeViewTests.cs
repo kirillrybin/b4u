@@ -152,5 +152,80 @@ namespace Blockly.UI.Tests
             Assert.AreEqual("Закрыть", c.CodePanel.CloseButton.GetComponentInChildren<TMP_Text>().text);
             Assert.AreEqual("Сохранить", c.CodePanel.SaveButton.GetComponentInChildren<TMP_Text>().text);
         }
+
+        static Rect Box(Button b) { var rt = (RectTransform)b.transform; return new Rect(rt.anchoredPosition.x, 0, rt.sizeDelta.x, 1); }
+
+        [TestCase(380f)]
+        [TestCase(500f)]
+        [TestCase(639f)]
+        [TestCase(1150f)]
+        public void TheHeaderButtonsNeverCoverEachOtherOrLeaveThePanel(float areaWidth)
+        {
+            c.SetCodeVisible(true);
+            var code = c.CodePanel;
+            code.Layout(areaWidth);
+            var boxes = new[] { code.LanguageButton, code.CopyButton, code.SaveButton, code.CloseButton }.Select(Box).ToArray();
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                Assert.GreaterOrEqual(boxes[i].xMin, 0f, "button " + i);
+                Assert.LessOrEqual(boxes[i].xMax, code.LaidOutWidth + 0.01f, "button " + i + " inside the panel of an area " + areaWidth);
+                if (i > 0) Assert.Less(boxes[i - 1].xMax, boxes[i].xMin + 0.01f, "button " + i + " does not cover the one before");
+            }
+        }
+
+        [Test]
+        public void ANarrowAreaGivesTheWholeWidthToThePanelAndAWideOneHalf()
+        {
+            c.SetCodeVisible(true);
+            var rt = (RectTransform)c.CodePanel.transform;
+            c.CodePanel.Layout(400f);
+            Assert.AreEqual(0f, rt.anchorMin.x);
+            Assert.Less(rt.offsetMin.x, 0f, "it starts left of the workspace, over the toolbox");
+            c.CodePanel.Layout(1150f);
+            Assert.AreEqual(0.5f, rt.anchorMin.x);
+        }
+
+        [Test]
+        public void LayingOutAgainForTheSameWidthDoesNothingAndAChangeOfSizeDoesNotLoop()
+        {
+            c.SetCodeVisible(true);
+            var code = c.CodePanel;
+            code.Layout(384.3f);                                           // a fractional width, as on a phone
+            var rt = (RectTransform)code.transform;
+            var before = new[] { rt.anchoredPosition, rt.sizeDelta, ((RectTransform)code.CopyButton.transform).anchoredPosition };
+            code.Layout(384.3f);
+            Assert.AreEqual(before[2], ((RectTransform)code.CopyButton.transform).anchoredPosition);
+            rt.sizeDelta += new Vector2(0.1f, 0f);                         // raises OnRectTransformDimensionsChange: must come back
+            Assert.IsTrue(code.Visible);
+        }
+
+        [Test]
+        public void ALabelThatTurnsOutWiderMakesTheHeaderFitAgain()
+        {
+            c.SetCodeVisible(true);
+            var code = c.CodePanel;
+            code.Layout(400f);
+            Assert.IsFalse(code.Recheck(), "nothing changed");
+            var label = code.LanguageButton.GetComponentInChildren<TMP_Text>();
+            float before = ((RectTransform)code.LanguageButton.transform).sizeDelta.x;
+            label.text = "A language with a very long name";            // as if its glyphs came out wider once drawn
+            Assert.IsTrue(code.Recheck());
+            Assert.Greater(((RectTransform)code.LanguageButton.transform).sizeDelta.x, before);
+            var boxes = new[] { code.LanguageButton, code.CopyButton, code.SaveButton, code.CloseButton }.Select(Box).ToArray();
+            for (int i = 1; i < boxes.Length; i++) Assert.Less(boxes[i - 1].xMax, boxes[i].xMin + 0.01f);
+        }
+
+        [Test]
+        public void ThePanelIsDrawnAboveTheToolboxAndBelowMenus()
+        {
+            c.SetCodeVisible(true);
+            var canvas = c.CodePanel.GetComponent<Canvas>();
+            // the setting only holds when it is made while the panel is active: OnEnable does it (EditMode never calls it)
+            typeof(CodeView).GetMethod("OnEnable", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(c.CodePanel, null);
+            Assert.IsTrue(canvas.overrideSorting);
+            Assert.Greater(canvas.sortingOrder, 0);
+            Assert.Less(canvas.sortingOrder, 200, "a dropdown menu is above it");
+            Assert.IsFalse(canvas.isRootCanvas, "nested in the scene's canvas");
+        }
     }
 }
