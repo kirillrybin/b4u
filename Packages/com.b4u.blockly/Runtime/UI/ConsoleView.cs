@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Blockly.UI
@@ -10,7 +11,7 @@ namespace Blockly.UI
     /// Scrolling text console for program output plus a one-line status (ready / finished / error).
     /// Output is shown literally (rich text off), so printed "&lt;b&gt;" is not interpreted as markup.
     /// </summary>
-    public sealed class ConsoleView : MonoBehaviour
+    public sealed class ConsoleView : MonoBehaviour, IBeginDragHandler, IDragHandler, IScrollHandler
     {
         [SerializeField] TMP_Text output;
         [SerializeField] TMP_Text status;
@@ -60,6 +61,21 @@ namespace Blockly.UI
                 gameObject.SetActive(value);
                 if (value) Refresh();                         // scrolls to the newest line
             }
+        }
+
+        // The output text is not a raycast target, so the ScrollRect never gets a drag: the panel (which is one) takes the drag and the wheel itself.
+        public void OnBeginDrag(PointerEventData e) { }
+        public void OnDrag(PointerEventData e) => ScrollBy(e.delta.y / Mathf.Max(0.01f, transform.lossyScale.y));
+        public void OnScroll(PointerEventData e) => ScrollBy(-e.scrollDelta.y * 30f);
+
+        /// <summary>Moves the text up (positive: toward the newest line) or down (negative: toward the oldest) by <paramref name="units"/>, never past either end.</summary>
+        public void ScrollBy(float units)
+        {
+            if (scroll == null || scroll.content == null || scroll.viewport == null) return;
+            float max = Mathf.Max(0f, scroll.content.rect.height - scroll.viewport.rect.height);
+            var p = scroll.content.anchoredPosition;
+            p.y = Mathf.Clamp(p.y + units, 0f, max);
+            scroll.content.anchoredPosition = p;
         }
 
         public void Append(string line)
