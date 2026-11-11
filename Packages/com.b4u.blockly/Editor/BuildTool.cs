@@ -50,6 +50,15 @@ namespace Blockly.EditorTools
                         ? AppleMobileArchitectureSimulator.ARM64 : AppleMobileArchitectureSimulator.X86_64;
             }
             if (target == BuildTarget.Android) PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARMv7 | AndroidArchitecture.ARM64;
+            // The Android build is landscape only (both directions, never portrait).
+            if (target == BuildTarget.Android)
+            {
+                PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
+                PlayerSettings.allowedAutorotateToPortrait = false;
+                PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+                PlayerSettings.allowedAutorotateToLandscapeLeft = true;
+                PlayerSettings.allowedAutorotateToLandscapeRight = true;
+            }
             if (target == BuildTarget.WebGL)
             {
                 // A phone's browser tab has little memory and has to compile the whole wasm module: build for size, strip what is unused.

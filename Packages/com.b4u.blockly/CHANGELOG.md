@@ -47,3 +47,5 @@ First version.
 - Code panel on a phone: in a workspace area narrower than 640 units the panel takes the whole width, and the four header buttons share it (their labels shrink with them) instead of covering each other.
 - Category list on a phone: when the category buttons do not all fit the strip (a phone held upright, the Search button at the end) the list scrolls with a drag or the wheel, and choosing a category scrolls its button into view (`ToolboxView.ScrollCategories`).
 - Code panel on a narrow screen: the panel is drawn above the toolbox (its own nested canvas) and covers the whole width, so the four header buttons keep readable labels.
+- Console: a drag (or the mouse wheel) over it scrolls the output; the text is not a raycast target, so the console takes the drag itself.
+- Android build (`BuildTool`) is landscape only, both directions, never portrait.
