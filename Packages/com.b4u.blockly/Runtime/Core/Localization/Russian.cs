@@ -77,7 +77,7 @@ namespace Blockly
             { "No expression handler for block type '{0}'", "Нет обработчика выражения для блока '{0}'" },
             // ---- categories
             { "Colour", "Цвет" }, { "Logic", "Логика" }, { "Loops", "Циклы" }, { "Math", "Математика" }, { "Text", "Текст" }, { "Lists", "Списки" },
-            { "Variables", "Переменные" }, { "Functions", "Функции" }, { "Events", "События" }, { "Moves", "Движения" },
+            { "Variables", "Переменные" }, { "Functions", "Функции" },
             // ---- block labels
             { "Y:", "Y:" }, { "append text", "добавить текст" }, { "as", "как" }, { "atan2 of X:", "atan2 от X:" }, { "by", "на" },
             { "change", "изменить" }, { "constrain", "ограничить" }, { "count", "посчитать" }, { "count with", "считать с переменной" },
