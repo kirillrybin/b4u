@@ -98,19 +98,16 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
-        public void TheThemeButtonShowsTheThemeInUseAndItsMenuListsTheCatalog()
+        public void TheViewMenuShowsTheThemeInUseAndItsEntryOpensTheCatalog()
         {
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Playground/Playground.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
             var c = Object.FindFirstObjectByType<PlaygroundController>();
             c.ShowByName("text");
             BlockThemeCatalog.Register("Candy", a);
-            var button = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == "Theme");
-            Assert.AreEqual("ShowThemeMenu", button.onClick.GetPersistentMethodName(0));
-            var label = button.GetComponentInChildren<TMP_Text>();
-            c.SetThemeButton((RectTransform)button.transform, label);
-            Assert.AreEqual("Theme: Classic", label.text);
-
-            c.ShowThemeMenuAt(new Vector2(100, 600));
+            c.ShowViewMenuAt(new Vector2(100, 600));
+            var view = Object.FindFirstObjectByType<DropdownMenu>();
+            Assert.AreEqual("Theme: Classic…", view.Items[3].Label);
+            view.Pick(3);                                          // opens the list of themes in the same place
             var menu = Object.FindFirstObjectByType<DropdownMenu>();
             Assert.NotNull(menu);
             CollectionAssert.AreEqual(new[] { "Classic", "Candy" }, menu.Items.Select(i => i.Label));
@@ -118,23 +115,9 @@ namespace Blockly.UI.Tests
             menu.Pick(1);
             Assert.AreEqual("Candy", BlockThemeCatalog.SavedName, "picking in the menu is remembered");
             Assert.AreSame(a, BlockStyle.Theme);
-            Assert.AreEqual("Theme: Candy", label.text);
-        }
-
-        [Test]
-        public void TheThemeLabelFollowsTheThemeInAScene()
-        {
-            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Playground/Playground.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
-            var c = Object.FindFirstObjectByType<PlaygroundController>();
-            var button = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == "Theme");
-            var label = button.GetComponentInChildren<TMP_Text>();
-            BlockThemeCatalog.Register("Candy", a);
-            BlockStyle.Theme = a;                                  // set before the controller starts, as a skin does
-            // in Play the scene's own fields are used and SetThemeButton is not called: OnEnable does the work (EditMode never calls it)
-            typeof(PlaygroundController).GetMethod("OnEnable", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(c, null);
-            Assert.AreEqual("Theme: Candy", label.text);
-            BlockStyle.Theme = null;
-            Assert.AreEqual("Theme: Classic", label.text);
+            c.ShowViewMenuAt(new Vector2(100, 600));
+            Assert.AreEqual("Theme: Candy…", Object.FindFirstObjectByType<DropdownMenu>().Items[3].Label);
+            Object.FindFirstObjectByType<DropdownMenu>().Close();
         }
     }
 }

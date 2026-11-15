@@ -70,7 +70,7 @@ namespace Blockly.UI.Tests
             // Edit Mode does not run RuntimeOnly persistent listeners, so check what the scene actually stores:
             // each button must call the matching method on the PlaygroundController.
             var c = Open();
-            var expected = new[] { ("Next", "Next"), ("Prev", "Previous"), ("Run", "Run"), ("Step", "Step"), ("Stop", "Stop"), ("Slow", "ToggleSlow") };
+            var expected = new[] { ("Next", "Next"), ("Prev", "Previous"), ("Run", "Run"), ("Step", "Step"), ("Stop", "Stop"), ("File", "ShowFileMenu"), ("View", "ShowViewMenu") };
             foreach (var (button, method) in expected)
             {
                 var b = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == button);
@@ -139,45 +139,58 @@ namespace Blockly.UI.Tests
             Assert.AreEqual(RunnerState.Idle, c.Runner.State);
         }
 
+        static DropdownMenu OpenViewMenu(PlaygroundController c)
+        {
+            c.ShowViewMenuAt(new Vector2(600, 600));
+            return Object.FindFirstObjectByType<DropdownMenu>();
+        }
+
         [Test]
-        public void SlowToggleChangesTheRunnerAndTheButtonLabel()
+        public void TheViewMenuHasSlowConsoleCodeAndTheThemeWithTicksForWhatIsOn()
+        {
+            var c = Open();
+            c.Show(0);
+            var menu = OpenViewMenu(c);
+            CollectionAssert.AreEqual(new[] { "Slow", "Console", "Code", "Theme: Classic…" }, menu.Items.Select(i => i.Label));
+            CollectionAssert.AreEqual(new[] { false, true, false, false }, menu.Items.Select(i => i.Selected), "the console is on, the rest off");
+            menu.Pick(2);
+            Assert.IsTrue(c.CodeVisible);
+            Assert.IsTrue(OpenViewMenu(c).Items[2].Selected, "the tick follows");
+            Object.FindFirstObjectByType<DropdownMenu>().Close();
+        }
+
+        [Test]
+        public void SlowInTheViewMenuChangesTheRunner()
         {
             var c = Open();
             c.Show(0);
             Assert.IsFalse(c.Runner.Slow);
-            c.ToggleSlow();
+            OpenViewMenu(c).Pick(0);
             Assert.IsTrue(c.Slow); Assert.IsTrue(c.Runner.Slow);
-            var label = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(b => b.name == "Slow").GetComponentInChildren<TMP_Text>();
-            Assert.AreEqual("Slow: on", label.text);
+            Assert.IsTrue(OpenViewMenu(c).Items[0].Selected);
+            Object.FindFirstObjectByType<DropdownMenu>().Close();
             c.Show(1);
             Assert.IsTrue(c.Runner.Slow, "the setting survives switching programs");
-            c.ToggleSlow();
-            Assert.AreEqual("Slow: off", label.text);
+            OpenViewMenu(c).Pick(0);
+            Assert.IsFalse(c.Slow);
         }
 
         [Test]
-        public void TheConsoleButtonHidesAndShowsTheConsoleAndTheWorkspaceTakesItsRoom()
+        public void TheConsoleEntryHidesAndShowsTheConsoleAndTheWorkspaceTakesItsRoom()
         {
             var c = Open();
             c.Show(0);
-            var button = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(b => b.name == "ConsoleToggle");
-            Assert.AreEqual(1, button.onClick.GetPersistentEventCount());
-            Assert.AreSame(c, button.onClick.GetPersistentTarget(0));
-            Assert.AreEqual("ToggleConsole", button.onClick.GetPersistentMethodName(0));
-            var label = button.GetComponentInChildren<TMP_Text>();
             var layout = Object.FindFirstObjectByType<PlaygroundLayout>();
             var scroll = (RectTransform)GameObject.Find("Scroll").transform;
             layout.Apply(1280, 720);
             Assert.IsTrue(c.ConsoleVisible);
-            Assert.AreEqual("Console: on", label.text);
             Assert.AreEqual(190f, scroll.offsetMin.y);
 
             c.Run(); RunToEnd(c);
             int lines = c.Console.Lines.Count;
-            c.ToggleConsole();
+            OpenViewMenu(c).Pick(1);
             Assert.IsFalse(c.ConsoleVisible);
             Assert.IsFalse(c.Console.gameObject.activeSelf);
-            Assert.AreEqual("Console: off", label.text);
             layout.Apply(1280, 720);
             Assert.AreEqual(0f, layout.EffectiveConsoleHeight);
             Assert.AreEqual(0f, scroll.offsetMin.y, "the workspace reaches the bottom");
@@ -374,8 +387,6 @@ namespace Blockly.UI.Tests
             Assert.IsTrue(c.ConsoleVisible, "an error is never left unseen");
             StringAssert.StartsWith("Error: ", c.Console.StatusText);
             StringAssert.Contains("nope is not defined", c.Console.StatusText);
-            var label = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == "ConsoleToggle").GetComponentInChildren<TMP_Text>();
-            Assert.AreEqual("Console: on", label.text);
         }
 
         [Test]

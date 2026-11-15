@@ -18,11 +18,8 @@ namespace Blockly.UI
         [SerializeField] WorkspaceView view;
         [SerializeField] ConsoleView console;
         [SerializeField] TMP_Text title;
-        [SerializeField] TMP_Text slowLabel;
-        [SerializeField] TMP_Text consoleToggleLabel;
-        [SerializeField] RectTransform themeButton;
-        [SerializeField] TMP_Text themeLabel;
-        DropdownMenu themeMenu;
+        [SerializeField] RectTransform viewButton;
+        DropdownMenu themeMenu, viewMenu;
         [SerializeField] ToolboxView toolbox;
         [SerializeField] UnityEngine.UI.Button undoButton;
         [SerializeField] UnityEngine.UI.Button redoButton;
@@ -80,9 +77,9 @@ namespace Blockly.UI
         void Start() => BeginSession();
 
         // the scene keeps the label and the button as serialized fields, so SetThemeButton is not called in Play: follow the theme from here too
-        void OnEnable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; BlockStyle.ThemeChanged += UpdateThemeLabel; Loc.Changed -= OnLanguageChanged; Loc.Changed += OnLanguageChanged; UpdateThemeLabel(); }
-        void OnDisable() { BlockStyle.ThemeChanged -= UpdateThemeLabel; Loc.Changed -= OnLanguageChanged; }
-        void OnDestroy() { BlockStyle.ThemeChanged -= UpdateThemeLabel; Loc.Changed -= OnLanguageChanged; }
+        void OnEnable() { Loc.Changed -= OnLanguageChanged; Loc.Changed += OnLanguageChanged; }
+        void OnDisable() { Loc.Changed -= OnLanguageChanged; }
+        void OnDestroy() { Loc.Changed -= OnLanguageChanged; }
 
         /// <summary>Shows the first program, or the unsaved work of the last session if there is some (what Start does).</summary>
         public void BeginSession()
@@ -110,39 +107,62 @@ namespace Blockly.UI
         /// <summary>One frame of the running program (Update calls this; tests call it directly).</summary>
         public void Tick(float deltaSeconds) => runner?.Pump(deltaSeconds);
 
-        public void Configure(TextAsset[] programAssets, WorkspaceView workspaceView, ConsoleView consoleView, TMP_Text titleText, TMP_Text slowButtonLabel, ToolboxView toolboxView = null,
-                              UnityEngine.UI.Button undo = null, UnityEngine.UI.Button redo = null, RectTransform file = null)
+        public void Configure(TextAsset[] programAssets, WorkspaceView workspaceView, ConsoleView consoleView, TMP_Text titleText, ToolboxView toolboxView = null,
+                              UnityEngine.UI.Button undo = null, UnityEngine.UI.Button redo = null, RectTransform file = null, RectTransform viewMenuButton = null)
         {
-            programs = programAssets; view = workspaceView; console = consoleView; title = titleText; slowLabel = slowButtonLabel; toolbox = toolboxView;
-            undoButton = undo; redoButton = redo; fileButton = file;
+            programs = programAssets; view = workspaceView; console = consoleView; title = titleText; toolbox = toolboxView;
+            undoButton = undo; redoButton = redo; fileButton = file; viewButton = viewMenuButton;
         }
 
-        /// <summary>The toolbar button that shows and hides the console writes its state on this label.</summary>
-        public void SetConsoleToggleLabel(TMP_Text label) { consoleToggleLabel = label; UpdateConsoleToggleLabel(); }
-
-        /// <summary>The toolbar's Theme button: its label shows the theme in use and a click opens the list of <see cref="BlockThemeCatalog"/>.</summary>
-        public void SetThemeButton(RectTransform button, TMP_Text label)
-        {
-            themeButton = button; themeLabel = label;
-            BlockStyle.ThemeChanged -= UpdateThemeLabel; BlockStyle.ThemeChanged += UpdateThemeLabel;
-            UpdateThemeLabel();
-        }
-
-        void UpdateThemeLabel()
-        {
-            if (this == null) { BlockStyle.ThemeChanged -= UpdateThemeLabel; return; }
-            if (themeLabel != null) themeLabel.text = Loc.T("Theme: {0}", BlockThemeCatalog.CurrentName);
-        }
-
-        /// <summary>Opens the list of themes under the Theme button.</summary>
+        /// <summary>Opens the list of themes under the View button.</summary>
         public void ShowThemeMenu()
         {
-            if (themeButton == null) return;
+            if (viewButton == null) return;
             var corners = new Vector3[4];
-            themeButton.GetWorldCorners(corners);
+            viewButton.GetWorldCorners(corners);
             var canvas = CanvasForUi;
             var cam = canvas == null || canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
             ShowThemeMenuAt(RectTransformUtility.WorldToScreenPoint(cam, corners[0]), Mathf.Max(180f, corners[2].x - corners[0].x));
+        }
+
+        public const string ViewSlow = "slow", ViewConsole = "console", ViewCode = "code", ViewTheme = "theme";
+
+        /// <summary>Opens the View menu under the View button: Slow, Console and Code (a tick when on) and the list of themes.</summary>
+        public void ShowViewMenu()
+        {
+            if (viewButton == null) return;
+            var corners = new Vector3[4];
+            viewButton.GetWorldCorners(corners);
+            var canvas = CanvasForUi;
+            var cam = canvas == null || canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            ShowViewMenuAt(RectTransformUtility.WorldToScreenPoint(cam, corners[0]), Mathf.Max(200f, corners[2].x - corners[0].x));
+        }
+
+        public void ShowViewMenuAt(Vector2 screenPoint, float width = 220f)
+        {
+            var canvas = CanvasForUi;
+            if (canvas == null || ActiveDialog != null) return;
+            if (viewMenu != null && viewMenu.IsOpen) viewMenu.Close();
+            var items = new List<DropdownItem>
+            {
+                new DropdownItem { Label = Loc.T("Slow"), Value = ViewSlow, Selected = slow },
+                new DropdownItem { Label = Loc.T("Console"), Value = ViewConsole, Selected = ConsoleVisible },
+                new DropdownItem { Label = Loc.T("Code"), Value = ViewCode, Selected = CodeVisible },
+                new DropdownItem { Label = Loc.T("Theme: {0}", BlockThemeCatalog.CurrentName) + "…", Value = ViewTheme },
+            };
+            viewMenu = DropdownMenu.Open(canvas, screenPoint, width, items, item => OnViewCommand(item.Value, screenPoint, width));
+        }
+
+        /// <summary>What choosing an entry of the View menu does (also the way tests press them).</summary>
+        public void OnViewCommand(string command, Vector2 menuPoint, float width = 220f)
+        {
+            switch (command)
+            {
+                case ViewSlow: ToggleSlow(); break;
+                case ViewConsole: ToggleConsole(); break;
+                case ViewCode: ToggleCode(); break;
+                case ViewTheme: ShowThemeMenuAt(menuPoint, width); break;
+            }
         }
 
         public void ShowThemeMenuAt(Vector2 screenPoint, float width = 180f)
@@ -191,13 +211,8 @@ namespace Blockly.UI
         {
             if (console == null) return;
             console.Visible = visible;
-            UpdateConsoleToggleLabel();
         }
 
-        void UpdateConsoleToggleLabel()
-        {
-            if (consoleToggleLabel != null) consoleToggleLabel.text = Loc.T(ConsoleVisible ? "Console: on" : "Console: off");
-        }
 
         public void Undo() => view?.Undo();
         public void Redo() => view?.Redo();
@@ -640,9 +655,6 @@ namespace Blockly.UI
         {
             if (this == null) { Loc.Changed -= OnLanguageChanged; return; }
             LocalizeSceneTexts();
-            UpdateThemeLabel();
-            UpdateConsoleToggleLabel();
-            if (slowLabel != null) slowLabel.text = Loc.T(slow ? "Slow: on" : "Slow: off");
         }
 
         void LocalizeSceneTexts()
@@ -654,7 +666,7 @@ namespace Blockly.UI
             if (toolbar == null) return;
             foreach (var t in toolbar.GetComponentsInChildren<TMP_Text>(true))
             {
-                if (t == slowLabel || t == consoleToggleLabel || t == themeLabel || t == title) continue;
+                if (t == title) continue;
                 if (!sceneTexts.TryGetValue(t, out var english)) { english = t.text; sceneTexts[t] = english; }
                 t.text = Loc.T(english);
             }
@@ -701,7 +713,6 @@ namespace Blockly.UI
         {
             slow = !slow;
             if (runner != null) runner.Slow = slow;
-            if (slowLabel != null) slowLabel.text = Loc.T(slow ? "Slow: on" : "Slow: off");
         }
 
         void OnDragStarted(Block _)

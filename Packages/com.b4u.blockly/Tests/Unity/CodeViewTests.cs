@@ -25,13 +25,16 @@ namespace Blockly.UI.Tests
         [Test]
         public void TheCodeButtonIsInTheToolbarAndShowsAndHidesThePanel()
         {
-            var button = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == "CodeToggle");
-            Assert.AreEqual("ToggleCode", button.onClick.GetPersistentMethodName(0));
-            Assert.AreEqual("Code", button.GetComponentInChildren<TMP_Text>().text);
+            var button = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(x => x.name == "View");
+            Assert.AreEqual("ShowViewMenu", button.onClick.GetPersistentMethodName(0));
             Assert.IsFalse(c.CodeVisible);
-            c.ToggleCode();
+            c.ShowViewMenuAt(new Vector2(600, 600));
+            var menu = Object.FindFirstObjectByType<DropdownMenu>();
+            Assert.AreEqual("Code", menu.Items[2].Label);
+            menu.Pick(2);
             Assert.IsTrue(c.CodeVisible);
-            c.ToggleCode();
+            c.ShowViewMenuAt(new Vector2(600, 600));
+            Object.FindFirstObjectByType<DropdownMenu>().Pick(2);
             Assert.IsFalse(c.CodeVisible);
         }
 

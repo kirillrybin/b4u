@@ -20,7 +20,7 @@ namespace Blockly.UI.Tests
 
         static Rect Box(RectTransform rt) => new Rect(rt.anchoredPosition.x, -rt.anchoredPosition.y, rt.sizeDelta.x, rt.sizeDelta.y);   // top-left pivot, y grows downwards
 
-        static RectTransform[] Buttons() => new[] { "Prev", "Next", "Run", "Step", "Stop", "Slow", "Undo", "Redo", "File" }.Select(n => Child("SafeArea/Toolbar/" + n)).ToArray();
+        static RectTransform[] Buttons() => new[] { "Prev", "Next", "Run", "Step", "Stop", "Undo", "Redo", "File", "View" }.Select(n => Child("SafeArea/Toolbar/" + n)).ToArray();
 
         [Test]
         public void ADesktopWindowKeepsTheDesignedSingleRow()
@@ -30,7 +30,7 @@ namespace Blockly.UI.Tests
             Assert.AreEqual(1, layout.ToolbarRows);
             Assert.AreEqual(48f, layout.ToolbarHeight);
             Assert.AreEqual(124f, Child("SafeArea/Toolbar/Run").anchoredPosition.x);
-            Assert.AreEqual(646f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
+            Assert.AreEqual(528f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
             Assert.AreEqual(190f, layout.EffectiveConsoleHeight);
             Assert.AreEqual(-48f, Child("SafeArea/Scroll").offsetMax.y);
         }
@@ -91,7 +91,7 @@ namespace Blockly.UI.Tests
             layout.Apply(1280, 720);
             Assert.AreEqual(1, layout.ToolbarRows);
             Assert.AreEqual(124f, Child("SafeArea/Toolbar/Run").anchoredPosition.x);
-            Assert.AreEqual(1114f, Child("SafeArea/Toolbar/Title").anchoredPosition.x);
+            Assert.AreEqual(686f, Child("SafeArea/Toolbar/Title").anchoredPosition.x);
         }
 
         [Test]
@@ -136,8 +136,8 @@ namespace Blockly.UI.Tests
             var layout = Open();
             layout.Apply(1280, 720);
             Assert.AreEqual(74f, Child("SafeArea/Toolbar/Run").sizeDelta.x);
-            Assert.AreEqual(112f, Child("SafeArea/Toolbar/Slow").sizeDelta.x);
-            Assert.AreEqual(646f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
+            Assert.AreEqual(76f, Child("SafeArea/Toolbar/View").sizeDelta.x);
+            Assert.AreEqual(528f, Child("SafeArea/Toolbar/File").anchoredPosition.x);
         }
 
         [Test]
@@ -145,11 +145,11 @@ namespace Blockly.UI.Tests
         {
             var layout = Open();
             layout.Apply(1280, 720);
-            var slow = Child("SafeArea/Toolbar/Slow").GetComponentInChildren<TMPro.TMP_Text>();
-            slow.text = "A very long label for the slow button";
+            var slow = Child("SafeArea/Toolbar/View").GetComponentInChildren<TMPro.TMP_Text>();
+            slow.text = "A very long label for the view button";
             layout.Remeasure();
             layout.Apply(1280, 720);
-            Assert.Greater(Child("SafeArea/Toolbar/Slow").sizeDelta.x, 120f);
+            Assert.Greater(Child("SafeArea/Toolbar/View").sizeDelta.x, 120f);
         }
     }
 }

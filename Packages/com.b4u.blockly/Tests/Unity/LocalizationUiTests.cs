@@ -32,13 +32,14 @@ namespace Blockly.UI.Tests
             Assert.AreEqual("Запуск", LabelOf("Run"));
             Assert.AreEqual("Шаг", LabelOf("Step"));
             Assert.AreEqual("Файл", LabelOf("File"));
-            Assert.AreEqual("Консоль: вкл", LabelOf("ConsoleToggle"));
-            Assert.AreEqual("Тема: Classic", LabelOf("Theme"));
-            c.ToggleSlow();
-            Assert.AreEqual("Медленно: вкл", LabelOf("Slow"));
+            Assert.AreEqual("Вид", LabelOf("View"));
+            c.ShowViewMenuAt(new Vector2(600, 600));
+            var menu = Object.FindFirstObjectByType<DropdownMenu>();
+            CollectionAssert.AreEqual(new[] { "Медленно", "Консоль", "Код", "Тема: Classic…" }, menu.Items.Select(i => i.Label));
+            menu.Close();
             c.SetLanguage("en", remember: false);
             Assert.AreEqual("Run", LabelOf("Run"));
-            Assert.AreEqual("Slow: on", LabelOf("Slow"));
+            Assert.AreEqual("View", LabelOf("View"));
         }
 
         [Test]

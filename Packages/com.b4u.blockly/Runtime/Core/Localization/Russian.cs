@@ -11,8 +11,8 @@ namespace Blockly
         {
             // ---- toolbar, menus, dialogs, status
             { "Run", "Запуск" }, { "Step", "Шаг" }, { "Stop", "Стоп" }, { "File", "Файл" },
-            { "Slow: on", "Медленно: вкл" }, { "Slow: off", "Медленно: выкл" },
-            { "Console: on", "Консоль: вкл" }, { "Console: off", "Консоль: выкл" },
+            { "Slow", "Медленно" }, { "View", "Вид" },
+            { "Console", "Консоль" },
             { "Theme: {0}", "Тема: {0}" }, { "Language", "Язык" }, { "Language…", "Язык…" },
             { "Ready", "Готово" }, { "Running…", "Выполняется…" }, { "Paused", "Пауза" }, { "Stopped", "Остановлено" }, { "Finished", "Завершено" },
             { "Error: {0}", "Ошибка: {0}" },

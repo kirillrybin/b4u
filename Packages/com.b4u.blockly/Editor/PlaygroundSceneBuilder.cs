@@ -128,31 +128,24 @@ namespace Blockly.EditorTools
             var run = Button("Run", bar, "Run", 124, 74);
             var step = Button("Step", bar, "Step", 204, 74);
             var stop = Button("Stop", bar, "Stop", 284, 74);
-            var slow = Button("Slow", bar, "Slow: off", 364, 112);
-            var undo = Button("Undo", bar, "Undo", 482, 76);
-            var redo = Button("Redo", bar, "Redo", 564, 76);
-            var file = Button("File", bar, "File", 646, 66);
-            var consoleToggle = Button("ConsoleToggle", bar, "Console: on", 718, 135);
-            var themeButton = Button("Theme", bar, "Theme: Classic", 859, 167);
-            var codeButton = Button("CodeToggle", bar, "Code", 1032, 76);
+            var undo = Button("Undo", bar, "Undo", 364, 76);
+            var redo = Button("Redo", bar, "Redo", 446, 76);
+            var file = Button("File", bar, "File", 528, 66);
+            var viewButton = Button("View", bar, "View", 600, 76);
             var title = Label("Title", bar, 18, 36, TextAlignmentOptions.MidlineLeft);
-            Place(title.rectTransform, 1114, 6, 158, 36);
+            Place(title.rectTransform, 686, 6, 586, 36);
 
             var controller = new GameObject("Playground").AddComponent<PlaygroundController>();
-            controller.Configure(programs, view, consoleView, title, slow.GetComponentInChildren<TMP_Text>(), toolboxView, undo, redo, (RectTransform)file.transform);
+            controller.Configure(programs, view, consoleView, title, toolboxView, undo, redo, (RectTransform)file.transform, (RectTransform)viewButton.transform);
             Wire(prev, controller.Previous); Wire(next, controller.Next);
             Wire(run, controller.Run); Wire(step, controller.Step);
-            Wire(stop, controller.Stop); Wire(slow, controller.ToggleSlow);
+            Wire(stop, controller.Stop);
             Wire(undo, controller.Undo); Wire(redo, controller.Redo);
             Wire(file, controller.ShowFileMenu);
-            Wire(consoleToggle, controller.ToggleConsole);
-            controller.SetConsoleToggleLabel(consoleToggle.GetComponentInChildren<TMP_Text>());
-            Wire(themeButton, controller.ShowThemeMenu);
-            controller.SetThemeButton((RectTransform)themeButton.transform, themeButton.GetComponentInChildren<TMP_Text>());
-            Wire(codeButton, controller.ToggleCode);
+            Wire(viewButton, controller.ShowViewMenu);
 
             var skin = canvasGo.AddComponent<PlaygroundSkin>();
-            var buttons = new[] { prev, next, run, step, stop, slow, undo, redo, file, consoleToggle, themeButton, codeButton };
+            var buttons = new[] { prev, next, run, step, stop, undo, redo, file, viewButton };
             var toolbarTexts = new List<TMP_Text> { title };
             foreach (var b in buttons) toolbarTexts.Add(b.GetComponentInChildren<TMP_Text>());
             skin.Configure(appBackground, scroll.GetComponent<Image>(), bar.GetComponent<Image>(), panel.GetComponent<Image>(), flyoutPanel.GetComponent<Image>(),
@@ -161,7 +154,7 @@ namespace Blockly.EditorTools
             var layout = canvasGo.AddComponent<PlaygroundLayout>();
             layout.Configure(scaler, ui, bar,
                 new[] { (RectTransform)prev.transform, (RectTransform)next.transform, (RectTransform)run.transform, (RectTransform)step.transform, (RectTransform)stop.transform,
-                        (RectTransform)slow.transform, (RectTransform)undo.transform, (RectTransform)redo.transform, (RectTransform)file.transform, (RectTransform)consoleToggle.transform, (RectTransform)themeButton.transform, (RectTransform)codeButton.transform },
+                        (RectTransform)undo.transform, (RectTransform)redo.transform, (RectTransform)file.transform, (RectTransform)viewButton.transform },
                 title.rectTransform, scroll, toolboxRt, flyoutPanel, panel);
 
             Directory.CreateDirectory(Root);
