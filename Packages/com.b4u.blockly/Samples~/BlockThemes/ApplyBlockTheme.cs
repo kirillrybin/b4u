@@ -77,15 +77,6 @@ public class ApplyBlockTheme : MonoBehaviour
         t.ToolboxFont.Scale = 1.1f;
         t.SelectionColour = Hex("#7aa2ff");
         t.Rules.Add(new BlockStyleRule { Match = "controls_*", StrokeWidth = 3.5f });     // loops and conditions get a heavier outline
-        // the "When flag clicked" block of the IconBlocks sample: its own colour and a cap; it is the only block with one
-        t.Rules.Add(new BlockStyleRule
-        {
-            Match = "event_when_clicked", Hat = true,
-            OverrideFill = true, Fill = Hex("#8f8f4d"),
-            OverrideStroke = true, Stroke = Hex("#d9d77a"),
-        });
-        t.HatHeight = 20f;      // about 0.55 of a row (34), like the proportions of the design
-        t.HatStyle = Blockly.Layout.HatShape.Dome;      // a dome like a "when clicked" hat: rises at the left, slopes down to the edge
         t.ButtonCornerRadius = 10f;    // rounded buttons and panels
         t.PanelCornerRadius = 14f;
         return t;
