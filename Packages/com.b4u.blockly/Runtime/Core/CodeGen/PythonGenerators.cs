@@ -31,7 +31,7 @@ namespace Blockly
 
         internal static CodeLanguage Create()
         {
-            var l = new CodeLanguage("Python") { Indent = "    ", FileExtension = ".py", DefaultPrint = "print", Quote = Quote };
+            var l = new CodeLanguage("Python") { Indent = "    ", FileExtension = ".py", DefaultPrint = "print", CommentPrefix = "# ", Quote = Quote };
             foreach (var w in ReservedWords) l.Reserved.Add(w);
             l.Assemble = (g, variables, defs, code) =>
             {
@@ -645,7 +645,7 @@ namespace Blockly
                 string head = globals.Count > 0 ? g.Language.Indent + "global " + string.Join(", ", globals) + "\n" : "";
                 string all = head + body + ret;
                 if (body.Length == 0 && ret.Length == 0) all = head + g.Language.Indent + "pass\n";
-                g.AddDefinition("def " + name + "(" + string.Join(", ", parameters) + "):\n" + all.TrimEnd('\n'));
+                g.AddDefinition(g.CommentLines(b) + "def " + name + "(" + string.Join(", ", parameters) + "):\n" + all.TrimEnd('\n'));
                 return "";
             };
             l.Statement("procedures_defnoreturn", define);

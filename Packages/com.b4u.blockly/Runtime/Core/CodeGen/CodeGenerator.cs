@@ -23,6 +23,8 @@ namespace Blockly
     {
         /// <summary>What the "print" block calls (default: console.log for JavaScript, print for Python). It takes one argument.</summary>
         public string Print;
+        /// <summary>Whether the comments of the blocks are written into the code as comment lines (default: yes).</summary>
+        public bool Comments = true;
     }
 
     /// <summary>
@@ -41,6 +43,8 @@ namespace Blockly
         /// <summary>The extension of a file with this language's code, with the dot (".js").</summary>
         public string FileExtension = ".txt";
         public string DefaultPrint = "console.log";
+        /// <summary>What a comment line starts with ("// " for JavaScript, "# " for Python).</summary>
+        public string CommentPrefix = "// ";
         public readonly HashSet<string> Reserved = new HashSet<string>();
         /// <summary>Puts the variable line, the helper functions and the procedures in front of the main code.</summary>
         public Func<CodeGenerator, IList<string>, IList<string>, string, string> Assemble;
@@ -214,6 +218,31 @@ namespace Blockly
         public string StatementToCode(Block block, string input)
             => Prefix(ChainToCode(block.GetInputTargetBlock(input)), Language.Indent);
 
+        /// <summary>Where a comment line is cut (Blockly's COMMENT_WRAP of 60 less the room for the prefix).</summary>
+        public const int CommentWrap = 57;
+
+        /// <summary>
+        /// The comment of a block as whole comment lines (each ending with a newline), cut at <see cref="CommentWrap"/> columns at spaces;
+        /// empty for no comment, an empty one, or when <see cref="CodeOptions.Comments"/> is off.
+        /// </summary>
+        public string CommentLines(Block block)
+        {
+            if (!Options.Comments || block?.Comment == null || block.Comment.Trim().Length == 0) return "";
+            var sb = new StringBuilder();
+            foreach (string paragraph in block.Comment.Replace("\r\n", "\n").Split('\n'))
+            {
+                var line = new StringBuilder();
+                foreach (string word in paragraph.Split(' '))
+                {
+                    if (line.Length > 0 && line.Length + 1 + word.Length > CommentWrap) { sb.Append(Language.CommentPrefix).Append(line).Append('\n'); line.Clear(); }
+                    if (line.Length > 0) line.Append(' ');
+                    line.Append(word);
+                }
+                sb.Append(Language.CommentPrefix).Append(line.ToString().TrimEnd()).Append('\n');
+            }
+            return sb.ToString();
+        }
+
         /// <summary>The code of a block and of the ones after it.</summary>
         public string ChainToCode(Block first)
         {
@@ -223,6 +252,7 @@ namespace Blockly
                 if (b.Disabled) continue;
                 if (!Language.TryStatement(b.Type, out var gen))
                     throw new NotSupportedException(Loc.T("No code generator for block type '{0}'", b.Type));
+                if (!ProcedureInfo.IsDefinition(b)) sb.Append(CommentLines(b));      // a definition writes its comment above the function instead
                 sb.Append(gen(this, b));
             }
             return sb.ToString();

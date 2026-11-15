@@ -717,7 +717,7 @@ namespace Blockly
                 string body = g.StatementToCode(b, "STACK");
                 string ret = V(g, b, "RETURN", JsOrder.None, "");
                 if (ret.Length > 0) ret = g.Language.Indent + "return " + ret + ";\n";
-                g.AddDefinition("function " + name + "(" + string.Join(", ", g.ParameterNames(b)) + ") {\n" + body + ret + "}");
+                g.AddDefinition(g.CommentLines(b) + "function " + name + "(" + string.Join(", ", g.ParameterNames(b)) + ") {\n" + body + ret + "}");
                 return "";
             };
             l.Statement("procedures_defnoreturn", define);

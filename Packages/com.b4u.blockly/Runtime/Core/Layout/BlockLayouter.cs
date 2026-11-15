@@ -23,12 +23,20 @@ namespace Blockly.Layout
         public Vec2[] Polygon;
     }
 
+    /// <summary>Where the comment icon of a block sits (absolute workspace coordinates, y down).</summary>
+    public sealed class IconBox
+    {
+        public float X, Y, W, H;
+    }
+
     public sealed class BlockBox
     {
         public Block Block;
         public bool IsShadow;
         public float X, Y, W, H;
         public Vec2[] Outline;                     // clockwise in y-down coordinates
+        /// <summary>The comment icon at the start of the first row; null for a block without a comment (or when comments are off).</summary>
+        public IconBox CommentIcon;
         public readonly List<FieldBox> Fields = new List<FieldBox>();
         public readonly List<SlotBox> Slots = new List<SlotBox>();
         /// <summary>
@@ -60,11 +68,17 @@ namespace Blockly.Layout
 
         public BlockLayouter(Workspace workspace, ITextMeasurer text) { this.workspace = workspace; this.text = text; }
 
+        /// <summary>The side of the comment icon.</summary>
+        public const float CommentIconSize = 16f;
+        /// <summary>False leaves out the icon (and its room) of a block with a comment: the block is laid out as if it had none.</summary>
+        public bool ShowComments = true;
+
         // ------------------------------------------------------------------ measured tree
         sealed class Item
         {
             public Field Field; public string Text; public bool Editable, Dropdown; public string ImageSrc, Colour;
             public Input Slot; public Measured SlotChild;
+            public bool CommentIcon;
             public float W, H;
         }
 
@@ -205,6 +219,8 @@ namespace Blockly.Layout
             }
             Close();
             if (m.Rows.Count == 0) m.Rows.Add(new Row());
+            if (ShowComments && block.Comment != null && !shadow)
+                m.Rows[0].Items.Insert(0, new Item { CommentIcon = true, W = CommentIconSize, H = CommentIconSize });
 
             // Statement arms line up: the inner edge sits right of the widest statement-row label.
             float stmtLabel = 0;
@@ -381,7 +397,12 @@ namespace Blockly.Layout
                 if (r.Statement?.Connection != null) box.Connections[r.Statement.Connection] = new Vec2(x + m.StmtX, rowY);
                 foreach (var it in r.Items)
                 {
-                    if (it.Slot != null)
+                    if (it.CommentIcon)
+                    {
+                        float iy = rowY + (r.Statement != null ? (G.RowMinHeight - it.H) / 2f : (r.H - it.H) / 2f);
+                        box.CommentIcon = new IconBox { X = cx, Y = iy, W = it.W, H = it.H };
+                    }
+                    else if (it.Slot != null)
                     {
                         float sy = rowY + (r.H - it.H) / 2f;
                         if (it.Slot.Connection != null) box.Connections[it.Slot.Connection] = new Vec2(cx + G.TabWidth, sy + G.TabTop);

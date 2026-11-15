@@ -50,6 +50,7 @@ namespace Blockly
             // ---- block menu, variables, procedures
             { "Duplicate", "Дублировать" }, { "Copy", "Копировать" }, { "Cut", "Вырезать" },
             { "Collapse block", "Свернуть блок" }, { "Expand block", "Развернуть блок" },
+            { "Add comment", "Добавить комментарий" }, { "Remove comment", "Удалить комментарий" },
             { "Disable block", "Отключить блок" }, { "Enable block", "Включить блок" },
             { "params", "параметры" },
             { "Parameters of \"{0}\" (separated by commas):", "Параметры «{0}» (через запятую):" },

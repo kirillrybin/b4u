@@ -179,6 +179,7 @@ namespace Blockly.UI
                 codeView.SaveRequested += ExportCode;
             }
             if (codeView == null) return;
+            codeView.Options.Comments = view.CommentsEnabled;
             codeView.Show(view.Workspace);
             codeView.Visible = visible;
         }
@@ -263,11 +264,13 @@ namespace Blockly.UI
             console?.Clear();
             console?.SetStatus(Loc.T("Ready"), ConsoleView.NeutralColour);
             toolbox?.CloseFlyout();
+            if (codeView != null) codeView.Options.Comments = view.CommentsEnabled;
             codeView?.Show(ws);
         }
 
         void OnEdited()
         {
+            if (codeView != null) codeView.Options.Comments = view.CommentsEnabled;
             codeView?.Show(view.Workspace);
             if (!dirty) { dirty = true; RefreshTitle(); }
             autosaveTimer = autosaveDelay;                             // every edit restarts the wait, so a burst of edits is written once
