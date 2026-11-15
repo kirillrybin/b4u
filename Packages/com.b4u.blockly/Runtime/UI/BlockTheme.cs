@@ -223,7 +223,7 @@ namespace Blockly.UI
         public float FlyoutTitleSize = 22f;
         public float FlyoutTitleHeight = 56f;
         [Tooltip("Space between the edge of the flyout and its blocks.")]
-        public float FlyoutPadding = 12f;
+        public float FlyoutPadding = 6f;
 
         [Header("Text")]
         public float FontSize = 12f;
