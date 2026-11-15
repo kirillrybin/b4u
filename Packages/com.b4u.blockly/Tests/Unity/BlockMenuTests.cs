@@ -44,12 +44,12 @@ namespace Blockly.UI.Tests
             Assert.IsTrue(view.ShowBlockMenu(print, new Vector2(100, 100)));
             Assert.AreSame(print, view.SelectedBlock, "the block is selected");
             var menu = Object.FindFirstObjectByType<DropdownMenu>();
-            CollectionAssert.AreEqual(new[] { "Duplicate", "Copy", "Cut", "Disable block", "Collapse block", "Delete" }, menu.Items.Select(i => i.Label));
+            CollectionAssert.AreEqual(new[] { "Duplicate", "Copy", "Cut", "Disable block", "Collapse block", "Add comment", "Delete" }, menu.Items.Select(i => i.Label));
 
             var text = print.GetInputTargetBlock("TEXT");
             view.ShowBlockMenu(text, new Vector2(100, 100));
             menu = Object.FindFirstObjectByType<DropdownMenu>();
-            CollectionAssert.AreEqual(new[] { "Duplicate", "Copy", "Cut", "Delete" }, menu.Items.Select(i => i.Label), "an expression block always runs with its parent");
+            CollectionAssert.AreEqual(new[] { "Duplicate", "Copy", "Cut", "Add comment", "Delete" }, menu.Items.Select(i => i.Label), "an expression block always runs with its parent");
         }
 
         [Test]

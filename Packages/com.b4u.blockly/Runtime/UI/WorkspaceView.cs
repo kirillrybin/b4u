@@ -68,6 +68,25 @@ namespace Blockly.UI
         public bool OverDeleteArea { get; private set; }
 
         public Workspace Workspace => workspace;
+
+        // ------------------------------------------------------------------ comments
+        [SerializeField, Tooltip("Blocks can have a comment: a '?' icon on the block that opens a text bubble. Off hides the icons, the bubbles and the menu entries; the comments stay in the program.")]
+        bool commentsEnabled = true;
+
+        /// <summary>Whether comments on blocks are on (default). Off hides the icon, the bubble and the menu entries; the comments are kept in the program and come back when it is turned on again.</summary>
+        public bool CommentsEnabled
+        {
+            get => commentsEnabled;
+            set
+            {
+                if (commentsEnabled == value) return;
+                commentsEnabled = value;
+                if (workspace != null) Rebuild();
+            }
+        }
+
+        /// <summary>A layouter that follows this view's settings; every layout the view uses has to come from here so that what is measured is what is drawn.</summary>
+        BlockLayouter NewLayouter() => new BlockLayouter(workspace, measurer) { ShowComments = commentsEnabled };
         public LayoutResult Layout { get; private set; }
         /// <summary>The block currently outlined as "about to execute", or null.</summary>
         public Block HighlightedBlock { get; private set; }
@@ -145,7 +164,7 @@ namespace Blockly.UI
             FieldEditStarted?.Invoke(null);                       // a running program is about to be edited: stop it
             string before = SnapshotForUndo();
             EnsureMeasurer();
-            WorkspaceEditing.Delete(workspace, new BlockLayouter(workspace, measurer), block, heal: true);
+            WorkspaceEditing.Delete(workspace, NewLayouter(), block, heal: true);
             SelectedBlock = null;
             Rebuild();
             RecordForUndo(before);
@@ -191,7 +210,7 @@ namespace Blockly.UI
         }
 
         // ------------------------------------------------------------------ block menu
-        public const string MenuDuplicate = "duplicate", MenuCopy = "copy", MenuCut = "cut", MenuDisable = "disable", MenuCollapse = "collapse", MenuDelete = "delete";
+        public const string MenuDuplicate = "duplicate", MenuCopy = "copy", MenuCut = "cut", MenuDisable = "disable", MenuCollapse = "collapse", MenuDelete = "delete", MenuAddComment = "add-comment", MenuRemoveComment = "remove-comment";
         public const float LongPressSeconds = 0.5f;
         Block pressBlock; Vector2 pressPoint; float pressStarted;
 
@@ -234,6 +253,7 @@ namespace Blockly.UI
             };
             if (CanDisable(block)) items.Add(new DropdownItem { Label = Loc.T(block.Disabled ? "Enable block" : "Disable block"), Value = MenuDisable });
             if (CanCollapse(block)) items.Add(new DropdownItem { Label = Loc.T(block.Collapsed ? "Expand block" : "Collapse block"), Value = MenuCollapse });
+            if (CanComment(block)) items.Add(new DropdownItem { Label = Loc.T(block.Comment == null ? "Add comment" : "Remove comment"), Value = block.Comment == null ? MenuAddComment : MenuRemoveComment });
             items.Add(new DropdownItem { Label = Loc.T("Delete"), Value = MenuDelete });
             Canvas.ForceUpdateCanvases();
             menu = DropdownMenu.Open(RootCanvas, screenPoint, 170f, items, item => ChooseBlockMenuItem(block, item.Value));
@@ -252,6 +272,8 @@ namespace Blockly.UI
                 case MenuCut: return CutSelected();
                 case MenuDisable: return ToggleDisabledSelected();
                 case MenuCollapse: return ToggleCollapsedSelected();
+                case MenuAddComment: return AddComment(block);
+                case MenuRemoveComment: return RemoveComment(block);
                 case MenuDelete: return DeleteSelected();
                 default: return false;
             }
@@ -306,6 +328,139 @@ namespace Blockly.UI
             return true;
         }
 
+        // ------------------------------------------------------------------ comments on blocks
+        readonly List<CommentBubble> bubbles = new List<CommentBubble>();
+        public const string CommentIconName = "comment icon";
+
+        /// <summary>The comment bubbles on screen.</summary>
+        public IReadOnlyList<CommentBubble> CommentBubbles => bubbles;
+
+        /// <summary>The bubble of <paramref name="block"/> if it is open, else null.</summary>
+        public CommentBubble BubbleOf(Block block) => bubbles.Find(b => b != null && b.Block == block);
+
+        /// <summary>A block can have a comment when comments are on and it is a real block of an editable workspace (not a shadow, not in the flyout).</summary>
+        public bool CanComment(Block block) => commentsEnabled && block != null && !block.IsShadow && Spawner == null && workspace != null && History != null;
+
+        /// <summary>Gives the block an empty comment, opens its bubble and puts the cursor in it. One undo step.</summary>
+        public bool AddComment(Block block)
+        {
+            if (!CanComment(block) || block.Comment != null || IsDragging) return false;
+            CloseMenu();
+            string before = SnapshotForUndo();
+            block.Comment = ""; block.CommentPinned = true;
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            BubbleOf(block)?.Focus();
+            return true;
+        }
+
+        /// <summary>Takes the comment off the block. One undo step.</summary>
+        public bool RemoveComment(Block block)
+        {
+            if (!CanComment(block) || block.Comment == null || IsDragging) return false;
+            CloseMenu();
+            string before = SnapshotForUndo();
+            block.Comment = null; block.CommentPinned = false;
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        /// <summary>Opens the bubble of a commented block, or closes it. Not an undo step and not an edit of the program.</summary>
+        public bool ToggleCommentBubble(Block block)
+        {
+            if (!CanComment(block) || block.Comment == null || IsDragging) return false;
+            CloseMenu();
+            Select(block);
+            block.CommentPinned = !block.CommentPinned;
+            Rebuild();
+            if (block.CommentPinned) BubbleOf(block)?.Focus();
+            return true;
+        }
+
+        internal string SnapshotForCommentEdit() => SnapshotForUndo();
+
+        /// <summary>The workspace y (down) at a screen y (pixels, from the bottom of the screen).</summary>
+        internal float WorkspaceYAtScreenY(float screenY) => ScreenToWorkspace(new Vector2(0f, screenY), EventCamera).y;
+
+        /// <summary>The user finished typing in a bubble: one undo step for the whole edit, and the program counts as changed.</summary>
+        internal void FinishCommentEdit(string before)
+        {
+            if (before == null || before == SnapshotForUndo()) return;
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+        }
+
+        void FlushBubbles()
+        {
+            foreach (var b in bubbles) if (b != null) b.Flush();
+            bubbles.Clear();
+        }
+
+        /// <summary>The part of the workspace that is on screen, in workspace units (y down); empty when the view has no viewport around it.</summary>
+        internal Rect VisibleArea()
+        {
+            var area = transform.parent as RectTransform;
+            if (area == null) return default;
+            var corners = new Vector3[4];
+            area.GetWorldCorners(corners);
+            var rt = (RectTransform)transform;
+            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+            foreach (var c in corners)
+            {
+                var l = rt.InverseTransformPoint(c);                  // the view's pivot is its top-left corner, y up: workspace y is -y
+                minX = Mathf.Min(minX, l.x); maxX = Mathf.Max(maxX, l.x);
+                minY = Mathf.Min(minY, -l.y); maxY = Mathf.Max(maxY, -l.y);
+            }
+            return Rect.MinMaxRect(minX, minY, maxX, maxY);
+        }
+
+        void CreateCommentIcon(RectTransform parent, BlockBox box, BlockStyle.BlockLook look)
+        {
+            var ic = box.CommentIcon;
+            var rt = NewRect(CommentIconName, parent, ic.X - box.X, ic.Y - box.Y, ic.W, ic.H);
+            var circle = new Vec2[16];
+            for (int i = 0; i < circle.Length; i++)
+            {
+                float a = i * Mathf.PI * 2f / circle.Length;
+                circle[i] = new Vec2(ic.W / 2f + Mathf.Cos(a) * ic.W / 2f, ic.H / 2f + Mathf.Sin(a) * ic.H / 2f);
+            }
+            var g = rt.gameObject.AddComponent<PolygonGraphic>();
+            g.SetShape(circle, look.Stroke, look.Fill, 1f);
+            g.EdgeWidth = edgeWidth;
+            g.raycastTarget = Spawner == null;
+            if (Spawner == null) rt.gameObject.AddComponent<CommentIconTarget>().Init(this, box.Block);
+            var q = NewRect("?", rt, 0, 0, ic.W, ic.H).gameObject.AddComponent<TextMeshProUGUI>();
+            Configure(q);
+            q.text = "?"; q.fontSize = 11; q.color = Color.white; q.alignment = TextAlignmentOptions.Center;
+        }
+
+        /// <summary>The right edge of a block including what is plugged into it (its inputs, and the blocks inside its arms; not the blocks after it): the bubble goes beyond it.</summary>
+        float RightEdgeOf(Block block)
+        {
+            if (block == null || !Layout.ByBlock.TryGetValue(block, out var box)) return 0f;
+            float right = box.X + box.W;
+            foreach (var input in block.Inputs)
+            {
+                var child = input.Connection?.Target?.Owner;
+                if (child == null) continue;
+                if (input.Kind == InputKind.Statement) for (var c = child; c != null; c = c.NextBlock) right = Mathf.Max(right, RightEdgeOf(c));
+                else right = Mathf.Max(right, RightEdgeOf(child));
+            }
+            return right;
+        }
+
+        void CreateCommentBubbles()
+        {
+            if (!commentsEnabled || Spawner != null || IsDragging) return;       // a dragged block moves away from its bubble: they come back on drop
+            var visible = VisibleArea();
+            foreach (var box in Layout.Boxes)
+                if (box.CommentIcon != null && box.Block.CommentPinned)
+                    bubbles.Add(CommentBubble.Create(this, transform, box.Block, box, RightEdgeOf(box.Block), visible, BlockStyle.Look(box.Block, box.IsShadow)));
+        }
+
         // ------------------------------------------------------------------ procedure parameters
         RectTransform paramsButton;
         public const string ParamsButtonName = "params button";
@@ -357,7 +512,7 @@ namespace Blockly.UI
             FieldEditStarted?.Invoke(null);                       // a running program is about to be edited: stop it
             EnsureMeasurer();
             string before = SnapshotForUndo();
-            bool changed = ProcedureEditing.SetParams(workspace, new BlockLayouter(workspace, measurer), definition, names);
+            bool changed = ProcedureEditing.SetParams(workspace, NewLayouter(), definition, names);
             if (changed) { RecordForUndo(before); Rebuild(); WorkspaceEdited?.Invoke(); }
             return changed;
         }
@@ -479,7 +634,7 @@ namespace Blockly.UI
             Clear();
             if (workspace == null) return;
             EnsureMeasurer();
-            Layout = new BlockLayouter(workspace, measurer).LayoutWorkspace();
+            Layout = NewLayouter().LayoutWorkspace();
             RefreshEdgeWidth();
             foreach (var box in Layout.Boxes) CreateBlock(box);
 
@@ -488,6 +643,7 @@ namespace Blockly.UI
 
             if (SelectedBlock != null && !Layout.ByBlock.ContainsKey(SelectedBlock)) { SelectedBlock = null; SelectionChanged?.Invoke(null); }
             UpdateSelectionOutline();
+            CreateCommentBubbles();
         }
 
         /// <summary>The text measurer shared with the layout (so other views can lay out with identical metrics).</summary>
@@ -648,7 +804,7 @@ namespace Blockly.UI
             if (workspace == null || block == null || field == null) return false;
             EnsureMeasurer();
             string before = SnapshotForUndo();
-            bool changed = FieldEditing.SetValue(workspace, block, field, value, new BlockLayouter(workspace, measurer));
+            bool changed = FieldEditing.SetValue(workspace, block, field, value, NewLayouter());
             if (changed) { RecordForUndo(before); Rebuild(); WorkspaceEdited?.Invoke(); }
             return changed;
         }
@@ -703,7 +859,7 @@ namespace Blockly.UI
             FieldEditStarted?.Invoke(null);
             EnsureMeasurer();
             string before = SnapshotForUndo();
-            VariableEditing.Delete(workspace, new BlockLayouter(workspace, measurer), id);
+            VariableEditing.Delete(workspace, NewLayouter(), id);
             RecordForUndo(before);
             Rebuild();
             WorkspaceEdited?.Invoke();
@@ -850,7 +1006,7 @@ namespace Blockly.UI
             if (IsEditingField) SubmitFieldEdit(fieldInput.text);          // accept what was typed before moving things around
             string before = stateBefore ?? SnapshotForUndo();
             EnsureMeasurer();
-            var d = new BlockDragger(workspace, new BlockLayouter(workspace, measurer)) { GridSpacing = Spawner == null && BlockStyle.GridSnap ? BlockStyle.GridSpacing : 0f };
+            var d = new BlockDragger(workspace, NewLayouter()) { GridSpacing = Spawner == null && BlockStyle.GridSnap ? BlockStyle.GridSpacing : 0f };
             if (!d.Begin(block, isNew)) return false;
             dragger = d;
             dragBefore = before;
@@ -1068,7 +1224,7 @@ namespace Blockly.UI
             if (workspace == null) return;
             EnsureMeasurer();
             string before = recordUndo ? SnapshotForUndo() : null;
-            new BlockLayouter(workspace, measurer).CleanUp();
+            NewLayouter().CleanUp();
             RecordForUndo(before);
             Rebuild();
         }
@@ -1076,6 +1232,7 @@ namespace Blockly.UI
         void Clear()
         {
             CloseMenu();
+            FlushBubbles();
             if (fieldInput != null && editField != null) { editBlock = null; editField = null; fieldInput.gameObject.SetActive(false); }
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
@@ -1163,6 +1320,7 @@ namespace Blockly.UI
             }
 
             foreach (var f in box.Fields) CreateField(root, box, f, look);
+            if (box.CommentIcon != null) CreateCommentIcon(root, box, look);
         }
 
         void CreateField(RectTransform parent, BlockBox box, FieldBox f, BlockStyle.BlockLook look)

@@ -41,6 +41,11 @@ namespace Blockly
             block.Collapsed = e.GetAttribute("collapsed") == "true";
             block.Disabled = e.GetAttribute("disabled") == "true";
             if (e.HasAttribute("inline")) block.InputsInline = e.GetAttribute("inline") == "true";
+            foreach (XmlElement c in Elements(e, "comment"))                      // <comment pinned="true" h="80" w="160">text</comment>
+            {
+                block.Comment = c.InnerText;
+                block.CommentPinned = c.GetAttribute("pinned") == "true";
+            }
 
             foreach (XmlElement m in Elements(e, "mutation"))
             {

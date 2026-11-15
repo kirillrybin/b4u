@@ -97,6 +97,10 @@ namespace Blockly
         public BlockDefinition Definition;
         public double X, Y;
         public bool InputsInline, Collapsed, Disabled, IsShadow;
+        /// <summary>The comment of the block: null for none, "" for an empty one. Saved with the block; the code export writes it as comment lines.</summary>
+        public string Comment;
+        /// <summary>Whether the comment's bubble is open (Blockly's "pinned"); saved with the block.</summary>
+        public bool CommentPinned;
         /// <summary>For a shadow block: the connection it is the default value of (shadows are not "connected", so Parent is null).</summary>
         public Connection ShadowOf;
         public Dictionary<string, object> ExtraState;   // mutator state (kept verbatim for round-trip)

@@ -49,3 +49,4 @@ First version.
 - Code panel on a narrow screen: the panel is drawn above the toolbox (its own nested canvas) and covers the whole width, so the four header buttons keep readable labels.
 - Console: a drag (or the mouse wheel) over it scrolls the output; the text is not a raycast target, so the console takes the drag itself.
 - Android build (`BuildTool`) is landscape only, both directions, never portrait.
+- Comments on blocks: "Add comment" in the block menu puts a "?" icon on the block; a click on it opens a text bubble beside the block (kept inside the visible area), saved with the program (Blockly JSON `icons.comment` and XML `<comment>`), and written into the exported JavaScript / Python as `//` / `#` lines. `WorkspaceView.CommentsEnabled` turns the feature off (the comments stay in the program); `CodeOptions.Comments` turns the export lines off.

@@ -233,6 +233,9 @@ namespace Blockly.UI
 
         // ------------------------------------------------------------ content
         /// <summary>Exports <paramref name="ws"/> again and shows it. Called after every edit.</summary>
+        /// <summary>The settings of the export the panel shows (for example <see cref="CodeOptions.Comments"/>).</summary>
+        public CodeOptions Options = new CodeOptions();
+
         public void Show(Workspace ws) { workspace = ws; Refresh(); }
 
         public void Refresh()
@@ -241,7 +244,7 @@ namespace Blockly.UI
             code = ""; error = "";
             if (workspace != null)
             {
-                try { code = Language.Generate(workspace); }
+                try { code = Language.Generate(workspace, Options); }
                 catch (NotSupportedException e) { error = e.Message; }
             }
             body.color = error.Length > 0 ? ConsoleView.ErrorColour : BlockStyle.ConsoleText;

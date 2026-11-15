@@ -52,6 +52,12 @@ namespace Blockly
             block.Collapsed = Json.Json.GetBool(d, "collapsed");
             block.Disabled = Json.Json.GetBool(d, "disabled");
             if (d.TryGetValue("inline", out var il) && il is bool inl) block.InputsInline = inl;
+            var comment = Json.Json.GetObject(Json.Json.GetObject(d, "icons"), "comment");      // Blockly: "icons": { "comment": { "text", "pinned", "height", "width" } }
+            if (comment != null)
+            {
+                block.Comment = Json.Json.GetString(comment, "text") ?? "";
+                block.CommentPinned = Json.Json.GetBool(comment, "pinned");
+            }
 
             if (d.TryGetValue("extraState", out var es))
             {
@@ -183,6 +189,8 @@ namespace Blockly
             if (b.Collapsed) d["collapsed"] = true;
             if (b.Disabled) d["disabled"] = true;
             if (b.InputsInline != (b.Definition.InputsInline ?? false)) d["inline"] = b.InputsInline;
+            if (b.Comment != null)
+                d["icons"] = new Dictionary<string, object> { { "comment", new Dictionary<string, object> { { "text", b.Comment }, { "pinned", b.CommentPinned } } } };
 
             var mut = b.Definition.Mutator;
             var es = mut != null ? mut.Save(b) : b.ExtraState;

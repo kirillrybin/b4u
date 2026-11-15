@@ -66,6 +66,15 @@ namespace Blockly.EditorTools
                     Canvas.ForceUpdateCanvases();
                 }
                 if (Arg("-blocklySearch") != null) controller.Toolbox.Search(Arg("-blocklySearch"));
+                // -blocklyComment "text": puts an open comment on the first block
+                if (Arg("-blocklyComment") != null && controller.View.Workspace.TopBlocks.Count > 0)
+                {
+                    var first = controller.View.Workspace.TopBlocks[0];
+                    controller.View.AddComment(first);
+                    first.Comment = Arg("-blocklyComment");
+                    controller.View.Rebuild();
+                    Canvas.ForceUpdateCanvases();
+                }
                 if (Arg("-blocklyFlyout") != null) controller.Toolbox.SelectCategory(int.Parse(Arg("-blocklyFlyout")));
 
                 int steps = int.Parse(Arg("-blocklySteps", "0"));
