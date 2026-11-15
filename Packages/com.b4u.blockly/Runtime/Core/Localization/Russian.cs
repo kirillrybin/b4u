@@ -51,6 +51,7 @@ namespace Blockly
             { "Duplicate", "Дублировать" }, { "Copy", "Копировать" }, { "Cut", "Вырезать" },
             { "Collapse block", "Свернуть блок" }, { "Expand block", "Развернуть блок" },
             { "Add comment", "Добавить комментарий" }, { "Remove comment", "Удалить комментарий" },
+            { "item", "элемент" }, { "create text with", "создать текст из" }, { "create list with", "создать список из" },
             { "Disable block", "Отключить блок" }, { "Enable block", "Включить блок" },
             { "params", "параметры" },
             { "Parameters of \"{0}\" (separated by commas):", "Параметры «{0}» (через запятую):" },

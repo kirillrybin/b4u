@@ -69,6 +69,22 @@ namespace Blockly.UI
 
         public Workspace Workspace => workspace;
 
+        // ------------------------------------------------------------------ mutators
+        [SerializeField, Tooltip("If, join and list blocks get a gear icon that opens a bubble to add, remove and move their parts (else if, else, items). Off hides the icon and the bubble; the blocks keep their shape.")]
+        bool mutatorsEnabled = true;
+
+        /// <summary>Whether the mutator gear and bubble of if, join and list blocks are on (default). Off hides them; the blocks keep their shape.</summary>
+        public bool MutatorsEnabled
+        {
+            get => mutatorsEnabled;
+            set
+            {
+                if (mutatorsEnabled == value) return;
+                mutatorsEnabled = value;
+                if (workspace != null) Rebuild();
+            }
+        }
+
         // ------------------------------------------------------------------ comments
         [SerializeField, Tooltip("Blocks can have a comment: a '?' icon on the block that opens a text bubble. Off hides the icons, the bubbles and the menu entries; the comments stay in the program.")]
         bool commentsEnabled = true;
@@ -86,7 +102,7 @@ namespace Blockly.UI
         }
 
         /// <summary>A layouter that follows this view's settings; every layout the view uses has to come from here so that what is measured is what is drawn.</summary>
-        BlockLayouter NewLayouter() => new BlockLayouter(workspace, measurer) { ShowComments = commentsEnabled };
+        BlockLayouter NewLayouter() => new BlockLayouter(workspace, measurer) { ShowComments = commentsEnabled, ShowMutators = mutatorsEnabled };
         public LayoutResult Layout { get; private set; }
         /// <summary>The block currently outlined as "about to execute", or null.</summary>
         public Block HighlightedBlock { get; private set; }
@@ -393,8 +409,95 @@ namespace Blockly.UI
             WorkspaceEdited?.Invoke();
         }
 
+        // ------------------------------------------------------------------ mutator bubbles
+        readonly HashSet<Block> openMutators = new HashSet<Block>();
+        readonly List<MutatorBubble> mutatorBubbles = new List<MutatorBubble>();
+        public const string MutatorIconName = "mutator icon";
+
+        /// <summary>The mutator bubbles on screen.</summary>
+        public IReadOnlyList<MutatorBubble> MutatorBubbles => mutatorBubbles;
+        public MutatorBubble MutatorBubbleOf(Block block) => mutatorBubbles.Find(b => b != null && b.Block == block);
+        public bool IsMutatorOpen(Block block) => openMutators.Contains(block);
+
+        /// <summary>A block has a mutator to open when mutators are on and it is an if, join or list block of an editable workspace.</summary>
+        public bool CanMutate(Block block) => mutatorsEnabled && Spawner == null && workspace != null && History != null && MutatorEditing.CanMutate(block);
+
+        /// <summary>Opens the mutator bubble of a block, or closes it. Not an edit of the program.</summary>
+        public bool ToggleMutatorBubble(Block block)
+        {
+            if (!CanMutate(block) || IsDragging) return false;
+            CloseMenu();
+            Select(block);
+            if (!openMutators.Remove(block)) openMutators.Add(block);
+            Rebuild();
+            return true;
+        }
+
+        /// <summary>Adds an else if / else (an if) or an item (join, list). One undo step.</summary>
+        public bool MutatorAdd(Block block, PartKind kind)
+            => Mutate(block, (ws, lay) => kind == PartKind.ElseIf ? MutatorEditing.AddElseIf(ws, lay, block)
+                                         : kind == PartKind.Else ? MutatorEditing.AddElse(ws, lay, block) : MutatorEditing.AddItem(ws, lay, block));
+
+        /// <summary>Takes a part away; the blocks plugged into it stay in the workspace. One undo step.</summary>
+        public bool MutatorRemove(Block block, MutatorPart part) => Mutate(block, (ws, lay) => MutatorEditing.Remove(ws, lay, block, part));
+
+        /// <summary>Moves a part one place up (-1) or down (+1), with what is plugged into it. One undo step.</summary>
+        public bool MutatorMove(Block block, MutatorPart part, int delta) => Mutate(block, (ws, lay) => MutatorEditing.Move(ws, lay, block, part, delta));
+
+        bool Mutate(Block block, Func<Workspace, BlockLayouter, bool> change)
+        {
+            if (!CanMutate(block) || IsDragging || IsEditingField || ActiveDialog != null) return false;
+            CloseMenu();
+            string before = SnapshotForUndo();
+            FieldEditStarted?.Invoke(null);                       // the block changes shape: a running program is stale
+            EnsureMeasurer();
+            if (!change(workspace, NewLayouter())) return false;
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        void CreateMutatorIcon(RectTransform parent, BlockBox box, BlockStyle.BlockLook look)
+        {
+            var ic = box.MutatorIcon;
+            var rt = NewRect(MutatorIconName, parent, ic.X - box.X, ic.Y - box.Y, ic.W, ic.H);
+            var gear = new List<Vec2>();
+            const int teeth = 8;
+            for (int i = 0; i < teeth * 2; i++)                    // a ring of teeth: long and short radius alternate
+            {
+                float a = i * Mathf.PI / teeth;
+                float r = (i % 2 == 0 ? 0.5f : 0.34f) * ic.W;
+                gear.Add(new Vec2(ic.W / 2f + Mathf.Cos(a) * r, ic.H / 2f + Mathf.Sin(a) * r));
+            }
+            var g = rt.gameObject.AddComponent<PolygonGraphic>();
+            g.SetShape(gear.ToArray(), look.Stroke, look.Fill, 1f);
+            g.EdgeWidth = edgeWidth;
+            g.raycastTarget = Spawner == null;
+            if (Spawner == null) rt.gameObject.AddComponent<MutatorIconTarget>().Init(this, box.Block);
+            var hole = NewRect("hub", rt, ic.W * 0.35f, ic.H * 0.35f, ic.W * 0.3f, ic.H * 0.3f).gameObject.AddComponent<PolygonGraphic>();
+            var c = new Vec2[8];
+            for (int i = 0; i < c.Length; i++) { float a = i * Mathf.PI * 2f / c.Length; c[i] = new Vec2(ic.W * 0.15f + Mathf.Cos(a) * ic.W * 0.15f, ic.H * 0.15f + Mathf.Sin(a) * ic.H * 0.15f); }
+            hole.SetShape(c, look.Fill);
+            hole.raycastTarget = false;
+        }
+
+        void CreateMutatorBubbles()
+        {
+            openMutators.RemoveWhere(b => !Layout.ByBlock.ContainsKey(b));       // a block that is gone (deleted, or replaced by undo) takes its bubble with it
+            if (!mutatorsEnabled || Spawner != null || IsDragging) return;
+            var visible = VisibleArea();
+            foreach (var box in Layout.Boxes)
+                if (box.MutatorIcon != null && openMutators.Contains(box.Block))
+                {
+                    float top = box.Block.Comment != null && box.Block.CommentPinned ? CommentBubble.Height + CommentBubble.Margin : 0f;     // below the comment bubble
+                    mutatorBubbles.Add(MutatorBubble.Create(this, transform, box.Block, box, RightEdgeOf(box.Block), top, visible, BlockStyle.Look(box.Block, box.IsShadow)));
+                }
+        }
+
         void FlushBubbles()
         {
+            mutatorBubbles.Clear();
             foreach (var b in bubbles) if (b != null) b.Flush();
             bubbles.Clear();
         }
@@ -644,6 +747,7 @@ namespace Blockly.UI
             if (SelectedBlock != null && !Layout.ByBlock.ContainsKey(SelectedBlock)) { SelectedBlock = null; SelectionChanged?.Invoke(null); }
             UpdateSelectionOutline();
             CreateCommentBubbles();
+            CreateMutatorBubbles();
         }
 
         /// <summary>The text measurer shared with the layout (so other views can lay out with identical metrics).</summary>
@@ -1320,6 +1424,7 @@ namespace Blockly.UI
             }
 
             foreach (var f in box.Fields) CreateField(root, box, f, look);
+            if (box.MutatorIcon != null) CreateMutatorIcon(root, box, look);
             if (box.CommentIcon != null) CreateCommentIcon(root, box, look);
         }
 

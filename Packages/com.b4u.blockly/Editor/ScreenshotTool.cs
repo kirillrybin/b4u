@@ -75,6 +75,17 @@ namespace Blockly.EditorTools
                     controller.View.Rebuild();
                     Canvas.ForceUpdateCanvases();
                 }
+                // -blocklyMutator 1: opens the mutator bubble of the first block that has one (and adds an else if to an if, so the rows show)
+                if (Arg("-blocklyMutator") == "1")
+                {
+                    var mutable = controller.View.Workspace.AllBlocks().FirstOrDefault(Blockly.Editing.MutatorEditing.CanMutate);
+                    if (mutable != null)
+                    {
+                        controller.View.ToggleMutatorBubble(mutable);
+                        if (Blockly.Editing.MutatorEditing.KindOf(mutable) == Blockly.Editing.MutatorEditing.Kind.If) controller.View.MutatorAdd(mutable, Blockly.Editing.PartKind.ElseIf);
+                        Canvas.ForceUpdateCanvases();
+                    }
+                }
                 if (Arg("-blocklyFlyout") != null) controller.Toolbox.SelectCategory(int.Parse(Arg("-blocklyFlyout")));
 
                 int steps = int.Parse(Arg("-blocklySteps", "0"));
