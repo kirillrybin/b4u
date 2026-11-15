@@ -24,5 +24,4 @@ Liberation Sans, the default font of TextMesh Pro (Assets/TextMesh Pro/Fonts), w
 
 Pictures of the Purple skin sample
 
-The Logic, Lists and Colour category icons were drawn for this package and are MIT like the code. The other category icons (Loops, Math, Text, Variables, Functions, Search)
-and the trash can come from a design file; their author and licence still have to be confirmed before the repository is opened.
+All category icons and the trash can of the Purple skin sample were drawn for this package (plain geometric shapes) and are MIT like the code.
