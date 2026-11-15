@@ -512,11 +512,14 @@ namespace Blockly.UI
             if (searching) category.Blocks = ToolboxSearch.Find(definition, main.Workspace, searchQuery);
             flyoutPanel.gameObject.SetActive(true);                 // before measuring: TMP needs an active hierarchy
             current = Flyout.Build(category, main.Workspace, flyoutView.Measurer);
+            // The padding is part of the content: the blocks start 'pad' units in, and there is 'pad' more room right and below. (Moving the content
+            // itself would not do: the scroll view clamps it back to the edge of the viewport as soon as it updates, and the padding is gone.)
+            float pad = BlockStyle.FlyoutPadding;
+            foreach (var b in current.Workspace.TopBlocks) { b.X += pad; b.Y += pad; }
             flyoutView.SetWorkspace(current.Workspace);
             var rt = (RectTransform)flyoutView.transform;
-            float pad = BlockStyle.FlyoutPadding;
-            rt.sizeDelta += new Vector2(2 * pad, 2 * pad);           // padding inside the scroll area
-            rt.anchoredPosition = new Vector2(pad, -pad);
+            rt.sizeDelta += new Vector2(pad, pad);
+            rt.anchoredPosition = Vector2.zero;
             ShowFlyoutTitle(Loc.T(category.Name));
             ShowSearchField(searching, searching ? category.Blocks.Count : 0, opening);
             ApplyStripCorners();
@@ -715,7 +718,8 @@ namespace Blockly.UI
             var rt = (RectTransform)go.transform;
             rt.SetParent(flyoutView.transform, false);
             rt.anchorMin = rt.anchorMax = new Vector2(0, 1); rt.pivot = new Vector2(0, 1);
-            rt.anchoredPosition = new Vector2(8, -6); rt.sizeDelta = new Vector2(190, 32);
+            float padding = BlockStyle.FlyoutPadding;
+            rt.anchoredPosition = new Vector2(padding + 8f, -(padding + 6f)); rt.sizeDelta = new Vector2(190, 32);
             var img = go.GetComponent<Image>();
             img.color = BlockStyle.VariableButton;
             UiShape.Round(img, BlockStyle.ButtonCornerRadius);
