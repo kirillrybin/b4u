@@ -221,6 +221,28 @@ namespace Blockly.UI.Tests
         }
 
         [Test]
+        public void TheSelectButtonIsAlwaysThereAndTogglesTheMode()
+        {
+            var v = NewView();
+            var host = new GameObject("Scroll", typeof(RectTransform)).GetComponent<RectTransform>();
+            host.SetParent(root.transform, false);
+            v.transform.parent.SetParent(host, false);
+            v.SetWorkspace(v.Workspace);                                       // the button is made when the workspace is set
+            Assert.IsNotNull(v.SelectButton, "shown while the mode is off");
+            Assert.IsNull(v.SelectChip, "the chip is only for the mode on");
+            Assert.AreEqual("Select", v.SelectButton.GetComponentInChildren<TMPro.TMP_Text>().text);
+            v.SelectButton.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsTrue(v.SelectMode);
+            StringAssert.StartsWith("Select: on", v.SelectButton.GetComponentInChildren<TMPro.TMP_Text>().text);
+            v.SelectButton.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsFalse(v.SelectMode);
+            v.SelectButtonVisible = false;
+            Assert.IsNull(v.SelectButton, "can be hidden");
+            v.SelectButtonVisible = true; v.MultiSelectEnabled = false;
+            Assert.IsNull(v.SelectButton, "no button without multi-select");
+        }
+
+        [Test]
         public void TheSelectModeShowsAChipAndTheBackgroundMenuTogglesIt()
         {
             var v = NewView();

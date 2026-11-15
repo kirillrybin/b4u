@@ -300,6 +300,7 @@ namespace Blockly.UI
             if (History != null) History.Changed += () => HistoryChanged?.Invoke();
             HistoryChanged?.Invoke();
             Rebuild();
+            UpdateSelectChip();
         }
 
         // ------------------------------------------------------------------ undo / redo
@@ -364,6 +365,7 @@ namespace Blockly.UI
                 if (multiSelectEnabled == value) return;
                 multiSelectEnabled = value;
                 if (!value) { SelectMode = false; if (multi.Count > 0) Select(SelectedBlock); }
+                UpdateSelectChip();
             }
         }
 
@@ -394,13 +396,29 @@ namespace Blockly.UI
 
         public const string SelectChipName = "select mode";
         RectTransform selectChip;
+        TMP_Text selectChipLabel;
+        Image selectChipImage;
 
-        /// <summary>The small "Select: on" button shown over the workspace while the select mode is on (tap it to leave the mode); null when not shown.</summary>
-        public RectTransform SelectChip => selectChip != null && selectChip.gameObject.activeSelf ? selectChip : null;
+        [SerializeField, Tooltip("Show a small Select button in the top right corner of the workspace that turns the select mode on and off (for touch screens, where there is no Shift key). Needs Multi Select Enabled.")]
+        bool selectButtonVisible = true;
+
+        /// <summary>Shows or hides the Select button in the corner of the workspace (default: shown while <see cref="MultiSelectEnabled"/> is on).</summary>
+        public bool SelectButtonVisible
+        {
+            get => selectButtonVisible;
+            set { if (selectButtonVisible == value) return; selectButtonVisible = value; UpdateSelectChip(); }
+        }
+
+        /// <summary>The "Select: on" chip, shown while the select mode is on; null otherwise.</summary>
+        public RectTransform SelectChip => selectMode && selectChip != null && selectChip.gameObject.activeSelf ? selectChip : null;
+
+        /// <summary>The Select button in the corner of the workspace (it reads "Select" when the mode is off and "Select: on" when it is on); null when it is not shown.</summary>
+        public RectTransform SelectButton => selectChip != null && selectChip.gameObject.activeSelf ? selectChip : null;
 
         void UpdateSelectChip()
         {
-            if (!selectMode) { if (selectChip != null) selectChip.gameObject.SetActive(false); return; }
+            bool show = Spawner == null && multiSelectEnabled && (selectButtonVisible || selectMode);       // the main workspace only, not a flyout
+            if (!show) { if (selectChip != null) selectChip.gameObject.SetActive(false); return; }
             var host = transform.parent != null ? transform.parent.parent as RectTransform : null;       // the scroll view that holds the workspace
             if (host == null) return;
             if (selectChip == null)
@@ -411,18 +429,21 @@ namespace Blockly.UI
                 selectChip.anchorMin = selectChip.anchorMax = selectChip.pivot = new Vector2(1, 1);
                 selectChip.anchoredPosition = new Vector2(-10, -10);
                 selectChip.sizeDelta = new Vector2(130, 30);
-                var img = go.GetComponent<Image>();
-                img.color = SelectionColour;
-                go.GetComponent<Button>().targetGraphic = img;
-                go.GetComponent<Button>().onClick.AddListener(() => SelectMode = false);
+                selectChipImage = go.GetComponent<Image>();
+                go.GetComponent<Button>().targetGraphic = selectChipImage;
+                go.GetComponent<Button>().onClick.AddListener(() => SelectMode = !SelectMode);
                 var label = new GameObject("text", typeof(RectTransform)).GetComponent<RectTransform>();
                 label.SetParent(selectChip, false);
                 label.anchorMin = Vector2.zero; label.anchorMax = Vector2.one; label.offsetMin = label.offsetMax = Vector2.zero;
-                var t = label.gameObject.AddComponent<TextMeshProUGUI>();
-                Configure(t);
-                t.fontSize = 14; t.color = Color.white; t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
-                t.text = Loc.T("Select: on") + "  ×";
+                selectChipLabel = label.gameObject.AddComponent<TextMeshProUGUI>();
+                Configure(selectChipLabel);
+                selectChipLabel.fontSize = 14; selectChipLabel.color = Color.white; selectChipLabel.alignment = TextAlignmentOptions.Center; selectChipLabel.raycastTarget = false;
             }
+            var c = SelectionColour;
+            selectChip.sizeDelta = new Vector2(selectMode ? 130 : 84, 30);
+            UiShape.Round(selectChipImage, 15f, UiCorners.All);
+            selectChipImage.color = selectMode ? c : new Color(c.r * 0.45f, c.g * 0.45f, c.b * 0.45f, 0.75f);        // the mode on: the selection colour; off: a quiet button
+            selectChipLabel.text = selectMode ? Loc.T("Select: on") + "  ×" : Loc.T("Select");
             selectChip.gameObject.SetActive(true);
             selectChip.SetAsLastSibling();
         }
@@ -1203,7 +1224,7 @@ namespace Blockly.UI
         }
         float pendingEdgeScale;
 
-        void OnEnable() { SubscribeToTheme(); }
+        void OnEnable() { SubscribeToTheme(); UpdateSelectChip(); }
         void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; }
         void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; if (selectChip != null) DestroyImmediateSafe(selectChip.gameObject); }
 
@@ -1211,6 +1232,7 @@ namespace Blockly.UI
         void OnLanguageChanged()
         {
             if (this == null) { Loc.Changed -= OnLanguageChanged; return; }
+            UpdateSelectChip();
             if (workspace != null && Spawner == null) Rebuild();      // the flyout is drawn again by the toolbox, which also puts its button back
         }
 
@@ -1240,6 +1262,7 @@ namespace Blockly.UI
         {
             if (this == null) { BlockStyle.ThemeChanged -= OnThemeChanged; return; }   // destroyed without OnDestroy (EditMode)
             UpdateGrid();
+            UpdateSelectChip();
             if (measureTemplate != null) { Configure(measureTemplate); measurer.Clear(); measuredVersion = BlockStyle.Version; }
             Rebuild();
         }
