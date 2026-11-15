@@ -15,3 +15,14 @@ The colour palette of the colour field (Runtime/Core/Definitions/BlockDefinition
 Changes: reduced to the blocks this package supports, with mutators replaced by the package's own, and re-saved as JSON.
 
 The C# code is written for this package and is MIT; it follows the behaviour, the JSON/XML formats and the rendering rules of Blockly.
+
+Fonts (SIL Open Font License 1.1; the licence text must travel with the font)
+
+Poppins, Copyright 2014-2019 Indian Type Foundry (https://github.com/itfoundry/Poppins), used by the Purple skin sample. The licence text is Samples~/PurpleSkin/OFL-Poppins.txt;
+in the project it is next to the font in Assets/TextMesh Pro/Resources/Fonts & Materials/. The font may be used, embedded and redistributed with the application, but not sold on its own.
+Liberation Sans, the default font of TextMesh Pro (Assets/TextMesh Pro/Fonts), with its licence text next to it (LiberationSans - OFL.txt).
+
+Pictures of the Purple skin sample
+
+The Logic, Lists and Colour category icons were drawn for this package and are MIT like the code. The other category icons (Loops, Math, Text, Variables, Functions, Search)
+and the trash can come from a design file; their author and licence still have to be confirmed before the repository is opened.

@@ -18,6 +18,22 @@ namespace Blockly.EditorTools
     /// </summary>
     public static class ScreenshotTool
     {
+        /// <summary>
+        /// Does what the project's own startup code would do when the game starts: the <c>ApplyBlockTheme</c> component of the scene (registers its theme) and the
+        /// <c>PurpleIcons</c> installer (registers the category pictures). Found by name, because the package does not reference the project's scripts; absent ones are skipped.
+        /// </summary>
+        static void RunEditModeInit()
+        {
+            const System.Reflection.BindingFlags any = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var installer = asm.GetType("PurpleIcons");
+                installer?.GetMethod("Install", any)?.Invoke(null, null);
+            }
+            foreach (var m in UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+                if (m != null && m.GetType().Name == "ApplyBlockTheme") m.GetType().GetMethod("OnEnable", any)?.Invoke(m, null);
+        }
+
         static string Arg(string name, string def = null)
         {
             var a = Environment.GetCommandLineArgs();
@@ -60,7 +76,9 @@ namespace Blockly.EditorTools
                 if (Arg("-blocklyCodeLanguage") != null) { controller.SetCodeVisible(true); controller.CodePanel.PickLanguage(Arg("-blocklyCodeLanguage")); }
                 if (Arg("-blocklyTheme") != null) 
                 {
-                    BuiltInThemes.Register(); BlockThemeCatalog.Select(Arg("-blocklyTheme"));
+                    BuiltInThemes.Register();
+                    RunEditModeInit();          // the themes and pictures of the project (Assets) register themselves when the game starts, which edit mode never does
+                    BlockThemeCatalog.Select(Arg("-blocklyTheme"));
                     foreach (var skin in UnityEngine.Object.FindObjectsByType<PlaygroundSkin>(FindObjectsSortMode.None)) skin.Apply();     // edit mode does not run OnEnable
                     controller.View.UpdateGrid();
                     Canvas.ForceUpdateCanvases();

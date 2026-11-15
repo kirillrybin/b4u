@@ -17,7 +17,7 @@ public class ApplyBlockTheme : MonoBehaviour
     void OnEnable()
     {
         var t = theme != null ? theme : Candy(font);
-        BlockThemeCatalog.Register(theme != null ? theme.name : "Figma", t);
+        BlockThemeCatalog.Register(theme != null ? theme.name : "Purple", t);
         BlockStyle.Theme = t;
     }
 
@@ -36,7 +36,7 @@ public class ApplyBlockTheme : MonoBehaviour
             t.Font = font;
             t.ToolbarFont.Font = t.ToolboxFont.Font = t.ConsoleFont.Font = t.MenuFont.Font = t.DialogFont.Font = font;
         }
-        t.name = "Figma";
+        t.name = "Purple";
         t.StrokeScale = 1.35f;         // outline lighter than the fill
         t.StrokeWidth = 2.8f;
         t.FieldStrokeWidth = 0f;
@@ -98,15 +98,6 @@ public class ApplyBlockTheme : MonoBehaviour
         t.ToolboxFont.Scale = 1.1f;
         t.SelectionColour = Hex("#7aa2ff");
         t.Rules.Add(new BlockStyleRule { Match = "controls_*", StrokeWidth = 3.5f });     // loops and conditions get a heavier outline
-        // the "When flag clicked" block of the IconBlocks sample: its own colour and a cap; it is the only block with one
-        t.Rules.Add(new BlockStyleRule
-        {
-            Match = "event_when_clicked", Hat = true,
-            OverrideFill = true, Fill = Hex("#8f8f4d"),
-            OverrideStroke = true, Stroke = Hex("#d9d77a"),
-        });
-        t.HatHeight = 23f;      // about 0.55 of a row (42), like the proportions of the design
-        t.HatStyle = Blockly.Layout.HatShape.Dome;      // a dome like a "when clicked" hat: rises at the left, slopes down to the edge
         t.ButtonCornerRadius = 12f;    // rounded buttons and panels
         t.PanelCornerRadius = 14f;
         return t;
