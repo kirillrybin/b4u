@@ -50,7 +50,10 @@ namespace Blockly
             // ---- block menu, variables, procedures
             { "Duplicate", "Дублировать" }, { "Copy", "Копировать" }, { "Cut", "Вырезать" },
             { "Collapse block", "Свернуть блок" }, { "Expand block", "Развернуть блок" },
-            { "Add comment", "Добавить комментарий" }, { "Remove comment", "Удалить комментарий" },
+            { "Add comment", "Добавить комментарий" },
+            { "Call to an undefined procedure “{0}”", "Вызов несуществующей процедуры «{0}»" }, { "Variable “{0}” is not defined", "Переменная «{0}» не определена" },
+            { "This block needs a value in every empty input", "Этому блоку нужно значение в каждом пустом входе" },
+            { "This block should be connected to a statement or value input", "Этот блок нужно подключить к входу другого блока" }, { "Remove comment", "Удалить комментарий" },
             { "item", "элемент" }, { "create text with", "создать текст из" }, { "create list with", "создать список из" },
             { "Disable block", "Отключить блок" }, { "Enable block", "Включить блок" },
             { "params", "параметры" },

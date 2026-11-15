@@ -39,6 +39,8 @@ namespace Blockly.Layout
         public IconBox CommentIcon;
         /// <summary>The mutator (gear) icon at the very start of the first row; null unless <see cref="BlockLayouter.ShowMutators"/> is on and the block has a mutator the user can open.</summary>
         public IconBox MutatorIcon;
+        /// <summary>The warning triangle at the very start of the first row; null unless <see cref="BlockLayouter.ShowWarnings"/> is on and the block is in <see cref="BlockLayouter.Warnings"/>.</summary>
+        public IconBox WarningIcon;
         public readonly List<FieldBox> Fields = new List<FieldBox>();
         public readonly List<SlotBox> Slots = new List<SlotBox>();
         /// <summary>
@@ -76,13 +78,17 @@ namespace Blockly.Layout
         public bool ShowComments = true;
         /// <summary>True reserves room for the mutator icon (the gear) of if, join and list blocks. Off by default, so a plain layout is the one of Blockly's blocks without icons.</summary>
         public bool ShowMutators = false;
+        /// <summary>Whether blocks that are in <see cref="Warnings"/> get a warning icon (and the room for it). Off by default, so existing layouts do not change.</summary>
+        public bool ShowWarnings = false;
+        /// <summary>The blocks that have a warning (see <see cref="Editing.BlockWarnings"/>).</summary>
+        public ICollection<Block> Warnings;
 
         // ------------------------------------------------------------------ measured tree
         sealed class Item
         {
             public Field Field; public string Text; public bool Editable, Dropdown; public string ImageSrc, Colour;
             public Input Slot; public Measured SlotChild;
-            public bool CommentIcon, MutatorIcon;
+            public bool CommentIcon, MutatorIcon, WarningIcon;
             public float W, H;
         }
 
@@ -227,6 +233,8 @@ namespace Blockly.Layout
                 m.Rows[0].Items.Insert(0, new Item { CommentIcon = true, W = CommentIconSize, H = CommentIconSize });
             if (ShowMutators && !shadow && Editing.MutatorEditing.CanMutate(block))
                 m.Rows[0].Items.Insert(0, new Item { MutatorIcon = true, W = CommentIconSize, H = CommentIconSize });      // first, as in Blockly (the gear comes before the comment)
+            if (ShowWarnings && !shadow && Warnings != null && Warnings.Contains(block))
+                m.Rows[0].Items.Insert(0, new Item { WarningIcon = true, W = CommentIconSize, H = CommentIconSize });      // before the gear: warning, gear, comment
 
             // Statement arms line up: the inner edge sits right of the widest statement-row label.
             float stmtLabel = 0;
@@ -403,7 +411,12 @@ namespace Blockly.Layout
                 if (r.Statement?.Connection != null) box.Connections[r.Statement.Connection] = new Vec2(x + m.StmtX, rowY);
                 foreach (var it in r.Items)
                 {
-                    if (it.MutatorIcon)
+                    if (it.WarningIcon)
+                    {
+                        float wy = rowY + (r.Statement != null ? (G.RowMinHeight - it.H) / 2f : (r.H - it.H) / 2f);
+                        box.WarningIcon = new IconBox { X = cx, Y = wy, W = it.W, H = it.H };
+                    }
+                    else if (it.MutatorIcon)
                     {
                         float gy = rowY + (r.Statement != null ? (G.RowMinHeight - it.H) / 2f : (r.H - it.H) / 2f);
                         box.MutatorIcon = new IconBox { X = cx, Y = gy, W = it.W, H = it.H };
