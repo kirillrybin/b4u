@@ -130,6 +130,36 @@ namespace Blockly.UI
             return b;
         }
 
+        bool docked;                         // moved up so that the on-screen keyboard does not cover it
+
+        /// <summary>
+        /// While the user types on a touch screen the keyboard covers the lower part of the screen: the note moves to the top of the visible area and
+        /// shrinks to fit above the keyboard, and goes back when typing ends (the model keeps its own place).
+        /// </summary>
+        void Update()
+        {
+            if (view == null || note == null) return;
+            bool typing = before != null && Application.isMobilePlatform && input != null && input.isFocused;
+            var rt = (RectTransform)transform;
+            float homeH = note.Collapsed ? HeaderHeight : (float)System.Math.Max(note.H, 2 * HeaderHeight);
+            if (!typing)
+            {
+                if (docked) { docked = false; rt.anchoredPosition = new Vector2((float)note.X, -(float)note.Y); rt.sizeDelta = new Vector2((float)note.W, homeH); }
+                return;
+            }
+            // Unity does not always report the native Android keyboard: assume it takes the lower 56% of the screen then
+            float keyboard = TouchScreenKeyboard.visible && TouchScreenKeyboard.area.height > 0f ? TouchScreenKeyboard.area.height : Screen.height * 0.56f;
+            float margin = 8f;
+            float keyboardTop = view.WorkspaceYAtScreenY(keyboard) - margin;
+            var area = view.VisibleArea();
+            float top = area.height > 0f ? area.yMin + margin : (float)note.Y;
+            float left = area.width > 0f ? Mathf.Clamp((float)note.X, area.xMin + margin, Mathf.Max(area.xMin + margin, area.xMax - margin - (float)note.W)) : (float)note.X;
+            float height = Mathf.Clamp(keyboardTop - top, 56f, homeH);
+            rt.anchoredPosition = new Vector2(left, -top);
+            rt.sizeDelta = new Vector2((float)note.W, height);
+            docked = true;
+        }
+
         /// <summary>Puts the cursor in the text field (a new note is ready to type into).</summary>
         public void Focus() { if (input != null) { input.Select(); input.ActivateInputField(); } }
 
