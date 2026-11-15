@@ -36,7 +36,7 @@ https://github.com/kirillrybin/b4u.git?path=/Packages/com.b4u.blockly
 
 ## Try it
 
-**Blockly > Create Playground Scene** builds `Assets/Playground/Playground.unity` with a toolbar, a toolbox, a workspace, an output console and a set of example programs. Press Play, pick a program, press Run. The **Theme** button lists the themes of `BlockThemeCatalog` (Classic, the built-in Dark and High Contrast, plus whatever is registered with `BlockThemeCatalog.Register("name", theme)`, or `Register("name", () => makeTheme())` to build it only when it is chosen) and applies the one you pick; the choice is remembered for the next start. The **Console** button hides the output console to give the workspace its room (an error shows it again).
+**Blockly > Create Playground Scene** builds `Assets/Playground/Playground.unity` with a toolbar, a toolbox, a workspace, an output console and a set of example programs. Press Play, pick a program, press Run. The **View** menu holds Slow, Console, Code and Theme. Its **Theme** entry lists the themes of `BlockThemeCatalog` (Classic, the built-in Dark and High Contrast, plus whatever is registered with `BlockThemeCatalog.Register("name", theme)`, or `Register("name", () => makeTheme())` to build it only when it is chosen) and applies the one you pick; the choice is remembered for the next start. Its **Console** entry hides the output console to give the workspace its room (an error shows it again).
 
 ## Use it from code
 

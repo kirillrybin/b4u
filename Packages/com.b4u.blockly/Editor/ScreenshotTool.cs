@@ -67,6 +67,7 @@ namespace Blockly.EditorTools
                     var layout = UnityEngine.Object.FindFirstObjectByType<PlaygroundLayout>();      // edit mode does not run its Update either
                     if (layout != null) { var size = ((RectTransform)layout.transform).rect.size; layout.Apply(size.x, size.y); Canvas.ForceUpdateCanvases(); }
                 }
+                if (Arg("-blocklyViewMenu") == "1") { controller.ShowViewMenuAt(new Vector2(float.Parse(Arg("-blocklyViewMenuX", "600")) , float.Parse(Arg("-blocklyViewMenuY", "650")))); Canvas.ForceUpdateCanvases(); }
                 if (Arg("-blocklySearch") != null) controller.Toolbox.Search(Arg("-blocklySearch"));
                 // -blocklyComment "text": puts an open comment on the first block
                 if (Arg("-blocklyComment") != null && controller.View.Workspace.TopBlocks.Count > 0)
@@ -112,7 +113,7 @@ namespace Blockly.EditorTools
                     for (int i = 0; i < 100000 && controller.Runner.State == RunnerState.Running; i++) controller.Tick(0.016f);
                 }
 
-                var canvas = UnityEngine.Object.FindFirstObjectByType<Canvas>();
+                var canvas = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).First(c => c.GetComponent<CanvasScaler>() != null && c.isRootCanvas);
                 var cam = new GameObject("Camera", typeof(Camera)).GetComponent<Camera>();
                 cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = Color.black;
                 canvas.renderMode = RenderMode.ScreenSpaceCamera;
