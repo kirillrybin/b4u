@@ -85,10 +85,6 @@ public class PurpleSkin : MonoBehaviour
         t.FlyoutCorners = UiCorners.Right;
         t.FlyoutTitle = true; t.FlyoutTitleSize = 24f; t.FlyoutTitleHeight = 64f; t.FlyoutTitleColour = Color.white;
         t.FlyoutPadding = 24f;
-        // the rail collapses to square icon buttons; a round tab on its edge toggles it
-        t.ToolboxCollapsible = true; t.ToolboxCollapsedWidth = 86f;
-        t.ToggleSize = 44f; t.ToggleTop = 24f;
-        t.ToggleColour = Hex("#252749"); t.ToggleIconColour = Hex("#7370a0");
         // while a block is dragged the rail becomes the delete panel: dashed red border, trash can, label
         t.ToolboxDeletePanel = true; t.ToolboxDeleteHover = Hex("#2f2848");
         t.DeleteBorderColour = Hex("#e04a4a"); t.DeleteBorderWidth = 2f; t.DeleteDashLength = 8f; t.DeleteDashGap = 8f;
