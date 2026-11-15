@@ -195,6 +195,14 @@ namespace Blockly
             return d;
         }
 
+        /// <summary>Like <see cref="SaveBlockCopy"/> but the blocks that follow the block are part of the copy (a whole stack).</summary>
+        public static Dictionary<string, object> SaveStackCopy(Workspace ws, Block b)
+        {
+            var d = SaveBlock(ws, b, false);
+            StripIds(d);
+            return d;
+        }
+
         static void StripIds(Dictionary<string, object> block)
         {
             block.Remove("id");

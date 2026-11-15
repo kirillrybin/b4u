@@ -98,6 +98,8 @@ namespace Blockly.EditorTools
                         Canvas.ForceUpdateCanvases();
                     }
                 }
+                // -blocklySelect all: selects every stack, so the outlines show
+                if (Arg("-blocklySelect") == "all") { controller.View.SelectAll(); Canvas.ForceUpdateCanvases(); }
                 if (Arg("-blocklyFlyout") != null) controller.Toolbox.SelectCategory(int.Parse(Arg("-blocklyFlyout")));
 
                 int steps = int.Parse(Arg("-blocklySteps", "0"));
