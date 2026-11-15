@@ -85,6 +85,77 @@ namespace Blockly.UI
             }
         }
 
+        // ------------------------------------------------------------------ warnings
+        [SerializeField, Tooltip("Blocks that cannot do their job (an empty input, an unknown variable or procedure, a value plugged into nothing) get a warning icon with a bubble. Off hides the icons.")]
+        bool warningsEnabled = true;
+
+        /// <summary>Whether warning icons are on (default). They are only shown in a workspace the user can edit, not in the flyout.</summary>
+        public bool WarningsEnabled
+        {
+            get => warningsEnabled;
+            set
+            {
+                if (warningsEnabled == value) return;
+                warningsEnabled = value;
+                if (workspace != null) Rebuild();
+            }
+        }
+
+        Dictionary<Block, string> warnings = new Dictionary<Block, string>();
+        readonly HashSet<Block> openWarnings = new HashSet<Block>();
+        readonly List<WarningBubble> warningBubbles = new List<WarningBubble>();
+        public const string WarningIconName = "warning icon";
+        public static readonly Color WarningColour = new Color(0.97f, 0.74f, 0.1f);
+
+        /// <summary>The warning text of a block, or null when it has none (or warnings are off).</summary>
+        public string WarningOf(Block block) => block != null && warnings.TryGetValue(block, out var t) ? t : null;
+        /// <summary>The warning bubbles on screen.</summary>
+        public IReadOnlyList<WarningBubble> WarningBubbles => warningBubbles;
+        public WarningBubble WarningBubbleOf(Block block) => warningBubbles.Find(b => b != null && b.Block == block);
+        public bool IsWarningOpen(Block block) => openWarnings.Contains(block);
+
+        /// <summary>Opens the warning bubble of a block, or closes it. Not an edit of the program.</summary>
+        public bool ToggleWarningBubble(Block block)
+        {
+            if (WarningOf(block) == null || IsDragging) return false;
+            CloseMenu();
+            Select(block);
+            if (!openWarnings.Remove(block)) openWarnings.Add(block);
+            Rebuild();
+            return true;
+        }
+
+        void CreateWarningIcon(RectTransform parent, BlockBox box, BlockStyle.BlockLook look)
+        {
+            var ic = box.WarningIcon;
+            var rt = NewRect(WarningIconName, parent, ic.X - box.X, ic.Y - box.Y, ic.W, ic.H);
+            var tri = new[] { new Vec2(ic.W / 2f, 0.5f), new Vec2(ic.W - 0.5f, ic.H - 1f), new Vec2(0.5f, ic.H - 1f) };
+            var g = rt.gameObject.AddComponent<PolygonGraphic>();
+            g.SetShape(tri, look.Stroke, WarningColour, 1f);
+            g.EdgeWidth = edgeWidth;
+            g.raycastTarget = Spawner == null;
+            if (Spawner == null) rt.gameObject.AddComponent<WarningIconTarget>().Init(this, box.Block);
+            var q = NewRect("!", rt, 0, 3, ic.W, ic.H - 3).gameObject.AddComponent<TextMeshProUGUI>();
+            Configure(q);
+            q.text = "!"; q.fontSize = 10; q.fontStyle = FontStyles.Bold; q.color = Color.black; q.alignment = TextAlignmentOptions.Center;
+        }
+
+        void CreateWarningBubbles()
+        {
+            openWarnings.RemoveWhere(b => !warnings.ContainsKey(b) || !Layout.ByBlock.ContainsKey(b));      // a block that is fixed or gone takes its bubble with it
+            if (!warningsEnabled || Spawner != null || IsDragging) return;
+            var visible = VisibleArea();
+            foreach (var box in Layout.Boxes)
+                if (box.WarningIcon != null && openWarnings.Contains(box.Block))
+                {
+                    float top = 0f;
+                    if (box.Block.Comment != null && box.Block.CommentPinned) top += CommentBubble.Height + CommentBubble.Margin;
+                    var gear = MutatorBubbleOf(box.Block);
+                    if (gear != null) top += ((RectTransform)gear.transform).sizeDelta.y + MutatorBubble.Margin;       // below the other bubbles of the block
+                    warningBubbles.Add(WarningBubble.Create(this, transform, box.Block, warnings[box.Block], box, RightEdgeOf(box.Block), top, visible, BlockStyle.Look(box.Block, box.IsShadow)));
+                }
+        }
+
         // ------------------------------------------------------------------ comments
         [SerializeField, Tooltip("Blocks can have a comment: a '?' icon on the block that opens a text bubble. Off hides the icons, the bubbles and the menu entries; the comments stay in the program.")]
         bool commentsEnabled = true;
@@ -102,7 +173,12 @@ namespace Blockly.UI
         }
 
         /// <summary>A layouter that follows this view's settings; every layout the view uses has to come from here so that what is measured is what is drawn.</summary>
-        BlockLayouter NewLayouter() => new BlockLayouter(workspace, measurer) { ShowComments = commentsEnabled, ShowMutators = mutatorsEnabled };
+        BlockLayouter NewLayouter()
+        {
+            bool warn = warningsEnabled && Spawner == null;
+            warnings = warn ? BlockWarnings.Check(workspace) : new Dictionary<Block, string>();
+            return new BlockLayouter(workspace, measurer) { ShowComments = commentsEnabled, ShowMutators = mutatorsEnabled, ShowWarnings = warn, Warnings = warnings.Keys };
+        }
         public LayoutResult Layout { get; private set; }
         /// <summary>The block currently outlined as "about to execute", or null.</summary>
         public Block HighlightedBlock { get; private set; }
@@ -498,6 +574,7 @@ namespace Blockly.UI
         void FlushBubbles()
         {
             mutatorBubbles.Clear();
+            warningBubbles.Clear();
             foreach (var b in bubbles) if (b != null) b.Flush();
             bubbles.Clear();
         }
@@ -748,6 +825,7 @@ namespace Blockly.UI
             UpdateSelectionOutline();
             CreateCommentBubbles();
             CreateMutatorBubbles();
+            CreateWarningBubbles();
         }
 
         /// <summary>The text measurer shared with the layout (so other views can lay out with identical metrics).</summary>
@@ -1424,6 +1502,7 @@ namespace Blockly.UI
             }
 
             foreach (var f in box.Fields) CreateField(root, box, f, look);
+            if (box.WarningIcon != null) CreateWarningIcon(root, box, look);
             if (box.MutatorIcon != null) CreateMutatorIcon(root, box, look);
             if (box.CommentIcon != null) CreateCommentIcon(root, box, look);
         }
