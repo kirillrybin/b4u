@@ -126,11 +126,23 @@ namespace Blockly.UI.Tests
         [Test]
         public void TheFlyoutPaddingMovesTheBlocks()
         {
+            theme.FlyoutPadding = 0f;
+            BlockStyle.Theme = theme;
+            toolbox.SelectCategory(0);
+            var bare = toolbox.FlyoutView.Workspace.TopBlocks[0];
+            float x0 = (float)bare.X, y0 = (float)bare.Y;
+
             theme.FlyoutPadding = 30f;
             BlockStyle.Theme = theme;
             toolbox.SelectCategory(0);
             var rt = (RectTransform)toolbox.FlyoutView.transform;
-            Assert.AreEqual(new Vector2(30f, -30f), rt.anchoredPosition);
+            Assert.AreEqual(Vector2.zero, rt.anchoredPosition, "the padding is inside the content: a scroll view would clamp a moved content back to the edge");
+            var first = toolbox.FlyoutView.Workspace.TopBlocks[0];
+            Assert.AreEqual(x0 + 30f, (float)first.X, 1e-3f);
+            Assert.AreEqual(y0 + 30f, (float)first.Y, 1e-3f);
+            var box = toolbox.FlyoutView.Layout.ByBlock[first];
+            Assert.AreEqual(first.X, box.X, 1e-3f); Assert.AreEqual(first.Y, box.Y, 1e-3f);
+            Assert.GreaterOrEqual(rt.sizeDelta.x, toolbox.FlyoutView.Layout.Right + 30f - 1e-3f, "room on the right too");
         }
 
         [Test]
