@@ -20,6 +20,22 @@ namespace Blockly
                 if (name != null) ws.GetOrCreateVariable(name, Json.Json.GetString(vd, "id"), Json.Json.GetString(vd, "type", ""));
             }
 
+            foreach (var c in Json.Json.GetArray(root, "workspaceComments") ?? new List<object>())      // Blockly: [{ id, x, y, width, height, text, collapsed }]
+            {
+                var cd = Json.Json.AsObject(c);
+                if (cd == null) continue;
+                var note = new WorkspaceComment
+                {
+                    Id = Json.Json.GetString(cd, "id") ?? ws.NewCommentId(),
+                    X = Json.Json.GetNumber(cd, "x"), Y = Json.Json.GetNumber(cd, "y"),
+                    Text = Json.Json.GetString(cd, "text") ?? "",
+                    Collapsed = Json.Json.GetBool(cd, "collapsed"),
+                };
+                if (cd.ContainsKey("width")) note.W = Json.Json.GetNumber(cd, "width");
+                if (cd.ContainsKey("height")) note.H = Json.Json.GetNumber(cd, "height");
+                ws.Comments.Add(note);
+            }
+
             var blocks = Json.Json.GetArray(Json.Json.GetObject(root, "blocks"), "blocks");
             if (blocks == null) return;
             foreach (var b in blocks)
@@ -150,6 +166,19 @@ namespace Blockly
                     vars.Add(vd);
                 }
                 root["variables"] = vars;
+            }
+
+            if (ws.Comments.Count > 0)
+            {
+                var notes = new List<object>();
+                foreach (var c in ws.Comments)
+                {
+                    var cd = new Dictionary<string, object> { { "id", c.Id }, { "x", c.X }, { "y", c.Y }, { "width", c.W }, { "height", c.H } };
+                    if (!string.IsNullOrEmpty(c.Text)) cd["text"] = c.Text;
+                    if (c.Collapsed) cd["collapsed"] = true;
+                    notes.Add(cd);
+                }
+                root["workspaceComments"] = notes;
             }
             return Json.Json.Write(root, indented);
         }

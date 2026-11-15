@@ -85,6 +85,94 @@ namespace Blockly.UI
             }
         }
 
+        // ------------------------------------------------------------------ workspace notes
+        [SerializeField, Tooltip("Notes on the workspace (Blockly's workspace comments): right click or hold on the empty background to add one. Off hides the notes and the menu; the notes stay in the program.")]
+        bool notesEnabled = true;
+
+        /// <summary>Whether notes on the workspace are on (default). Off hides them and the background menu; they are kept in the program.</summary>
+        public bool NotesEnabled
+        {
+            get => notesEnabled;
+            set
+            {
+                if (notesEnabled == value) return;
+                notesEnabled = value;
+                if (workspace != null) Rebuild();
+            }
+        }
+
+        public const string MenuAddNote = "add-note", NoteName = WorkspaceNote.NoteName;
+        readonly List<WorkspaceNote> noteObjects = new List<WorkspaceNote>();
+
+        /// <summary>The notes on screen, bottom first.</summary>
+        public IReadOnlyList<WorkspaceNote> Notes => noteObjects;
+        public WorkspaceNote NoteOf(WorkspaceComment note) => noteObjects.Find(n => n != null && n.Comment == note);
+        public bool CanNote => notesEnabled && Spawner == null && workspace != null && History != null;
+
+        /// <summary>Opens the menu of the empty background (right click, or a long press): add a note at that point.</summary>
+        public bool ShowWorkspaceMenu(Vector2 screenPoint)
+        {
+            if (!CanNote || IsDragging || RootCanvas == null || ActiveDialog != null) return false;
+            if (IsEditingField) SubmitFieldEdit(fieldInput.text);
+            CloseMenu();
+            var items = new List<DropdownItem> { new DropdownItem { Label = Loc.T("Add note"), Value = MenuAddNote } };
+            Canvas.ForceUpdateCanvases();
+            var at = ScreenToWorkspace(screenPoint, EventCamera);
+            menu = DropdownMenu.Open(RootCanvas, screenPoint, 150f, items, item => { if (item.Value == MenuAddNote) AddNote(at); });
+            return true;
+        }
+
+        /// <summary>Puts a new empty note with its top-left corner at a workspace point and puts the cursor in it. One undo step.</summary>
+        public WorkspaceComment AddNote(Vector2 at)
+        {
+            if (!CanNote) return null;
+            string before = SnapshotForUndo();
+            var note = WorkspaceCommentEditing.Add(workspace, Mathf.Max(0f, at.x), Mathf.Max(0f, at.y));
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            NoteOf(note)?.Focus();
+            return note;
+        }
+
+        /// <summary>Deletes a note. One undo step.</summary>
+        public bool RemoveNote(WorkspaceComment note)
+        {
+            if (!CanNote || note == null) return false;
+            string before = SnapshotForUndo();
+            if (!WorkspaceCommentEditing.Remove(workspace, note)) return false;
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        /// <summary>Collapses a note to its header, or expands it again. One undo step.</summary>
+        public bool ToggleNoteCollapsed(WorkspaceComment note)
+        {
+            if (!CanNote || note == null) return false;
+            string before = SnapshotForUndo();
+            WorkspaceCommentEditing.SetCollapsed(note, !note.Collapsed);
+            Rebuild();
+            RecordForUndo(before);
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
+        /// <summary>A note was dropped after a drag (its position is already in the model): one undo step, and the scroll area follows.</summary>
+        internal void FinishNoteMove(string before)
+        {
+            if (before == null) return;
+            Rebuild();
+            if (before != SnapshotForUndo()) { RecordForUndo(before); WorkspaceEdited?.Invoke(); }
+        }
+
+        void CreateNotes()
+        {
+            if (!notesEnabled || workspace == null) return;
+            foreach (var c in workspace.Comments) noteObjects.Add(WorkspaceNote.Create(this, transform, c, Spawner == null));
+        }
+
         // ------------------------------------------------------------------ warnings
         [SerializeField, Tooltip("Blocks that cannot do their job (an empty input, an unknown variable or procedure, a value plugged into nothing) get a warning icon with a bubble. Off hides the icons.")]
         bool warningsEnabled = true;
@@ -575,6 +663,8 @@ namespace Blockly.UI
         {
             mutatorBubbles.Clear();
             warningBubbles.Clear();
+            foreach (var n in noteObjects) if (n != null) n.Flush();
+            noteObjects.Clear();
             foreach (var b in bubbles) if (b != null) b.Flush();
             bubbles.Clear();
         }
@@ -816,10 +906,14 @@ namespace Blockly.UI
             EnsureMeasurer();
             Layout = NewLayouter().LayoutWorkspace();
             RefreshEdgeWidth();
+            CreateNotes();                                       // under the blocks
             foreach (var box in Layout.Boxes) CreateBlock(box);
 
             var rt = (RectTransform)transform;
-            rt.sizeDelta = new Vector2(Mathf.Max(0, Layout.Right), Mathf.Max(0, Layout.Bottom));
+            float right = Layout.Right, bottom = Layout.Bottom;
+            if (notesEnabled)
+                foreach (var c in workspace.Comments) { right = Mathf.Max(right, (float)(c.X + c.W)); bottom = Mathf.Max(bottom, (float)(c.Y + (c.Collapsed ? WorkspaceNote.HeaderHeight : c.H))); }
+            rt.sizeDelta = new Vector2(Mathf.Max(0, right), Mathf.Max(0, bottom));
 
             if (SelectedBlock != null && !Layout.ByBlock.ContainsKey(SelectedBlock)) { SelectedBlock = null; SelectionChanged?.Invoke(null); }
             UpdateSelectionOutline();

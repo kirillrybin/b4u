@@ -220,11 +220,21 @@ namespace Blockly
         public string Id, Name, Type;
     }
 
+    /// <summary>A free-standing note on the workspace (Blockly's workspace comment): not attached to a block, not part of the program.</summary>
+    public sealed class WorkspaceComment
+    {
+        public string Id, Text = "";
+        public double X, Y, W = 160, H = 100;
+        public bool Collapsed;
+    }
+
     public sealed class Workspace
     {
         public readonly BlockRegistry Registry;
         public readonly List<Block> TopBlocks = new List<Block>();
         public readonly List<Variable> Variables = new List<Variable>();
+        /// <summary>The notes on the workspace, bottom first. They are saved with the program but never run or exported.</summary>
+        public readonly List<WorkspaceComment> Comments = new List<WorkspaceComment>();
         int nextId = 1;
 
         public Workspace(BlockRegistry registry) { Registry = registry; }
@@ -250,6 +260,16 @@ namespace Blockly
         {
             TopBlocks.Clear();
             Variables.Clear();
+            Comments.Clear();
+        }
+
+        /// <summary>A note id nobody in this workspace has.</summary>
+        public string NewCommentId()
+        {
+            int n = Comments.Count + 1;
+            string id;
+            do id = "c" + n++; while (Comments.Exists(c => c.Id == id));
+            return id;
         }
 
         public Block CreateBlock(string type, string id = null)

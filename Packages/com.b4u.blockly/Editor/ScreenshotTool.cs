@@ -86,6 +86,18 @@ namespace Blockly.EditorTools
                         Canvas.ForceUpdateCanvases();
                     }
                 }
+                // -blocklyNote "text": puts a note on the workspace (-blocklyNoteCollapsed 1 collapses it)
+                if (Arg("-blocklyNote") != null)
+                {
+                    var note = controller.View.AddNote(new Vector2(420, 40));
+                    if (note != null)
+                    {
+                        note.Text = Arg("-blocklyNote");
+                        note.Collapsed = Arg("-blocklyNoteCollapsed") == "1";
+                        controller.View.Rebuild();
+                        Canvas.ForceUpdateCanvases();
+                    }
+                }
                 if (Arg("-blocklyFlyout") != null) controller.Toolbox.SelectCategory(int.Parse(Arg("-blocklyFlyout")));
 
                 int steps = int.Parse(Arg("-blocklySteps", "0"));

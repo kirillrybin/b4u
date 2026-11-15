@@ -17,6 +17,13 @@ namespace Blockly
                 foreach (XmlElement v in Elements(e, "variable"))
                     ws.GetOrCreateVariable(v.InnerText, v.GetAttribute("id") is { Length: > 0 } id ? id : null, v.GetAttribute("type"));
 
+            foreach (XmlElement e in Elements(root, "comment"))                  // <comment id x y w h collapsed>text</comment>
+            {
+                var note = new WorkspaceComment { Id = e.GetAttribute("id") is { Length: > 0 } cid ? cid : ws.NewCommentId(), Text = e.InnerText, Collapsed = e.GetAttribute("collapsed") == "true" };
+                note.X = Num(e, "x", 0); note.Y = Num(e, "y", 0); note.W = Num(e, "w", 160); note.H = Num(e, "h", 100);
+                ws.Comments.Add(note);
+            }
+
             foreach (XmlElement e in Elements(root, "block"))
             {
                 var b = LoadBlock(ws, e, false);
@@ -25,6 +32,9 @@ namespace Blockly
                 ws.TopBlocks.Add(b);
             }
         }
+
+        static double Num(XmlElement e, string attribute, double fallback)
+            => double.TryParse(e.GetAttribute(attribute), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
 
         static IEnumerable<XmlElement> Elements(XmlElement parent, string name)
         {
