@@ -31,6 +31,9 @@ namespace Blockly.UI
         ToolboxView ToolboxView => toolboxView != null ? toolboxView : (toolbox != null ? toolboxView = toolbox.GetComponent<ToolboxView>() : null);
         ToolboxView toolboxView;
         float lastToolboxWidth = -1f;
+
+        /// <summary>Empty space between the strip and the workspace: the collapse tab grows out of the strip's edge by its own width, and the blocks must not start under it.</summary>
+        public float WorkspaceGutter => BlockStyle.ToolboxCollapsible ? BlockStyle.ToggleSize : 0f;
         bool lastConsoleVisible = true;
         const float DpPerInch = 160f;
         const float MinTitleWidth = 140f;
@@ -141,7 +144,7 @@ namespace Blockly.UI
             if (LabelsChanged()) { dirty = true; lastSize = new Vector2(-1, -1); }
             bool consoleVisible = console == null || console.gameObject.activeSelf;
             if (consoleVisible != lastConsoleVisible) { lastConsoleVisible = consoleVisible; lastSize = new Vector2(-1, -1); }     // shown or hidden
-            float tw = ToolboxWidth;
+            float tw = ToolboxWidth + WorkspaceGutter;
             if (!Mathf.Approximately(tw, lastToolboxWidth)) { lastToolboxWidth = tw; lastSize = new Vector2(-1, -1); }     // the strip collapsed or expanded
             // The canvas scaler adopts a new scale a frame later, so the size in canvas units is looked at every frame and the layout is
             // redone whenever it differs from the one it was made for.
@@ -199,7 +202,7 @@ namespace Blockly.UI
             float consoleHeight = consoleVisible ? Mathf.Clamp(height - ToolbarHeight - MinWorkspaceHeight, 70f, ConsoleHeight) : 0f;
             EffectiveConsoleHeight = consoleHeight;
             float flyoutWidth = Mathf.Min(FlyoutWidth, width - ToolboxWidth - FlyoutMargin);
-            SetPanel(workspace, ToolboxWidth, consoleHeight, 0, ToolbarHeight);
+            SetPanel(workspace, ToolboxWidth + WorkspaceGutter, consoleHeight, 0, ToolbarHeight);
             if (toolbox != null) { toolbox.offsetMin = new Vector2(0, consoleHeight); toolbox.offsetMax = new Vector2(ToolboxWidth, -ToolbarHeight); }
             if (flyout != null) { flyout.offsetMin = new Vector2(ToolboxWidth, consoleHeight); flyout.offsetMax = new Vector2(ToolboxWidth + Mathf.Max(120f, flyoutWidth), -ToolbarHeight); }
             if (console != null) console.sizeDelta = new Vector2(0, consoleHeight);

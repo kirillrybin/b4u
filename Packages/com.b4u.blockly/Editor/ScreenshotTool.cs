@@ -64,6 +64,8 @@ namespace Blockly.EditorTools
                     foreach (var skin in UnityEngine.Object.FindObjectsByType<PlaygroundSkin>(FindObjectsSortMode.None)) skin.Apply();     // edit mode does not run OnEnable
                     controller.View.UpdateGrid();
                     Canvas.ForceUpdateCanvases();
+                    var layout = UnityEngine.Object.FindFirstObjectByType<PlaygroundLayout>();      // edit mode does not run its Update either
+                    if (layout != null) { var size = ((RectTransform)layout.transform).rect.size; layout.Apply(size.x, size.y); Canvas.ForceUpdateCanvases(); }
                 }
                 if (Arg("-blocklySearch") != null) controller.Toolbox.Search(Arg("-blocklySearch"));
                 // -blocklyComment "text": puts an open comment on the first block

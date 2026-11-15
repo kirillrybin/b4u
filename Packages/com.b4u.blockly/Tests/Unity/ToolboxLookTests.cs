@@ -258,7 +258,7 @@ namespace Blockly.UI.Tests
             toolbox.Collapsed = true;
             layout.Apply(1280, 720);
             Assert.AreEqual(80f, ((RectTransform)toolbox.transform).offsetMax.x);
-            Assert.AreEqual(80f, GameObject.Find("Scroll").GetComponent<RectTransform>().offsetMin.x, "the workspace uses the room");
+            Assert.AreEqual(80f + theme.ToggleSize, GameObject.Find("Scroll").GetComponent<RectTransform>().offsetMin.x, "the workspace uses the room, right of the tab");
             Assert.AreEqual(46f, buttons[0].rect.width, 0.01f, "a square plate");
             Assert.IsFalse(buttons[0].Find("Text").gameObject.activeSelf, "icon only");
             Assert.IsTrue(buttons[1].Find("Text").gameObject.activeSelf, "a category without an icon keeps its text");
@@ -307,6 +307,22 @@ namespace Blockly.UI.Tests
             Assert.AreEqual(70f, layout.ToolboxWidth);
             toolbox.Collapsed = false;
             Assert.AreEqual(130f, layout.ToolboxWidth);
+        }
+
+        [Test]
+        public void TheWorkspaceStartsRightOfTheCollapseTab()
+        {
+            var layout = Object.FindFirstObjectByType<PlaygroundLayout>();
+            var workspace = GameObject.Find("Scroll").GetComponent<RectTransform>();
+            theme.ToolboxCollapsible = false;
+            BlockStyle.Theme = theme;
+            layout.Apply(1280, 720);
+            Assert.AreEqual(0f, layout.WorkspaceGutter);
+            theme.ToolboxCollapsible = true; theme.ToggleSize = 40f;
+            BlockStyle.Theme = theme;
+            layout.Apply(1280, 720);
+            Assert.AreEqual(40f, layout.WorkspaceGutter);
+            Assert.AreEqual(layout.ToolboxWidth + 40f, workspace.offsetMin.x, 0.01f, "the blocks do not start under the tab");
         }
 
         [Test]
