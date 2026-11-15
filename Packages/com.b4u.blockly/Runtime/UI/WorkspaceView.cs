@@ -101,7 +101,7 @@ namespace Blockly.UI
             }
         }
 
-        public const string MenuAddNote = "add-note", NoteName = WorkspaceNote.NoteName;
+        public const string MenuAddNote = "add-note", MenuSelectMode = "select-mode", MenuSelectAll = "select-all", NoteName = WorkspaceNote.NoteName;
         readonly List<WorkspaceNote> noteObjects = new List<WorkspaceNote>();
 
         /// <summary>The notes on screen, bottom first.</summary>
@@ -112,13 +112,25 @@ namespace Blockly.UI
         /// <summary>Opens the menu of the empty background (right click, or a long press): add a note at that point.</summary>
         public bool ShowWorkspaceMenu(Vector2 screenPoint)
         {
-            if (!CanNote || IsDragging || RootCanvas == null || ActiveDialog != null) return false;
+            bool multiOk = multiSelectEnabled && Spawner == null && workspace != null && History != null;
+            if ((!CanNote && !multiOk) || IsDragging || RootCanvas == null || ActiveDialog != null) return false;
             if (IsEditingField) SubmitFieldEdit(fieldInput.text);
             CloseMenu();
-            var items = new List<DropdownItem> { new DropdownItem { Label = Loc.T("Add note"), Value = MenuAddNote } };
+            var items = new List<DropdownItem>();
+            if (CanNote) items.Add(new DropdownItem { Label = Loc.T("Add note"), Value = MenuAddNote });
+            if (multiOk)
+            {
+                items.Add(new DropdownItem { Label = Loc.T(selectMode ? "Stop selecting" : "Select blocks"), Value = MenuSelectMode });
+                items.Add(new DropdownItem { Label = Loc.T("Select all"), Value = MenuSelectAll });
+            }
             Canvas.ForceUpdateCanvases();
             var at = ScreenToWorkspace(screenPoint, EventCamera);
-            menu = DropdownMenu.Open(RootCanvas, screenPoint, 150f, items, item => { if (item.Value == MenuAddNote) AddNote(at); });
+            menu = DropdownMenu.Open(RootCanvas, screenPoint, 150f, items, item =>
+            {
+                if (item.Value == MenuAddNote) AddNote(at);
+                else if (item.Value == MenuSelectMode) SelectMode = !SelectMode;
+                else if (item.Value == MenuSelectAll) SelectAll();
+            });
             return true;
         }
 
@@ -315,6 +327,7 @@ namespace Blockly.UI
             if (key == KeyCode.Equals || key == KeyCode.Plus || key == KeyCode.KeypadPlus) return ZoomBy(ZoomStep, ViewportCentreOnScreen);
             if (key == KeyCode.Minus || key == KeyCode.KeypadMinus) return ZoomBy(1f / ZoomStep, ViewportCentreOnScreen);
             if (key == KeyCode.Alpha0 || key == KeyCode.Keypad0) return SetZoom(1f, ViewportCentreOnScreen);
+            if (key == KeyCode.A) return SelectAll();
             if (key == KeyCode.C) return CopySelected();
             if (key == KeyCode.X) return CutSelected();
             if (key == KeyCode.V) return Paste();
@@ -329,15 +342,220 @@ namespace Blockly.UI
         {
             while (block != null && block.IsShadow) block = block.ShadowOf?.Owner;
             if (block != null && (workspace == null || Spawner != null || !workspace.AllBlocks().Contains(block))) block = null;
-            if (block == SelectedBlock) return;
+            bool hadMulti = multi.Count > 0;
+            multi.Clear();
+            if (block == SelectedBlock && !hadMulti) return;
             SelectedBlock = block;
             UpdateSelectionOutline();
             SelectionChanged?.Invoke(block);
+            if (hadMulti) SelectionSetChanged?.Invoke();
+        }
+
+        // ------------------------------------------------------------------ several stacks selected at once
+        [SerializeField, Tooltip("Several stacks of blocks can be selected at once (Ctrl, Cmd or Shift + click, a rectangle dragged with Shift, Ctrl+A, or the select mode on touch screens) and moved, copied, cut, disabled and deleted together.")]
+        bool multiSelectEnabled = true;
+
+        /// <summary>Whether several stacks can be selected at once (default). Off turns the modifier clicks, the rectangle, Ctrl+A and the select mode into no-ops and drops a selection of several.</summary>
+        public bool MultiSelectEnabled
+        {
+            get => multiSelectEnabled;
+            set
+            {
+                if (multiSelectEnabled == value) return;
+                multiSelectEnabled = value;
+                if (!value) { SelectMode = false; if (multi.Count > 0) Select(SelectedBlock); }
+            }
+        }
+
+        readonly List<Block> multi = new List<Block>();               // the top-level blocks of the selected stacks; only filled while two or more are selected
+        bool selectMode;
+
+        /// <summary>The selection is more than one stack.</summary>
+        public bool IsMultiSelected => multi.Count >= 2;
+        /// <summary>The stacks that are selected (their top-level blocks): the one selected block's stack, or all of a multi-selection; empty when nothing is selected.</summary>
+        public IReadOnlyList<Block> SelectedStacks => IsMultiSelected ? multi : SelectedBlock != null ? (IReadOnlyList<Block>)new[] { SelectedBlock.Root } : System.Array.Empty<Block>();
+        /// <summary>The set of selected stacks changed (the single-block <see cref="SelectionChanged"/> is raised too, with the primary block).</summary>
+        public event Action SelectionSetChanged;
+        public event Action SelectModeChanged;
+
+        /// <summary>The select mode of touch screens: a tap on a block adds it to the selection or takes it out, and a drag on the empty background draws a rectangle instead of scrolling.</summary>
+        public bool SelectMode
+        {
+            get => selectMode;
+            set
+            {
+                value &= multiSelectEnabled;
+                if (selectMode == value) return;
+                selectMode = value;
+                UpdateSelectChip();
+                SelectModeChanged?.Invoke();
+            }
+        }
+
+        public const string SelectChipName = "select mode";
+        RectTransform selectChip;
+
+        /// <summary>The small "Select: on" button shown over the workspace while the select mode is on (tap it to leave the mode); null when not shown.</summary>
+        public RectTransform SelectChip => selectChip != null && selectChip.gameObject.activeSelf ? selectChip : null;
+
+        void UpdateSelectChip()
+        {
+            if (!selectMode) { if (selectChip != null) selectChip.gameObject.SetActive(false); return; }
+            var host = transform.parent != null ? transform.parent.parent as RectTransform : null;       // the scroll view that holds the workspace
+            if (host == null) return;
+            if (selectChip == null)
+            {
+                var go = new GameObject(SelectChipName, typeof(RectTransform), typeof(Image), typeof(Button));
+                selectChip = (RectTransform)go.transform;
+                selectChip.SetParent(host, false);
+                selectChip.anchorMin = selectChip.anchorMax = selectChip.pivot = new Vector2(1, 1);
+                selectChip.anchoredPosition = new Vector2(-10, -10);
+                selectChip.sizeDelta = new Vector2(130, 30);
+                var img = go.GetComponent<Image>();
+                img.color = SelectionColour;
+                go.GetComponent<Button>().targetGraphic = img;
+                go.GetComponent<Button>().onClick.AddListener(() => SelectMode = false);
+                var label = new GameObject("text", typeof(RectTransform)).GetComponent<RectTransform>();
+                label.SetParent(selectChip, false);
+                label.anchorMin = Vector2.zero; label.anchorMax = Vector2.one; label.offsetMin = label.offsetMax = Vector2.zero;
+                var t = label.gameObject.AddComponent<TextMeshProUGUI>();
+                Configure(t);
+                t.fontSize = 14; t.color = Color.white; t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
+                t.text = Loc.T("Select: on") + "  ×";
+            }
+            selectChip.gameObject.SetActive(true);
+            selectChip.SetAsLastSibling();
+        }
+
+
+        /// <summary>Ctrl, Cmd or Shift is held (the keys that add to the selection). Always false when the legacy input manager is not in use.</summary>
+        public static bool ModifierHeld
+        {
+            get
+            {
+#if ENABLE_LEGACY_INPUT_MANAGER
+                return UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl) || UnityEngine.Input.GetKey(KeyCode.LeftCommand) || UnityEngine.Input.GetKey(KeyCode.RightCommand)
+                    || UnityEngine.Input.GetKey(KeyCode.LeftShift) || UnityEngine.Input.GetKey(KeyCode.RightShift);
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <summary>Shift is held (draws a selection rectangle on the background).</summary>
+        public static bool ShiftHeld
+        {
+            get
+            {
+#if ENABLE_LEGACY_INPUT_MANAGER
+                return UnityEngine.Input.GetKey(KeyCode.LeftShift) || UnityEngine.Input.GetKey(KeyCode.RightShift);
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <summary>The stack of <paramref name="block"/> is part of a selection of several.</summary>
+        public bool IsInMultiSelection(Block block)
+        {
+            while (block != null && block.IsShadow) block = block.ShadowOf?.Owner;
+            return IsMultiSelected && block != null && multi.Contains(block.Root);
+        }
+
+        /// <summary>Adds the stack of a block to the selection, or takes it out when it is in. The first block just becomes the selection.</summary>
+        public bool ToggleInSelection(Block block)
+        {
+            while (block != null && block.IsShadow) block = block.ShadowOf?.Owner;
+            if (!multiSelectEnabled || Spawner != null || workspace == null || IsDragging || block == null || !workspace.AllBlocks().Contains(block)) return false;
+            CloseMenu();
+            var top = block.Root;
+            if (SelectedBlock == null) { Select(block); return true; }
+            if (multi.Count == 0)
+            {
+                var first = SelectedBlock.Root;
+                if (first == top) { Select(null); return true; }
+                multi.Add(first); multi.Add(top);
+                SelectedBlock = block;
+            }
+            else if (multi.Contains(top))
+            {
+                multi.Remove(top);
+                if (multi.Count == 1) { var rest = multi[0]; multi.Clear(); SelectedBlock = rest; }
+                else if (SelectedBlock == null || !multi.Contains(SelectedBlock.Root)) SelectedBlock = multi[multi.Count - 1];
+            }
+            else { multi.Add(top); SelectedBlock = block; }
+            UpdateSelectionOutline();
+            SelectionChanged?.Invoke(SelectedBlock);
+            SelectionSetChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>Selects exactly these stacks (the stacks of the given blocks).</summary>
+        public void SelectStacks(IEnumerable<Block> blocks)
+        {
+            var stacks = WorkspaceEditing.Stacks(blocks ?? System.Array.Empty<Block>());
+            if (!multiSelectEnabled && stacks.Count > 1) stacks.RemoveRange(1, stacks.Count - 1);
+            if (stacks.Count <= 1) { Select(stacks.Count == 1 ? stacks[0] : null); return; }
+            multi.Clear(); multi.AddRange(stacks);
+            SelectedBlock = stacks[stacks.Count - 1];
+            UpdateSelectionOutline();
+            SelectionChanged?.Invoke(SelectedBlock);
+            SelectionSetChanged?.Invoke();
+        }
+
+        /// <summary>Selects every stack in the workspace (Ctrl+A).</summary>
+        public bool SelectAll()
+        {
+            if (!multiSelectEnabled || Spawner != null || workspace == null || IsDragging) return false;
+            CloseMenu();
+            SelectStacks(workspace.TopBlocks.ToList());
+            return workspace.TopBlocks.Count > 0;
+        }
+
+        /// <summary>Selects the stacks that touch a rectangle (workspace units, y down); with <paramref name="additive"/> they join the selection.</summary>
+        public void SelectRect(Rect area, bool additive)
+        {
+            if (!multiSelectEnabled || Spawner != null || workspace == null || Layout == null) return;
+            var hit = new List<Block>();
+            foreach (var top in workspace.TopBlocks)
+                for (var b = top; b != null; b = b.NextBlock)
+                    if (Layout.ByBlock.TryGetValue(b, out var box) && area.Overlaps(new Rect(box.X, box.Y, box.W, box.H))) { hit.Add(top); break; }
+            if (additive) { var all = new List<Block>(SelectedStacks); foreach (var h in hit) if (!all.Contains(h)) all.Add(h); hit = all; }
+            SelectStacks(hit);
+        }
+
+        RectTransform marquee;
+
+        /// <summary>Draws (or moves) the selection rectangle between two screen points.</summary>
+        public void UpdateMarquee(Vector2 startScreen, Vector2 nowScreen)
+        {
+            var a = ScreenToWorkspace(startScreen, EventCamera); var b = ScreenToWorkspace(nowScreen, EventCamera);
+            var r = Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+            if (marquee == null)
+            {
+                marquee = NewRect("marquee", transform, 0, 0, 1, 1);
+                var img = marquee.gameObject.AddComponent<Image>();
+                var c = SelectionColour; c.a = 0.2f;
+                img.color = c; img.raycastTarget = false;
+            }
+            marquee.gameObject.SetActive(true);
+            marquee.anchoredPosition = new Vector2(r.xMin, -r.yMin);
+            marquee.sizeDelta = new Vector2(r.width, r.height);
+            marquee.SetAsLastSibling();
+        }
+
+        /// <summary>Ends the rectangle: selects what it touches.</summary>
+        public void EndMarquee(Vector2 startScreen, Vector2 endScreen, bool additive)
+        {
+            if (marquee != null) marquee.gameObject.SetActive(false);
+            var a = ScreenToWorkspace(startScreen, EventCamera); var b = ScreenToWorkspace(endScreen, EventCamera);
+            SelectRect(Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y)), additive);
         }
 
         /// <summary>Deletes the selected block and its inputs; the blocks that followed it close the gap (Blockly's Delete key). One undo step.</summary>
         public bool DeleteSelected()
         {
+            if (IsMultiSelected) return DeleteGroup();
             var block = SelectedBlock;
             if (block == null || workspace == null || IsDragging || History == null) return false;
             CloseMenu();
@@ -353,6 +571,24 @@ namespace Blockly.UI
             return true;
         }
 
+        bool DeleteGroup()
+        {
+            if (workspace == null || IsDragging || History == null) return false;
+            CloseMenu();
+            FieldEditStarted?.Invoke(null);
+            string before = SnapshotForUndo();
+            EnsureMeasurer();
+            WorkspaceEditing.DeleteMany(workspace, NewLayouter(), multi.ToList());
+            multi.Clear();
+            SelectedBlock = null;
+            Rebuild();
+            RecordForUndo(before);
+            SelectionChanged?.Invoke(null);
+            SelectionSetChanged?.Invoke();
+            WorkspaceEdited?.Invoke();
+            return true;
+        }
+
         // ------------------------------------------------------------------ copy / cut / paste
         /// <summary>What Ctrl+C copied; shared by all views so a block can be pasted into another program.</summary>
         public static string Clipboard { get; set; }
@@ -362,6 +598,14 @@ namespace Blockly.UI
         /// <summary>Copies the selected block with its inputs (not the blocks after it).</summary>
         public bool CopySelected()
         {
+            if (IsMultiSelected)
+            {
+                if (workspace == null || Layout == null) return false;
+                var many = WorkspaceEditing.CopyMany(workspace, multi);
+                if (many == null) return false;
+                Clipboard = many; clipboardX = (float)multi[0].X; clipboardY = (float)multi[0].Y;
+                return true;
+            }
             var block = SelectedBlock;
             if (block == null || workspace == null || Layout == null || !Layout.ByBlock.TryGetValue(block, out var box)) return false;
             var text = WorkspaceEditing.Copy(workspace, block);
@@ -379,11 +623,11 @@ namespace Blockly.UI
             if (workspace == null || History == null || IsDragging || !HasClipboard) return false;
             CloseMenu();
             string before = SnapshotForUndo();
-            var block = WorkspaceEditing.Paste(workspace, Clipboard, clipboardX, clipboardY);
-            if (block == null) return false;
+            var pasted = WorkspaceEditing.PasteMany(workspace, Clipboard, clipboardX, clipboardY);
+            if (pasted.Count == 0) return false;
             FieldEditStarted?.Invoke(null);                       // a running program is about to be edited: stop it
             Rebuild();
-            Select(block);
+            SelectStacks(pasted);
             RecordForUndo(before);
             WorkspaceEdited?.Invoke();
             return true;
@@ -424,6 +668,7 @@ namespace Blockly.UI
             if (workspace == null || Spawner != null || IsDragging || block == null || RootCanvas == null || ActiveDialog != null) return false;
             if (IsEditingField) SubmitFieldEdit(fieldInput.text);
             CloseMenu();
+            if (IsInMultiSelection(block)) return ShowGroupMenu(block, screenPoint);
             Select(block);
             var items = new System.Collections.Generic.List<DropdownItem>
             {
@@ -440,9 +685,46 @@ namespace Blockly.UI
             return true;
         }
 
+        // the menu of a selection of several stacks: what makes sense for all of them
+        bool ShowGroupMenu(Block block, Vector2 screenPoint)
+        {
+            var items = new List<DropdownItem>
+            {
+                new DropdownItem { Label = Loc.T("Duplicate"), Value = MenuDuplicate },
+                new DropdownItem { Label = Loc.T("Copy"), Value = MenuCopy },
+                new DropdownItem { Label = Loc.T("Cut"), Value = MenuCut },
+                new DropdownItem { Label = Loc.T(AllDisabled(multi) ? "Enable block" : "Disable block"), Value = MenuDisable },
+                new DropdownItem { Label = Loc.T("Delete"), Value = MenuDelete },
+            };
+            Canvas.ForceUpdateCanvases();
+            menu = DropdownMenu.Open(RootCanvas, screenPoint, 170f, items, item => ChooseBlockMenuItem(block, item.Value));
+            return true;
+        }
+
+        static bool AllDisabled(IEnumerable<Block> stacks)
+        {
+            bool any = false;
+            foreach (var s in stacks)
+                for (var b = s; b != null; b = b.NextBlock)
+                    if (CanDisable(b)) { any = true; if (!b.Disabled) return false; }
+            return any;
+        }
+
         /// <summary>What a block menu entry does (also what clicking it calls). Each change is one undo step.</summary>
         public bool ChooseBlockMenuItem(Block block, string action)
         {
+            if (IsInMultiSelection(block))
+            {
+                switch (action)
+                {
+                    case MenuDuplicate: return DuplicateSelected();
+                    case MenuCopy: return CopySelected();
+                    case MenuCut: return CutSelected();
+                    case MenuDisable: return ToggleDisabledSelected();
+                    case MenuDelete: return DeleteSelected();
+                    default: return false;
+                }
+            }
             Select(block);
             if (SelectedBlock != block) return false;
             switch (action)
@@ -462,6 +744,22 @@ namespace Blockly.UI
         /// <summary>Puts a copy of the selected block (with its inputs) just below and right of it and selects the copy. The clipboard is not touched.</summary>
         public bool DuplicateSelected()
         {
+            if (IsMultiSelected)
+            {
+                if (workspace == null || History == null || IsDragging) return false;
+                var manyText = WorkspaceEditing.CopyMany(workspace, multi);
+                if (manyText == null) return false;
+                CloseMenu();
+                string beforeMany = SnapshotForUndo();
+                var copies = WorkspaceEditing.PasteMany(workspace, manyText, (float)multi[0].X, (float)multi[0].Y);
+                if (copies.Count == 0) return false;
+                FieldEditStarted?.Invoke(null);
+                Rebuild();
+                SelectStacks(copies);
+                RecordForUndo(beforeMany);
+                WorkspaceEdited?.Invoke();
+                return true;
+            }
             var block = SelectedBlock;
             if (block == null || workspace == null || Layout == null || History == null || IsDragging || !Layout.ByBlock.TryGetValue(block, out var box)) return false;
             var text = WorkspaceEditing.Copy(workspace, block);
@@ -481,6 +779,18 @@ namespace Blockly.UI
         /// <summary>Disables the selected statement block (it is skipped when the program runs and looks grey), or enables it again.</summary>
         public bool ToggleDisabledSelected()
         {
+            if (IsMultiSelected)
+            {
+                if (workspace == null || History == null || IsDragging) return false;
+                CloseMenu();
+                string beforeMany = SnapshotForUndo();
+                FieldEditStarted?.Invoke(null);
+                WorkspaceEditing.SetDisabledMany(multi, !AllDisabled(multi));
+                Rebuild();
+                RecordForUndo(beforeMany);
+                WorkspaceEdited?.Invoke();
+                return true;
+            }
             var block = SelectedBlock;
             if (!CanDisable(block) || workspace == null || History == null || IsDragging) return false;
             CloseMenu();
@@ -740,7 +1050,7 @@ namespace Blockly.UI
 
         void UpdateParamsButton(BlockBox box)
         {
-            bool wanted = Spawner == null && ProcedureInfo.IsDefinition(SelectedBlock);
+            bool wanted = Spawner == null && !IsMultiSelected && ProcedureInfo.IsDefinition(SelectedBlock);
             if (!wanted) { if (paramsButton != null) paramsButton.gameObject.SetActive(false); return; }
             if (paramsButton == null)
             {
@@ -787,8 +1097,43 @@ namespace Blockly.UI
             return changed;
         }
 
+        readonly List<RectTransform> groupOutlines = new List<RectTransform>();
+
+        // a selection of several stacks: every block of every stack gets an outline
+        void UpdateGroupOutlines()
+        {
+            int used = 0;
+            if (IsMultiSelected && Layout != null)
+                foreach (var top in multi)
+                    for (var b = top; b != null; b = b.NextBlock)
+                    {
+                        if (!Layout.ByBlock.TryGetValue(b, out var box)) continue;
+                        if (used >= groupOutlines.Count)
+                        {
+                            var rt = NewRect("selection " + (used + 2), transform, 0, 0, 1, 1);
+                            rt.gameObject.AddComponent<PolygonGraphic>().raycastTarget = false;
+                            groupOutlines.Add(rt);
+                        }
+                        var o = groupOutlines[used++];
+                        o.gameObject.SetActive(true);
+                        o.anchoredPosition = new Vector2(box.X, -box.Y);
+                        o.sizeDelta = new Vector2(box.W, box.H);
+                        o.GetComponent<PolygonGraphic>().SetShape(Translate(box.Outline, box.X, box.Y), Color.clear, SelectionColour, BlockStyle.SelectionWidth);
+                        o.SetAsLastSibling();
+                    }
+            for (int i = used; i < groupOutlines.Count; i++) if (groupOutlines[i] != null) groupOutlines[i].gameObject.SetActive(false);
+            if (highlightObject != null && highlightObject.gameObject.activeSelf) highlightObject.SetAsLastSibling();
+        }
+
         void UpdateSelectionOutline()
         {
+            UpdateGroupOutlines();
+            if (IsMultiSelected)
+            {
+                if (selectionObject != null) selectionObject.gameObject.SetActive(false);
+                if (paramsButton != null) paramsButton.gameObject.SetActive(false);
+                return;
+            }
             BlockBox box = null;
             if (SelectedBlock == null || Layout == null || !Layout.ByBlock.TryGetValue(SelectedBlock, out box))
             {
@@ -860,7 +1205,7 @@ namespace Blockly.UI
 
         void OnEnable() { SubscribeToTheme(); }
         void OnDisable() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; }
-        void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; }
+        void OnDestroy() { BlockStyle.ThemeChanged -= OnThemeChanged; Loc.Changed -= OnLanguageChanged; if (selectChip != null) DestroyImmediateSafe(selectChip.gameObject); }
 
         /// <summary>The labels of the blocks are in another language: lay them out and draw them again.</summary>
         void OnLanguageChanged()
@@ -915,6 +1260,12 @@ namespace Blockly.UI
                 foreach (var c in workspace.Comments) { right = Mathf.Max(right, (float)(c.X + c.W)); bottom = Mathf.Max(bottom, (float)(c.Y + (c.Collapsed ? WorkspaceNote.HeaderHeight : c.H))); }
             rt.sizeDelta = new Vector2(Mathf.Max(0, right), Mathf.Max(0, bottom));
 
+            if (multi.Count > 0)                                   // undo and redo make new blocks: those stacks are no longer selected
+            {
+                multi.RemoveAll(b => !Layout.ByBlock.ContainsKey(b));
+                if (multi.Count < 2) { var rest = multi.Count == 1 ? multi[0] : null; multi.Clear(); SelectedBlock = rest; SelectionChanged?.Invoke(rest); SelectionSetChanged?.Invoke(); }
+                else if (SelectedBlock == null || !multi.Contains(SelectedBlock.Root)) SelectedBlock = multi[multi.Count - 1];
+            }
             if (SelectedBlock != null && !Layout.ByBlock.ContainsKey(SelectedBlock)) { SelectedBlock = null; SelectionChanged?.Invoke(null); }
             UpdateSelectionOutline();
             CreateCommentBubbles();
@@ -935,7 +1286,7 @@ namespace Blockly.UI
             }
         }
 
-        public bool IsDragging => dragger != null && dragger.IsDragging;
+        public bool IsDragging => groupDragging || (dragger != null && dragger.IsDragging);
         public Block DraggedBlock => dragger?.Dragged;
         public SnapCandidate? SnapCandidate => dragger?.Candidate;
         public static Color SnapColour => BlockStyle.SnapColour;
@@ -1295,9 +1646,78 @@ namespace Blockly.UI
             return true;
         }
 
+        // ---- dragging a selection of several stacks: they move together by the same amount, without snapping to other blocks
+        bool groupDragging;
+        List<Block> groupTops;
+        List<Vector2> groupStart;
+        Vector2 groupGrab;
+        string groupBefore;
+        HashSet<Block> groupBlocks;
+
+        /// <summary>Starts dragging every selected stack, grabbed at <paramref name="workspacePoint"/>. False unless several stacks are selected.</summary>
+        public bool BeginGroupDrag(Block grabbed, Vector2 workspacePoint)
+        {
+            if (!IsMultiSelected || workspace == null || IsDragging || Spawner != null || History == null) return false;
+            CloseMenu();
+            if (IsEditingField) SubmitFieldEdit(fieldInput.text);
+            groupBefore = SnapshotForUndo();
+            groupTops = new List<Block>(multi);
+            groupStart = groupTops.Select(t => new Vector2((float)t.X, (float)t.Y)).ToList();
+            groupGrab = workspacePoint;
+            groupBlocks = new HashSet<Block>(groupTops.SelectMany(t => { var all = new List<Block>(); for (var b = t; b != null; b = b.NextBlock) all.AddRange(b.Descendants()); return all; }));
+            groupDragging = true;
+            draggedObjects.Clear();
+            foreach (var box in Layout.Boxes)
+                if (groupBlocks.Contains(box.Block) && blockObjects.TryGetValue(box.Block, out var rt)) { rt.SetAsLastSibling(); draggedObjects.Add(rt); }
+            BlockDragStarted?.Invoke(grabbed);
+            return true;
+        }
+
+        void GroupDragTo(Vector2 workspacePoint)
+        {
+            var delta = workspacePoint - groupGrab;
+            float grid = Spawner == null && BlockStyle.GridSnap ? BlockStyle.GridSpacing : 0f;
+            if (grid > 0f)
+            {
+                delta.x = Mathf.Round((groupStart[0].x + delta.x) / grid) * grid - groupStart[0].x;
+                delta.y = Mathf.Round((groupStart[0].y + delta.y) / grid) * grid - groupStart[0].y;
+            }
+            for (int i = 0; i < groupTops.Count; i++) { groupTops[i].X = groupStart[i].x + delta.x; groupTops[i].Y = groupStart[i].y + delta.y; }
+            Layout = NewLayouter().LayoutWorkspace();
+            foreach (var box in Layout.Boxes)
+                if (groupBlocks.Contains(box.Block) && blockObjects.TryGetValue(box.Block, out var rt)) rt.anchoredPosition = new Vector2(box.X, -box.Y);
+            UpdateGroupOutlines();
+        }
+
+        void EndGroupDrag(bool cancel)
+        {
+            if (cancel) for (int i = 0; i < groupTops.Count; i++) { groupTops[i].X = groupStart[i].x; groupTops[i].Y = groupStart[i].y; }
+            bool deleted = false;
+            if (!cancel && OverDeleteArea)
+            {
+                EnsureMeasurer();
+                WorkspaceEditing.DeleteMany(workspace, NewLayouter(), groupTops);
+                multi.Clear(); SelectedBlock = null;
+                deleted = true;
+            }
+            groupDragging = false;
+            groupTops = null; groupStart = null; groupBlocks = null;
+            draggedObjects.Clear();
+            bool wasOver = OverDeleteArea;
+            OverDeleteArea = false;
+            if (wasOver) DeleteHoverChanged?.Invoke(false);
+            BlockDragEnded?.Invoke();
+            Rebuild();
+            RecordForUndo(groupBefore);
+            groupBefore = null;
+            if (deleted) { SelectionChanged?.Invoke(null); SelectionSetChanged?.Invoke(); }
+            WorkspaceEdited?.Invoke();
+        }
+
         public void DragTo(Vector2 workspacePoint)
         {
             if (!IsDragging) return;
+            if (groupDragging) { GroupDragTo(workspacePoint); return; }
             var target = workspacePoint - grabOffset;
             dragger.MoveTo(target.x, target.y);
             ApplyDraggedLayout();
@@ -1307,6 +1727,7 @@ namespace Blockly.UI
         public void EndDrag()
         {
             if (!IsDragging) return;
+            if (groupDragging) { EndGroupDrag(cancel: false); return; }
             if (OverDeleteArea) dragger.Delete(); else dragger.End();
             FinishDrag();
         }
@@ -1328,6 +1749,7 @@ namespace Blockly.UI
         public void CancelDrag()
         {
             if (!IsDragging) return;
+            if (groupDragging) { EndGroupDrag(cancel: true); return; }
             dragger.Cancel();
             FinishDrag();
         }
@@ -1417,7 +1839,8 @@ namespace Blockly.UI
                      || UnityEngine.Input.GetKey(KeyCode.LeftCommand) || UnityEngine.Input.GetKey(KeyCode.RightCommand);
             if (!ctrl) return;
             bool shift = UnityEngine.Input.GetKey(KeyCode.LeftShift) || UnityEngine.Input.GetKey(KeyCode.RightShift);
-            if (UnityEngine.Input.GetKeyDown(KeyCode.C)) HandleShortcut(KeyCode.C, true, shift);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.A)) HandleShortcut(KeyCode.A, true, shift);
+            else if (UnityEngine.Input.GetKeyDown(KeyCode.C)) HandleShortcut(KeyCode.C, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.X)) HandleShortcut(KeyCode.X, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.V)) HandleShortcut(KeyCode.V, true, shift);
             else if (UnityEngine.Input.GetKeyDown(KeyCode.Z)) HandleShortcut(KeyCode.Z, true, shift);
@@ -1519,7 +1942,7 @@ namespace Blockly.UI
             }
             blockObjects.Clear();
             highlightObject = null; highlightShape = null; HighlightedBlock = null;
-            selectionObject = null; selectionShape = null; paramsButton = null;
+            selectionObject = null; selectionShape = null; paramsButton = null; groupOutlines.Clear(); marquee = null;
             snapMarker = null; snapShape = null;
         }
 

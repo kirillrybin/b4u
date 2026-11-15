@@ -21,7 +21,9 @@ namespace Blockly.UI
         {
             if (e != null && e.button == PointerEventData.InputButton.Right) { if (view != null) view.ShowBlockMenu(block, e.position); return; }
             if (e != null && e.button != PointerEventData.InputButton.Left) return;
-            if (view != null) view.Select(block);
+            if (view == null) return;
+            if (view.MultiSelectEnabled && (view.SelectMode || WorkspaceView.ModifierHeld)) view.ToggleInSelection(block);
+            else view.Select(block);
         }
 
         // a press that is held still opens the block menu (the right click of a touch screen)
@@ -52,6 +54,11 @@ namespace Blockly.UI
 
             // grab at the press position so the block stays under the finger instead of jumping by the drag threshold
             var point = view.ScreenToWorkspace(e.pressPosition, e.pressEventCamera);
+            if (view.IsInMultiSelection(grabbed))                     // a stack of a selection of several: they all go
+            {
+                if (view.BeginGroupDrag(grabbed, point)) { e.pointerDrag = view.gameObject; view.OnDrag(e); }
+                return;
+            }
             view.Select(grabbed);
             if (view.BeginDrag(grabbed, point))
             {
