@@ -19,8 +19,8 @@ The C# code is written for this package and is MIT; it follows the behaviour, th
 Fonts (SIL Open Font License 1.1; the licence text must travel with the font)
 
 Poppins, Copyright 2014-2019 Indian Type Foundry (https://github.com/itfoundry/Poppins), used by the Purple skin sample. The licence text is Samples~/PurpleSkin/OFL-Poppins.txt;
-in the project it is next to the font in Assets/TextMesh Pro/Resources/Fonts & Materials/. The font may be used, embedded and redistributed with the application, but not sold on its own.
-Liberation Sans, the default font of TextMesh Pro (Assets/TextMesh Pro/Fonts), with its licence text next to it (LiberationSans - OFL.txt).
+in the project it is next to the font in Assets/Fonts/. The font may be used, embedded and redistributed with the application, but not sold on its own.
+TextMesh Pro's own resources (its shaders, emoji sprites and the default Liberation Sans font) are not in this repository: Unity's "TMP Essential Resources" are imported into the project with Blockly > Setup > Import TMP Essentials and keep their own licences (Unity Companion License, SIL OFL for the font).
 
 Pictures of the Purple skin sample
 
