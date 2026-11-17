@@ -19,3 +19,7 @@ dev/Core.Tests/obj/
 *.apk
 *.aab
 /.utmp/
+
+# TextMesh Pro "Essential Resources" (Unity's shaders, emoji sprites, default font): imported by Blockly > Setup > Import TMP Essentials, not shipped here
+/Assets/TextMesh Pro/
+/Assets/TextMesh Pro.meta
