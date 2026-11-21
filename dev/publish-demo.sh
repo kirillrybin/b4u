@@ -35,6 +35,8 @@ else
   git -C "$SITE" init -q -b gh-pages
   git -C "$SITE" remote add origin "$(git -C "$REPO" remote get-url origin)"
 fi
+git -C "$SITE" config user.name "$(git -C "$REPO" config user.name)"
+git -C "$SITE" config user.email "$(git -C "$REPO" config user.email)"     # the repository's own (noreply) address, not the global one
 find "$SITE" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 cp -R "$OUT"/. "$SITE"/
 git -C "$SITE" add -A
