@@ -64,6 +64,8 @@ namespace Blockly.EditorTools
                 // A phone's browser tab has little memory and has to compile the whole wasm module: build for size, strip what is unused.
                 SetWebGlCodeOptimizationToDiskSize();
                 PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
+                // Static hosts such as GitHub Pages serve the precompressed .gz files without a Content-Encoding header; the loader then unpacks them itself.
+                PlayerSettings.WebGL.decompressionFallback = true;
             }
 
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
