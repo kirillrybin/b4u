@@ -66,6 +66,8 @@ namespace Blockly.EditorTools
                 PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
                 // Static hosts such as GitHub Pages serve the precompressed .gz files without a Content-Encoding header; the loader then unpacks them itself.
                 PlayerSettings.WebGL.decompressionFallback = true;
+                // A page where the canvas fills the browser window (Assets/WebGLTemplates/Fullscreen), when the project has it
+                if (File.Exists("Assets/WebGLTemplates/Fullscreen/index.html")) PlayerSettings.WebGL.template = "PROJECT:Fullscreen";
             }
 
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();

@@ -3856,6 +3856,7 @@ MonoBehaviour:
   toolbox: {fileID: 116039436}
   flyout: {fileID: 1396922940}
   console: {fileID: 987697784}
+  desktopReferenceResolution: {x: 1920, y: 1080}
 --- !u!114 &1935083799
 MonoBehaviour:
   m_ObjectHideFlags: 0

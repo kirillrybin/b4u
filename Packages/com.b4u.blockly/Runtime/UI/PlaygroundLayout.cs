@@ -22,6 +22,11 @@ namespace Blockly.UI
         [SerializeField] RectTransform toolbox;
         [SerializeField] RectTransform flyout;
         [SerializeField] RectTransform console;
+        [SerializeField, Tooltip("The size the interface is designed for on a computer: the canvas scales with the window relative to it. A larger size shows more on the screen with smaller buttons and blocks. Phones use their own density-based scale.")]
+        Vector2 desktopReferenceResolution = new Vector2(1280, 720);
+
+        /// <summary>The design size of the interface on a computer (the canvas scale follows the window relative to it).</summary>
+        public Vector2 DesktopReferenceResolution { get => desktopReferenceResolution; set { desktopReferenceResolution = value; lastScreen = Vector2Int.zero; } }
 
         public const float RowHeight = 48f, RowPadding = 6f, ItemGap = 8f, ItemHeight = 36f, SideMargin = 8f;
         public const float FlyoutWidth = 360f, FlyoutMargin = 24f, ConsoleHeight = 190f, MinWorkspaceHeight = 220f;
@@ -170,7 +175,7 @@ namespace Blockly.UI
             else
             {
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1280, 720);
+                scaler.referenceResolution = desktopReferenceResolution;
                 scaler.matchWidthOrHeight = 0.5f;
             }
         }

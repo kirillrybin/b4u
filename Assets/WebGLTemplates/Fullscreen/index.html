@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>{{{ PRODUCT_NAME }}}</title>
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1c1e3a; }
+      #unity-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: #1c1e3a; touch-action: none; outline: none; }
+      #unity-loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+                       color: #c9c9f0; font: 600 18px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; }
+      #unity-bar { width: min(320px, 60vw); height: 8px; border-radius: 4px; background: #34376a; overflow: hidden; }
+      #unity-bar-full { width: 0; height: 100%; background: #7d86ff; }
+      #unity-warning { position: fixed; left: 50%; top: 10px; transform: translateX(-50%); display: none; z-index: 2; max-width: 90vw; font: 14px system-ui, sans-serif; }
+      #unity-warning div { padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; color: #fff; background: #b3412f; }
+    </style>
+  </head>
+  <body>
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="unity-loading"><div>{{{ PRODUCT_NAME }}}</div><div id="unity-bar"><div id="unity-bar-full"></div></div></div>
+    <div id="unity-warning"></div>
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+      var loading = document.querySelector("#unity-loading");
+      var banner = document.querySelector("#unity-warning");
+
+      function showBanner(msg, type) {
+        var div = document.createElement("div");
+        div.textContent = msg;
+        if (type != "error") div.style.background = "#8a6d12";
+        banner.appendChild(div); banner.style.display = "block";
+        if (type != "error") setTimeout(function () { banner.removeChild(div); banner.style.display = banner.children.length ? "block" : "none"; }, 5000);
+      }
+
+      var buildUrl = "Build";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+        frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+        workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+#endif
+        codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+        showBanner: showBanner,
+      };
+
+      // The canvas always fills the window; the engine follows its size. It is drawn at no less than twice the CSS size (a plain screen gets a
+      // smoother picture, a retina one its own density), but never above about 9 million pixels, so a 4K screen stays smooth.
+      var pixelRatio = Math.max(window.devicePixelRatio || 1, 2);
+      pixelRatio = Math.min(pixelRatio, 3, Math.sqrt(9e6 / Math.max(1, window.innerWidth * window.innerHeight)));
+      config.devicePixelRatio = Math.max(1, pixelRatio);
+      var script = document.createElement("script");
+      script.src = buildUrl + "/{{{ LOADER_FILENAME }}}";
+      script.onload = function () {
+        createUnityInstance(canvas, config, function (progress) {
+          document.querySelector("#unity-bar-full").style.width = (100 * progress) + "%";
+        }).then(function () {
+          loading.style.display = "none";
+        }).catch(function (message) { showBanner(String(message), "error"); });
+      };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>
