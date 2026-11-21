@@ -17,8 +17,7 @@ public class ApplyBlockTheme : MonoBehaviour
     void OnEnable()
     {
         var t = theme != null ? theme : Candy(font);
-        BlockThemeCatalog.Register(theme != null ? theme.name : "Purple", t);
-        BlockStyle.Theme = t;
+        BlockThemeCatalog.Register(theme != null ? theme.name : "Purple", t);       // listed in View > Theme; the Playground opens in Classic (or the theme chosen last time)
     }
 
     void OnDisable()

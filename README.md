@@ -2,9 +2,9 @@
 
 A native C# port of [Blockly](https://developers.google.com/blockly) for Unity 6. It loads Blockly programs (JSON and legacy XML), draws the blocks with UGUI and TextMeshPro, lets the user edit them, and runs them with a built-in interpreter. There is no WebView: the same code runs on Windows, macOS, iOS, Android and WebGL.
 
-**[Live demo in the browser](https://kirillrybin.github.io/b4u/)** (WebGL, runs on phones too). Pick a program, press Run; change the look in **View > Theme**.
+**[Live demo in the browser](https://kirillrybin.github.io/b4u/)** (WebGL, runs on phones too). Pick a program, press Run; try the Purple look in **View > Theme**.
 
-| Classic | Dark | Purple (the default of the demo project) |
+| Classic | Dark | Purple |
 |---|---|---|
 | ![Classic theme](docs/img/classic.png) | ![Dark theme](docs/img/dark.png) | ![Purple skin](docs/img/purple.png) |
 
@@ -39,7 +39,7 @@ The full guide (your own blocks, themes, languages, saving, platforms, known lim
 
 ## Looks
 
-The package itself carries no particular look: with no theme set, blocks use Blockly's Classic one, and Dark and High Contrast come with it. The demo project in this repository opens in the **Purple** theme (category icons, Poppins font, rounded plates); it is made by `Assets/ApplyBlockTheme.cs`, and the same look ships as the **Purple skin** sample of the package. Pick any theme at run time from **View > Theme**.
+The package itself carries no particular look: with no theme set, blocks use Blockly's Classic one, and Dark and High Contrast come with it. The demo project in this repository opens in Classic and also offers **Purple** (category icons, Poppins font, rounded plates), made by `Assets/ApplyBlockTheme.cs`; the same look ships as the **Purple skin** sample of the package. Pick any theme at run time from **View > Theme**; the choice is remembered.
 
 ## Tests
 
