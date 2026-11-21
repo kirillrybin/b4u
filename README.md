@@ -2,6 +2,8 @@
 
 A native C# port of [Blockly](https://developers.google.com/blockly) for Unity 6. It loads Blockly programs (JSON and legacy XML), draws the blocks with UGUI and TextMeshPro, lets the user edit them, and runs them with a built-in interpreter. There is no WebView: the same code runs on Windows, macOS, iOS, Android and WebGL.
 
+**[Live demo in the browser](https://kirillrybin.github.io/b4u/)** (WebGL, runs on phones too). Pick a program, press Run; change the look in **View > Theme**.
+
 | Classic | Dark | Purple (the default of the demo project) |
 |---|---|---|
 | ![Classic theme](docs/img/classic.png) | ![Dark theme](docs/img/dark.png) | ![Purple skin](docs/img/purple.png) |
